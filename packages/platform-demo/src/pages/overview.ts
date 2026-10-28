@@ -86,7 +86,26 @@ export function renderOverviewPage(container: HTMLElement): void {
   `;
   wrap.appendChild(journey);
 
+  for (const link of journey.querySelectorAll<HTMLAnchorElement>('a[href^="/"]')) {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const sheet = link.getAttribute('href')?.replace(/^\/+/, '');
+      if (sheet) {
+        document.dispatchEvent(new CustomEvent('navigate-to', { detail: { sheet } }));
+      }
+    });
+  }
+
   // ── Flow: 4 stages ──────────────────────────────────────────────────────
+  const TAB_SHEET_MAP: Record<string, string> = {
+    권한: 'permission',
+    서비스: 'service',
+    시나리오: 'scenario',
+    범위탐색: 'range',
+    버전: 'version',
+    '권한 부여 관리': 'grant',
+  };
+
   const stages = [
     {
       num: '01',
@@ -160,9 +179,23 @@ export function renderOverviewPage(container: HTMLElement): void {
         <code>${s.detail}</code>
       </div>
       <div class="ov-card-tabs">
-        ${s.tabs.map((t) => `<span class="ov-card-tab">${t}</span>`).join('')}
+        ${s.tabs
+          .map(
+            (t) =>
+              `<button type="button" class="ov-card-tab" data-target-sheet="${TAB_SHEET_MAP[t] ?? 'overview'}">${t}</button>`,
+          )
+          .join('')}
       </div>
     `;
+
+    for (const btn of card.querySelectorAll<HTMLButtonElement>('.ov-card-tab')) {
+      btn.addEventListener('click', () => {
+        const sheet = btn.dataset['targetSheet'];
+        if (sheet) {
+          document.dispatchEvent(new CustomEvent('navigate-to', { detail: { sheet } }));
+        }
+      });
+    }
 
     flow.appendChild(card);
 

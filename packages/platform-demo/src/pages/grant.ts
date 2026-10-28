@@ -19,6 +19,7 @@ import {
 import { DEMO_FEATURE_KO, DEMO_KO } from 'demo-snapshot';
 import { hasBit } from 'weighted-index';
 import { base64ToUint8 } from 'bit-index';
+import { yieldToMain } from './demo-display-data.js';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -261,6 +262,7 @@ function buildSimPanel(features: FeaturesResponse, ver: string): HTMLElement {
     checkBtn.disabled = true;
     checkBtn.textContent = '요청 중...';
     resultArea.innerHTML = `<div class="gm-sim-placeholder">API 요청 중...</div>`;
+    await yieldToMain();
 
     // eslint-disable-next-line typescript/no-non-null-assertion -- selectedRole은 DEMO_USERS에서 유래
     const user = DEMO_USERS.find((u) => u.role === selectedRole)!;

@@ -4,9 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QA-SDK Coordinate Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Sora:wght@300;400;600;700&display=swap">
+<link rel="modulepreload" href="./viz-3d-core.js">
 <script src="config.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Sora:wght@300;400;600;700&display=swap');
 :root{--bg:#050508;--card:rgba(8,10,16,0.92);--border:rgba(100,255,218,0.08);--mint:#64ffda;--cyan:#00b4d8;--amber:#ff9f43;--violet:#7c5cfc;--rose:#ff3860;--green:#2ed573;--red:#ff6b6b;--txt:#c0c8d8;--dim:#445}
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--txt);font-family:'Sora',sans-serif;overflow:hidden;height:100vh}
@@ -69,6 +72,11 @@ input.btn{width:170px;color:#556;text-align:left}
 .flow-step-row{padding:3px 6px;border-radius:3px;cursor:pointer;transition:background .15s,color .15s;pointer-events:all;font-size:9px}
 .flow-step-row:hover{background:rgba(100,255,218,0.1);color:var(--mint)}
 .flow-step-row.fs-active{background:rgba(255,159,67,0.15);color:var(--amber);border-left:2px solid var(--amber)}
+
+/* ── CSS Containment & Offscreen Deferral ── */
+.cd,.signal-legend,.bar,.flow-timeline,.ft-entry{contain:layout style paint}
+#info-overlay > div > div:nth-of-type(n+3){content-visibility:auto;contain-intrinsic-size:auto none auto 320px}
+@supports not (content-visibility:auto){#info-overlay > div > div:nth-of-type(n+3){contain:layout style paint}}
 </style>
 </head>
 <body>
@@ -618,6 +626,7 @@ function sendI(ctx,ek){sSeq++;const u=$('ws-url').value.replace('ws://','http://
 //  HUD
 // ═══════════════════════════════════════════════════
 const $=id=>document.getElementById(id);
+const yieldToMain=()=>('scheduler' in window&&'yield' in window.scheduler?window.scheduler.yield():new Promise(r=>setTimeout(r,0)));
 
 function updateHUD(step,ctx){
   $('h-step').textContent=step?.n||'--';$('h-desc').textContent=step?.d||'';$('h-total').textContent=tot;
@@ -653,16 +662,18 @@ function restoreFullFlow(){
 function showFlow(entry){
   if(!entry)return;$('h-flow').style.display='block';$('flow-idx').textContent=FH.indexLabel();$('flow-title').textContent=entry.name;
   if(!entry.flow.length)return;
-  const container=$('flow-steps');container.innerHTML='';
+  const container=$('flow-steps');
+  const frag=document.createDocumentFragment();
   entry.flow.forEach(f=>{
     const row=document.createElement('div');
     row.className='flow-step-row m';
     row.innerHTML=`<span style="color:#889">${f.tier}</span> ${f.l}`;
     row.addEventListener('mouseenter',()=>highlightFlowStep(f.cell,row));
     row.addEventListener('click',e=>{e.stopPropagation();highlightFlowStep(f.cell,row)});
-    container.appendChild(row);
+    frag.appendChild(row);
   });
-  container.addEventListener('mouseleave',restoreFullFlow);
+  container.replaceChildren(frag);
+  container.onmouseleave=restoreFullFlow;
 }
 
 function showCellInfo(key){
@@ -805,9 +816,10 @@ $('btn-check-server').addEventListener('click', async ()=>{
   } catch { $('srv-registry').innerHTML='<span style="color:#ff3860">● registry: offline</span>'; }
 });
 
-// Prefix filter chips
+// Prefix filter chips (batched via DocumentFragment)
 const prefixVisible=new Map();
 const filterContainer=$('prefix-filters');
+const filterFrag=document.createDocumentFragment();
 GRIDS.forEach(g=>{
   prefixVisible.set(g.id, true);
   const chip=document.createElement('span');
@@ -816,23 +828,27 @@ GRIDS.forEach(g=>{
   chip.textContent=g.id;
   chip.dataset.prefix=g.id;
   chip.classList.add('on');
-  chip.addEventListener('click',()=>{
+  chip.addEventListener('click',async()=>{
     const vis=!prefixVisible.get(g.id);
     prefixVisible.set(g.id, vis);
     chip.classList.toggle('on', vis);
+    await yieldToMain();
     const grp=groups.get(g.id);
     if(grp) grp.visible=vis;
   });
-  filterContainer.appendChild(chip);
+  filterFrag.appendChild(chip);
 });
+filterContainer.appendChild(filterFrag);
 
-$('btn-filter-all').addEventListener('click',()=>{
-  GRIDS.forEach(g=>{prefixVisible.set(g.id,true);const grp=groups.get(g.id);if(grp)grp.visible=true});
+$('btn-filter-all').addEventListener('click',async()=>{
   filterContainer.querySelectorAll('.btn').forEach(c=>c.classList.add('on'));
+  await yieldToMain();
+  GRIDS.forEach(g=>{prefixVisible.set(g.id,true);const grp=groups.get(g.id);if(grp)grp.visible=true});
 });
-$('btn-filter-none').addEventListener('click',()=>{
-  GRIDS.forEach(g=>{prefixVisible.set(g.id,false);const grp=groups.get(g.id);if(grp)grp.visible=false});
+$('btn-filter-none').addEventListener('click',async()=>{
   filterContainer.querySelectorAll('.btn').forEach(c=>c.classList.remove('on'));
+  await yieldToMain();
+  GRIDS.forEach(g=>{prefixVisible.set(g.id,false);const grp=groups.get(g.id);if(grp)grp.visible=false});
 });
 
 // Cell click — InstancedMesh 지원 + 선택 마커
@@ -883,27 +899,33 @@ const tooltip=document.createElement('div');
 tooltip.style.cssText='position:fixed;z-index:20;pointer-events:none;font-family:IBM Plex Mono,monospace;font-size:10px;color:#64ffda;background:rgba(5,5,8,0.85);border:1px solid rgba(100,255,218,0.15);padding:3px 8px;border-radius:3px;display:none;white-space:nowrap';
 document.body.appendChild(tooltip);
 let hoveredKey=null;
+let hoverRaf=0;
 
 canvas.addEventListener('mousemove',e=>{
-  mv.x=(e.clientX/innerWidth)*2-1;mv.y=-(e.clientY/innerHeight)*2+1;rc.setFromCamera(mv,cam);
-  const iMeshes=instancedGrids.map(ig=>ig.iMesh);
-  const h=rc.intersectObjects(iMeshes);
-  if(h.length&&h[0].instanceId!==undefined){
-    const ig=instancedGrids.find(g=>g.iMesh===h[0].object);
-    if(ig){
-      const key=ig.idxToKey[h[0].instanceId];
-      if(key!==hoveredKey){
-        hoveredKey=key;
-        tooltip.textContent=key;
-        canvas.style.cursor='pointer';
+  const cx=e.clientX,cy=e.clientY;
+  if(hoverRaf)return;
+  hoverRaf=requestAnimationFrame(()=>{
+    hoverRaf=0;
+    mv.x=(cx/innerWidth)*2-1;mv.y=-(cy/innerHeight)*2+1;rc.setFromCamera(mv,cam);
+    const iMeshes=instancedGrids.map(ig=>ig.iMesh);
+    const h=rc.intersectObjects(iMeshes);
+    if(h.length&&h[0].instanceId!==undefined){
+      const ig=instancedGrids.find(g=>g.iMesh===h[0].object);
+      if(ig){
+        const key=ig.idxToKey[h[0].instanceId];
+        if(key!==hoveredKey){
+          hoveredKey=key;
+          tooltip.textContent=key;
+          canvas.style.cursor='pointer';
+        }
+        tooltip.style.display='block';
+        tooltip.style.left=(cx+12)+'px';
+        tooltip.style.top=(cy-8)+'px';
       }
-      tooltip.style.display='block';
-      tooltip.style.left=(e.clientX+12)+'px';
-      tooltip.style.top=(e.clientY-8)+'px';
+    }else{
+      if(hoveredKey){hoveredKey=null;tooltip.style.display='none';canvas.style.cursor='default'}
     }
-  }else{
-    if(hoveredKey){hoveredKey=null;tooltip.style.display='none';canvas.style.cursor='default'}
-  }
+  });
 });
 
 // ═══════════════════════════════════════════════════

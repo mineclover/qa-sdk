@@ -16,7 +16,7 @@ import {
   demoCalcPermAddr,
   type DemoVer,
 } from 'demo-snapshot';
-import { buildRefSvcRows, type DemoRefSvcRow } from './demo-display-data.js';
+import { buildRefSvcRows, yieldToMain, type DemoRefSvcRow } from './demo-display-data.js';
 import { EVENT_INITIATOR_CAP, eventAddress, eventStride } from '../event-address.js';
 
 type Ver = DemoVer;
@@ -217,8 +217,9 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
     const wBtn = document.createElement('button');
     wBtn.className = 'acc-btn acc-btn-wild' + (st.permSvc === null ? ' acc-btn-active-wild' : '');
     wBtn.textContent = '*';
-    wBtn.addEventListener('click', () => {
+    wBtn.addEventListener('click', async () => {
       st.permSvc = null;
+      await yieldToMain();
       repaint();
     });
     svcBtns.appendChild(wBtn);
@@ -228,8 +229,9 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
       btn.className = 'acc-btn' + (st.permSvc === ps.pos ? ' acc-btn-active' : '');
       btn.innerHTML = `<span class="acc-btn-id">${ps.pos}</span><span class="acc-btn-ko">${ps.label}</span>`;
       btn.title = ps.title;
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         st.permSvc = ps.pos;
+        await yieldToMain();
         repaint();
       });
       svcBtns.appendChild(btn);
@@ -237,20 +239,22 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
     svcCtrl.appendChild(svcBtns);
 
     // ── Role buttons ──
-    roleBtns.innerHTML = '';
+    const roleFrag = document.createDocumentFragment();
     for (const role of curRoles) {
       const btn = document.createElement('button');
       btn.className = `acc-role-btn role-tag-${role.id}${role.idx1 === st.roleIdx1 ? ' acc-role-btn-active' : ''}`;
       btn.textContent = role.ko;
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         st.roleIdx1 = role.idx1;
+        await yieldToMain();
         repaint();
       });
-      roleBtns.appendChild(btn);
+      roleFrag.appendChild(btn);
     }
+    roleBtns.replaceChildren(roleFrag);
 
     // ── Initiator buttons ──
-    initBtns.innerHTML = '';
+    const initFrag = document.createDocumentFragment();
     for (const [init, label, ko] of [
       [1, 'web', '웹'],
       [2, 'mobile', '모바일'],
@@ -258,12 +262,14 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
       const btn = document.createElement('button');
       btn.className = `acc-role-btn${st.initiator === init ? ' acc-role-btn-active' : ''}`;
       btn.textContent = `${label} · ${ko}`;
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         st.initiator = init;
+        await yieldToMain();
         repaint();
       });
-      initBtns.appendChild(btn);
+      initFrag.appendChild(btn);
     }
+    initBtns.replaceChildren(initFrag);
 
     // ── Permission table ──
     const permTitleHtml = `

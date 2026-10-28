@@ -120,3 +120,13 @@ export function buildRefSvcRows(addresses: readonly number[]): DemoRefSvcRow[] {
     };
   });
 }
+
+export function yieldToMain(): Promise<void> {
+  const w = window as Window & { scheduler?: { yield?: () => Promise<void> } };
+  return 'scheduler' in window &&
+    w.scheduler &&
+    'yield' in w.scheduler &&
+    typeof w.scheduler.yield === 'function'
+    ? w.scheduler.yield()
+    : new Promise((r) => setTimeout(r, 0));
+}

@@ -24,17 +24,7 @@ import {
   refreshEventDetail,
   type EventState,
 } from './pages/event.js';
-import { renderScenarioPage } from './pages/scenario.js';
-import { renderGrantPage } from './pages/grant.js';
-import { renderVersionPage } from './pages/version.js';
 import { renderOverviewPage } from './pages/overview.js';
-import { renderRangePage } from './pages/range.js';
-import { renderAccessPage } from './pages/access.js';
-import { renderLoggingPage } from './pages/logging.js';
-import { renderLayoutPage } from './pages/layout.js';
-import { renderCasbinPage } from './pages/casbin.js';
-import { renderPermEnginePage } from './pages/perm-engine.js';
-import { renderPrefixMetaPage } from './pages/prefix-meta.js';
 import {
   DEMO_ENVS,
   DEMO_REGIONS,
@@ -447,16 +437,56 @@ function switchSheet(id: SheetId, pushState = true): void {
     if (id === 'service') repaintService();
     if (id === 'permission') repaintPermission();
     if (id === 'event') repaintEvent();
-    if (id === 'scenario') renderScenarioPage(scenarioContainer, state.ver);
-    if (id === 'grant') renderGrantPage(grantContainer, state.ver);
-    if (id === 'casbin') renderCasbinPage(casbinContainer, state.ver);
-    if (id === 'range') renderRangePage(rangeContainer);
-    if (id === 'access') renderAccessPage(accessContainer, state.ver);
-    if (id === 'logging') renderLoggingPage(loggingContainer, state.ver);
-    if (id === 'layout') renderLayoutPage(layoutContainer);
-    if (id === 'version') renderVersionPage(versionContainer, handleVersionChange, state.ver);
-    if (id === 'perm-engine') renderPermEnginePage(permEngineContainer, state.ver);
-    if (id === 'prefix-meta') renderPrefixMetaPage(prefixMetaContainer);
+    if (id === 'scenario') {
+      void import('./pages/scenario.js').then(({ renderScenarioPage }) =>
+        renderScenarioPage(scenarioContainer, state.ver),
+      );
+    }
+    if (id === 'grant') {
+      void import('./pages/grant.js').then(({ renderGrantPage }) =>
+        renderGrantPage(grantContainer, state.ver),
+      );
+    }
+    if (id === 'casbin') {
+      void import('./pages/casbin.js').then(({ renderCasbinPage }) =>
+        renderCasbinPage(casbinContainer, state.ver),
+      );
+    }
+    if (id === 'range') {
+      void import('./pages/range.js').then(({ renderRangePage }) =>
+        renderRangePage(rangeContainer),
+      );
+    }
+    if (id === 'access') {
+      void import('./pages/access.js').then(({ renderAccessPage }) =>
+        renderAccessPage(accessContainer, state.ver),
+      );
+    }
+    if (id === 'logging') {
+      void import('./pages/logging.js').then(({ renderLoggingPage }) =>
+        renderLoggingPage(loggingContainer, state.ver),
+      );
+    }
+    if (id === 'layout') {
+      void import('./pages/layout.js').then(({ renderLayoutPage }) =>
+        renderLayoutPage(layoutContainer),
+      );
+    }
+    if (id === 'version') {
+      void import('./pages/version.js').then(({ renderVersionPage }) =>
+        renderVersionPage(versionContainer, handleVersionChange, state.ver),
+      );
+    }
+    if (id === 'perm-engine') {
+      void import('./pages/perm-engine.js').then(({ renderPermEnginePage }) =>
+        renderPermEnginePage(permEngineContainer, state.ver),
+      );
+    }
+    if (id === 'prefix-meta') {
+      void import('./pages/prefix-meta.js').then(({ renderPrefixMetaPage }) =>
+        renderPrefixMetaPage(prefixMetaContainer),
+      );
+    }
   }
 
   updateStatusBar();

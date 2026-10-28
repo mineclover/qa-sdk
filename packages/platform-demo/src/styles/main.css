@@ -28,7 +28,19 @@
   --role-readonly: #7f8c8d;
 }
 
-/* ── Ribbon reset button ────────────────────────────────────────────────── */
+/* ── Ribbon controls & hit targets ──────────────────────────────────────── */
+.ribbon-ver-label {
+  color: rgba(255, 255, 255, 0.78);
+}
+.ribbon-ver-btn {
+  min-width: 36px;
+  min-height: 28px;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.88);
+}
 .ribbon-ver-sep {
   width: 1px;
   height: 16px;
@@ -36,13 +48,18 @@
   margin: 0 6px;
 }
 .ribbon-reset-btn {
-  padding: 3px 10px;
+  min-width: 52px;
+  min-height: 28px;
+  padding: 4px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.72rem;
   font-weight: 600;
   font-family: var(--font);
-  background: rgba(255, 120, 80, 0.2);
-  color: rgba(255, 255, 255, 0.75);
-  border: 1px solid rgba(255, 120, 80, 0.3);
+  background: rgba(255, 138, 101, 0.28);
+  color: #ffffff;
+  border: 1px solid rgba(255, 171, 145, 0.55);
   border-radius: 3px;
   cursor: pointer;
   transition:
@@ -50,12 +67,31 @@
     color 0.1s;
 }
 .ribbon-reset-btn:hover {
-  background: rgba(255, 120, 80, 0.35);
+  background: rgba(255, 138, 101, 0.42);
   color: #fff;
 }
 .ribbon-reset-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ── Global Typography & Tabular Numerals ───────────────────────────────── */
+.name-box,
+.fb-formula,
+.ribbon-ver-btn,
+.ov-card-num,
+.ov-journey-step-num,
+.cell-id-val,
+.rng-cell-val,
+.rng-dtl-value,
+.acc-summary-num,
+.pe-stat-val,
+.pm-num,
+.status-bar,
+code,
+pre,
+table {
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── App shell ───────────────────────────────────────────────────────────── */
@@ -67,10 +103,12 @@ body {
 
 body {
   overflow: hidden;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 body > nav {
-  flex: 0 0 32px;
+  flex: 0 0 40px;
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
@@ -90,7 +128,7 @@ body > nav > a {
 #app {
   display: flex;
   flex-direction: column;
-  height: calc(100dvh - 32px);
+  height: calc(100dvh - 40px);
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -144,27 +182,68 @@ body > nav > a {
   min-height: 0;
 }
 
+.overview-body,
+.range-body,
+.access-body,
+.scenario-body,
+.grant-body,
+.cb-body,
+.logging-body,
+.layout-body,
+.version-body,
+.pe-body {
+  display: block !important;
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+#overview-container,
+#scenario-container,
+#grant-container,
+#range-container,
+#access-container,
+#casbin-container,
+#logging-container,
+#layout-container,
+#version-container,
+#perm-engine-container,
+#prefix-meta-container {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
 @media (max-width: 760px) {
   body {
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
     height: auto;
     min-height: 100dvh;
   }
 
   #app {
     height: auto;
-    min-height: calc(100dvh - 32px);
-    overflow: visible;
+    min-height: calc(100dvh - 40px);
+    overflow-x: hidden;
+    overflow-y: visible;
   }
 
   .ribbon {
     height: auto;
     min-height: var(--ribbon-h);
-    align-items: stretch;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 6px 10px 0;
+    gap: 6px;
   }
 
   .ribbon-brand {
     flex: 0 0 auto;
+    padding-right: 10px;
+    margin-right: 4px;
   }
 
   .brand-sub,
@@ -173,18 +252,31 @@ body > nav > a {
   }
 
   .ribbon-ver {
-    margin-left: 0;
-    padding: 0 8px;
+    margin-left: auto;
+    padding: 0;
   }
 
   .ribbon-ver-btn,
-  .ribbon-reset-btn,
+  .ribbon-reset-btn {
+    min-height: 32px;
+  }
+
   .rtab,
   .stab {
     min-height: 36px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
   }
 
-  .ribbon-tabs,
+  .ribbon-tabs {
+    flex: 1 0 100%;
+    width: 100%;
+    margin-right: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    overflow-x: auto;
+  }
+
   .sheet-tabs {
     flex: 1 0 auto;
   }
@@ -198,20 +290,30 @@ body > nav > a {
   .workbook,
   .sheet {
     height: auto;
-    overflow: visible;
+    overflow-x: hidden;
+    overflow-y: visible;
   }
 
   .sheet-body {
-    overflow: visible;
+    overflow-x: hidden;
+    overflow-y: visible;
   }
 
+  .overview-body,
   .range-body,
   .access-body,
   .scenario-body,
   .cb-body,
   .grant-body,
-  .logging-body {
-    overflow: visible;
+  .logging-body,
+  .layout-body,
+  .version-body,
+  .pe-body {
+    display: block !important;
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+    overflow-y: visible;
   }
 
   .bottom-bar {
@@ -2799,27 +2901,28 @@ code {
 }
 
 .ov-wrap {
-  max-width: 1100px;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 32px 24px 48px;
+  padding: 24px 24px 40px;
+  box-sizing: border-box;
 }
 
 /* ── Header ── */
 .ov-header {
   text-align: center;
-  margin-bottom: 36px;
+  margin-bottom: 20px;
 }
 .ov-title {
-  font-size: 2rem;
+  font-size: 1.85rem;
   font-weight: 700;
   color: var(--xl-navy);
   letter-spacing: -0.02em;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 .ov-subtitle {
-  font-size: 1.05rem;
+  font-size: 0.98rem;
   color: var(--text-muted);
-  line-height: 1.7;
+  line-height: 1.6;
 }
 
 /* ── Flow (4 cards) ── */
@@ -2827,19 +2930,20 @@ code {
   display: flex;
   align-items: stretch;
   gap: 0;
-  margin-bottom: 36px;
+  margin-bottom: 24px;
 }
 
 .ov-card {
   flex: 1;
+  min-width: 0;
   background: var(--surface-0);
   border: 1px solid var(--border-cell);
   border-top: 3px solid var(--card-accent, var(--xl-blue));
   border-radius: var(--radius);
-  padding: 20px 18px 16px;
+  padding: 16px 16px 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   position: relative;
 }
 
@@ -2869,16 +2973,16 @@ code {
   opacity: 0.8;
 }
 .ov-card-title {
-  font-size: 1.08rem;
+  font-size: 1.04rem;
   font-weight: 700;
   color: var(--xl-navy);
   line-height: 1.35;
 }
 
 .ov-card-body {
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   color: var(--text-cell);
-  line-height: 1.7;
+  line-height: 1.65;
   flex: 1;
 }
 .ov-card-body strong {
@@ -2890,7 +2994,7 @@ code {
   background: var(--xl-navy-faint);
   border: 1px solid var(--xl-navy-light);
   border-radius: var(--radius-sm);
-  padding: 10px 12px;
+  padding: 8px 10px;
   display: flex;
   align-items: flex-start;
   gap: 8px;
@@ -2903,23 +3007,42 @@ code {
 }
 .ov-card-detail code {
   font-family: var(--font-num);
-  font-size: 0.82rem;
-  color: var(--text-formula);
-  line-height: 1.6;
+  font-size: 0.78rem;
+  background: transparent;
+  padding: 0;
+  color: var(--xl-navy);
+  line-height: 1.55;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 .ov-card-tabs {
   display: flex;
-  gap: 5px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 .ov-card-tab {
-  font-size: 0.78rem;
+  min-height: 28px;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 0.76rem;
   font-weight: 600;
   color: var(--xl-blue);
   background: var(--xl-blue-light);
-  padding: 3px 9px;
-  border-radius: 9px;
+  border: 1px solid rgba(41, 128, 185, 0.25);
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
+}
+.ov-card-tab:hover {
+  background: var(--xl-blue);
+  border-color: var(--xl-blue);
+  color: #ffffff;
 }
 
 /* ── Arrow between cards ── */
@@ -2935,22 +3058,23 @@ code {
 
 /* ── SDK Usage Examples ── */
 .ov-usage {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 .ov-usage-title {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--xl-navy);
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   letter-spacing: 0.02em;
 }
 .ov-usage-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 .ov-usage-card {
+  min-width: 0;
   background: var(--surface-0);
   border: 1px solid var(--border-cell);
   border-radius: var(--radius);
@@ -2976,14 +3100,16 @@ code {
 }
 .ov-usage-code {
   font-family: var(--font-num);
-  font-size: 0.82rem;
-  line-height: 1.65;
+  font-size: 0.8rem;
+  line-height: 1.6;
   color: var(--text-formula);
-  padding: 14px 16px;
+  padding: 12px 14px;
   margin: 0;
   flex: 1;
   white-space: pre;
   overflow-x: auto;
+  max-width: 100%;
+  box-sizing: border-box;
   background: var(--surface-0);
 }
 .ov-code-kw {
@@ -3003,25 +3129,25 @@ code {
   color: #6e7781;
 }
 .ov-usage-footer {
-  margin-top: 16px;
-  font-size: 0.88rem;
+  margin-top: 14px;
+  font-size: 0.85rem;
   color: var(--text-muted);
   text-align: center;
 }
 
 /* ── Core Concept ── */
 .ov-concept {
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 }
 .ov-concept-inner {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
+  gap: 14px;
   background: linear-gradient(135deg, var(--xl-navy-faint), var(--xl-blue-light));
   border: 1px solid var(--xl-navy-light);
   border-left: 4px solid var(--xl-blue);
   border-radius: var(--radius);
-  padding: 20px 24px;
+  padding: 14px 18px;
 }
 .ov-concept-icon {
   font-family: var(--font-num);
@@ -3036,9 +3162,9 @@ code {
   margin-top: 1px;
 }
 .ov-concept-text p {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   color: var(--text-cell);
-  line-height: 1.75;
+  line-height: 1.65;
   margin: 0;
 }
 .ov-concept-text strong {
@@ -3048,19 +3174,19 @@ code {
 
 /* ── Representative operating journey ── */
 .ov-journey {
-  margin-bottom: 36px;
+  margin-bottom: 24px;
   background: var(--surface-0);
   border: 1px solid var(--xl-navy-light);
   border-left: 4px solid var(--env-prod);
   border-radius: var(--radius);
-  padding: 20px 22px 22px;
+  padding: 16px 20px 18px;
 }
 .ov-journey-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 .ov-journey-kicker {
   color: var(--env-prod);
@@ -3068,18 +3194,18 @@ code {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 .ov-journey-title {
   color: var(--xl-navy);
-  font-size: 1.25rem;
+  font-size: 1.18rem;
   font-weight: 700;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 .ov-journey-desc {
   color: var(--text-muted);
-  font-size: 0.88rem;
-  line-height: 1.55;
+  font-size: 0.86rem;
+  line-height: 1.5;
 }
 .ov-journey-cta,
 .ov-journey-step a {
@@ -3089,9 +3215,12 @@ code {
 }
 .ov-journey-cta {
   flex: 0 0 auto;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
   border: 1px solid var(--xl-blue);
   border-radius: var(--radius-sm);
-  padding: 8px 12px;
+  padding: 6px 12px;
   font-size: 0.82rem;
   white-space: nowrap;
 }
@@ -3108,10 +3237,10 @@ code {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
   border: 1px solid var(--border-cell);
   border-radius: var(--radius-sm);
-  padding: 12px 14px;
+  padding: 10px 14px;
   background: var(--surface-1);
   color: var(--text-muted);
   font-size: 0.78rem;
@@ -3129,6 +3258,9 @@ code {
 }
 .ov-journey-step a {
   margin-top: auto;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
   font-size: 0.76rem;
 }
 .ov-journey-arrow {
@@ -3139,30 +3271,31 @@ code {
 
 /* ── DX Ecosystem ── */
 .ov-dx {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 .ov-dx-header {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 .ov-dx-title {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--xl-navy);
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   letter-spacing: 0.02em;
 }
 .ov-dx-desc {
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   color: var(--text-muted);
   line-height: 1.5;
 }
 .ov-dx-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
 }
 .ov-dx-card {
+  min-width: 0;
   background: var(--surface-0);
   border: 1px solid var(--border-cell);
   border-radius: var(--radius);
@@ -3223,9 +3356,16 @@ code {
   display: inline-block;
 }
 
+@media (max-width: 1024px) {
+  .ov-dx-grid,
+  .ov-usage-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 760px) {
   .ov-wrap {
-    padding: 24px 14px 36px;
+    padding: 20px 14px 32px;
   }
   .ov-title {
     font-size: 1.55rem;
@@ -3256,7 +3396,7 @@ code {
   }
   .ov-usage-grid,
   .ov-dx-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -7076,3 +7216,40 @@ code {
   color: #333;
   font-family: var(--font-num);
 }
+
+/* ── CSS Containment & Offscreen Deferral ────────────────────────────────── */
+.side-panel,
+.dim-sidebar,
+.xl-grid,
+.acc-tbl,
+.gm-matrix-table,
+.gm-tutorial-table,
+.gm-mask-panel,
+.gm-sim-panel,
+.rng-left,
+.rng-right,
+.acc-left,
+.acc-right,
+.lay-prog-table {
+  contain: layout style paint;
+}
+
+.ov-dx,
+.ov-usage,
+.gm-bottom,
+.cb-sec:nth-of-type(n + 3),
+.pe-section:nth-of-type(n + 3) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto none auto 320px;
+}
+
+@supports not (content-visibility: auto) {
+  .ov-dx,
+  .ov-usage,
+  .gm-bottom,
+  .cb-sec:nth-of-type(n + 3),
+  .pe-section:nth-of-type(n + 3) {
+    contain: layout style paint;
+  }
+}
+

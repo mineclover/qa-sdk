@@ -524,13 +524,13 @@ export function updateServiceSelection(
   newValue: number | null,
 ): void {
   const maxValue = DEMO_SVC_SHAPE.reduce((a, b) => a * b, 1) - 1;
-  gridContainer.querySelectorAll<HTMLElement>('.xl-cell').forEach((td) => {
-    const span = td.querySelector<HTMLElement>('.cell-id-val');
-    if (!span) return;
-    const v = Number(span.textContent);
-    const bg = densityFill(v, maxValue);
-    const ink = densityInk(v, maxValue);
+  const cells = Array.from(gridContainer.querySelectorAll<HTMLElement>('.xl-cell'));
+  const cellValues = cells.map((td) => Number(td.dataset.value));
+  cells.forEach((td, i) => {
+    const v = cellValues[i];
     if (v === prevValue) {
+      const bg = densityFill(v, maxValue);
+      const ink = densityInk(v, maxValue);
       td.classList.remove('selected');
       td.style.backgroundColor = bg;
       td.style.color = ink;

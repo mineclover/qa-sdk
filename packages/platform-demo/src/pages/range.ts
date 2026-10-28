@@ -14,7 +14,7 @@ import {
   DEMO_SVC_STRIDES,
   DEMO_SVC_SHAPE,
 } from 'demo-snapshot';
-import { displayValue, type DemoDisplayValue } from './demo-display-data.js';
+import { displayValue, yieldToMain, type DemoDisplayValue } from './demo-display-data.js';
 
 const SVC_PREFIX = 'service';
 const SVC_VER = 'v1';
@@ -214,8 +214,9 @@ export function renderRangePage(container: HTMLElement): void {
       'rng-btn rng-btn-wild' + (st.selections[d] === null ? ' rng-btn-active-wild' : '');
     wBtn.textContent = 'n';
     wBtn.title = '와일드카드 — 이 차원의 모든 값';
-    wBtn.addEventListener('click', () => {
+    wBtn.addEventListener('click', async () => {
       st.selections[d] = null;
+      await yieldToMain();
       repaint();
     });
     btns.appendChild(wBtn);
@@ -226,8 +227,9 @@ export function renderRangePage(container: HTMLElement): void {
       btn.className = 'rng-btn' + (st.selections[d] === v.idx1 ? ' rng-btn-active' : '');
       btn.innerHTML = `<span class="rng-btn-id">${v.id}</span><span class="rng-btn-ko">${v.shortKo}</span>`;
       btn.title = `${v.id} (${v.ko}) — idx ${v.idx1}`;
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         st.selections[d] = v.idx1;
+        await yieldToMain();
         repaint();
       });
       btns.appendChild(btn);
@@ -319,8 +321,8 @@ export function renderRangePage(container: HTMLElement): void {
       </span>
     `;
 
-    // Grid cells
-    grid.innerHTML = '';
+    // Grid cells (batched via DocumentFragment to prevent layout thrashing)
+    const frag = document.createDocumentFragment();
     for (const svcCell of SERVICE_CELLS) {
       const isMatched = matchedSet.has(svcCell.address);
       const cell = document.createElement('div');
@@ -354,8 +356,9 @@ export function renderRangePage(container: HTMLElement): void {
         }
       });
 
-      grid.appendChild(cell);
+      frag.appendChild(cell);
     }
+    grid.replaceChildren(frag);
 
     // Show range summary in detail
     if (matched.length > 0 && matched.length <= 20) {

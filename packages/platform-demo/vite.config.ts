@@ -1,5 +1,4 @@
 import { defineConfig } from 'vite';
-import obfuscatorPlugin from 'rollup-plugin-obfuscator';
 import { vitePfPlugin } from '../../packages/infra-engine/src/lib/vite-pf-plugin.js';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,28 +12,26 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    target: 'es2022',
+    cssMinify: true,
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
         'infra-control': resolve(__dirname, 'infra-control.html'),
       },
-      plugins: [
-        obfuscatorPlugin({
-          options: {
-            compact: true,
-            controlFlowFlattening: true,
-            controlFlowFlatteningThreshold: 0.5,
-            deadCodeInjection: true,
-            deadCodeInjectionThreshold: 0.3,
-            stringArray: true,
-            stringArrayEncoding: ['base64'],
-            stringArrayThreshold: 0.75,
-            renameGlobals: false,
-            selfDefending: false,
-            identifierNamesGenerator: 'hexadecimal',
-          },
-        }),
-      ],
+      output: {
+        manualChunks(id) {
+          if (
+            id.includes('demo-snapshot') ||
+            id.includes('weighted-index') ||
+            id.includes('permission-engine') ||
+            id.includes('bit-index') ||
+            id.includes('weighted-ui')
+          ) {
+            return 'vendor-sdk';
+          }
+        },
+      },
     },
   },
   plugins: [
