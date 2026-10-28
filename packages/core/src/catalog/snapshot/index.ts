@@ -44,3 +44,10 @@ export {
   type SnapshotLookup,
   type SnapshotIdentity,
 } from './compatibility.js';
+export {
+  RESERVED_ENTRY_PREFIX,
+  reservedEntryLabel,
+  layoutToDecodeMap,
+  type LayoutDecodeMap,
+  type LayoutDecodeMapDim,
+} from './decode-map.js';

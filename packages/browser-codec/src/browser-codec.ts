@@ -150,9 +150,10 @@ export function decode(
     const pos = Math.floor(addr / strides[i]);
     addr %= strides[i];
     const { label, dim } = labels[i];
+    // headroom 표기 canonical: @qa-sdk/core reservedEntryLabel (브라우저 번들 격리 위해 인라인)
     values[label] =
       dim.kind === 'axis'
-        ? ((dim.entries ?? [])[pos] ?? `(${pos})`)
+        ? ((dim.entries ?? [])[pos] ?? `(reserved:${pos})`)
         : ((dim.values ?? [])[pos] ?? pos);
   }
 

@@ -8,42 +8,11 @@
  *   1. REGISTRY_DB (D1 바인딩) — registry D1에서 catalog 직접 조회 (가장 빠름)
  *   2. REGISTRY_URL — HTTP fetch (fallback, CF Workers 간 fetch 이슈 가능)
  */
+import type { Catalog } from '@qa-sdk/core';
 import type { DecodeMap, D1Database } from 'index-meta-workers';
 import { createApp } from './app.js';
+import { buildDecodeMaps } from './lib/build-decode-maps.js';
 import { DecoderPool } from './lib/decoder-pool.js';
-
-/** catalog.prefixes[id] 에서 사용하는 최소 타입 */
-interface CatalogDimDef {
-  kind: string;
-  axisId?: string;
-  prefixId?: string;
-  tableId?: string;
-}
-
-interface CatalogAxisVersion {
-  entries: string[];
-}
-
-interface CatalogAxis {
-  versions: Record<string, CatalogAxisVersion>;
-}
-
-interface CatalogPrefixVersion {
-  version: string;
-  axisVersions?: Record<string, string>;
-  refEntries?: Record<string, { values: number[] }>;
-}
-
-interface CatalogPrefix {
-  labels?: string[];
-  dims?: Record<string, CatalogDimDef>;
-  versions?: CatalogPrefixVersion[];
-}
-
-interface CatalogShape {
-  prefixes?: Record<string, CatalogPrefix>;
-  axes?: Record<string, CatalogAxis>;
-}
 
 interface Env {
   REGISTRY_URL?: string;
@@ -79,8 +48,9 @@ async function loadFromD1(db: D1Database) {
       return;
     }
 
-    const catalog = JSON.parse(row.data) as CatalogShape;
-    const maps = buildDecodeMaps(catalog);
+    const catalog = JSON.parse(row.data) as Catalog;
+    const { maps, skipped } = await buildDecodeMaps(catalog);
+    loadStats.errors.push(...skipped);
     loadStats.fetched = maps.length;
     for (const map of maps) {
       try {
@@ -118,76 +88,6 @@ async function loadFromHttp(registryUrl?: string) {
   } catch (e) {
     loadError = `HTTP: ${e}`;
   }
-}
-
-/** catalog → DecodeMap[] (axis dim만, prefix_ref/table_ref는 capacity만) */
-function buildDecodeMaps(catalog: CatalogShape): DecodeMap[] {
-  const maps: DecodeMap[] = [];
-  for (const [prefixId, prefix] of Object.entries(catalog.prefixes ?? {})) {
-    const p = prefix as CatalogPrefix;
-    for (const ver of p.versions ?? []) {
-      const dims: DecodeMap['dims'] = [];
-      const shape: number[] = [];
-      const axisVersions = ver.axisVersions ?? {};
-
-      for (const label of p.labels ?? []) {
-        const dimDef = p.dims?.[label];
-        if (!dimDef) continue;
-
-        if (dimDef.kind === 'axis') {
-          if (!dimDef.axisId) continue;
-          const axis = catalog.axes?.[dimDef.axisId];
-          if (!axis) continue;
-          const axisVer = axisVersions[label] ?? Object.keys(axis.versions)[0] ?? 'v1';
-          const axisVerDef = axis.versions?.[axisVer];
-          if (!axisVerDef) continue;
-          const entries = [...axisVerDef.entries];
-          dims.push({
-            dimId: label,
-            snapshotId: `${dimDef.axisId}_${axisVer}`,
-            kind: { type: 'string_enum' },
-            entries,
-          });
-          shape.push(entries.length);
-        } else if (dimDef.kind === 'prefix_ref') {
-          if (!dimDef.prefixId) continue;
-          // prefix_ref: refEntries 필수 — 없으면 이 prefix 스킵
-          const refEntries = ver.refEntries?.[label];
-          if (!refEntries?.values?.length) {
-            dims.length = 0; // 이 prefix를 무효화
-            break;
-          }
-          const refValues: number[] = [...refEntries.values];
-          dims.push({
-            dimId: label,
-            snapshotId: `ref_${dimDef.prefixId}`,
-            kind: { type: 'index_ref', indexId: dimDef.prefixId },
-            entries: refValues.map((v: number) => String(v)),
-          });
-          shape.push(refValues.length);
-        } else if (dimDef.kind === 'table_ref') {
-          dims.push({
-            dimId: label,
-            snapshotId: `table_${dimDef.tableId}`,
-            kind: { type: 'string_enum' },
-            entries: ['_ref'],
-          });
-          shape.push(1);
-        }
-      }
-
-      if (dims.length > 0) {
-        maps.push({
-          indexId: prefixId,
-          versionId: ver.version,
-          shape,
-          size: shape.reduce((a: number, b: number) => a * b, 1),
-          dims,
-        });
-      }
-    }
-  }
-  return maps;
 }
 
 const app = createApp({ pool });

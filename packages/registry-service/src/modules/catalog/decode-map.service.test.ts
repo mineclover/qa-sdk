@@ -43,11 +43,15 @@ const store: CatalogStore = {
 };
 
 describe('DecodeMapService', () => {
-  it('uses actual entries length for shape, not reserved axis capacity', async () => {
+  it('shape는 axis capacity이고 headroom은 reserved entry로 채운다 (ADR-010, D-1)', async () => {
     const maps = await new DecodeMapService(store).list('demo');
 
     expect(maps).toHaveLength(1);
-    expect(maps[0]).toMatchObject({ shape: [2], size: 2 });
-    expect(maps[0]?.dims[0]?.entries).toEqual(['dev', 'prod']);
+    expect(maps[0]).toMatchObject({ shape: [8], size: 8 });
+    expect(maps[0]?.dims[0]?.entries).toEqual([
+      'dev',
+      'prod',
+      ...Array.from({ length: 6 }, (_, i) => `(reserved:${i + 2})`),
+    ]);
   });
 });

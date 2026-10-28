@@ -937,6 +937,9 @@ importers:
       '@types/node':
         specifier: ^22.20.5
         version: 22.20.5
+      demo-snapshot:
+        specifier: workspace:*
+        version: link:../demo-snapshot
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(@swc/core@1.15.46)(jiti@2.6.1)(postcss@8.5.15)(supports-color@10.2.2)(tsx@4.23.15)(typescript@5.9.3)(yaml@2.8.3)
