@@ -424,6 +424,71 @@ describe('ConvergencePipelineRunner', () => {
     expect(patternObs[0].subjects).toContain('pattern_anomaly');
   });
 
+  it('getPatternStats — 분류 전에는 null, flush 후 /v1/patterns 형식으로 노출 (U-2)', async () => {
+    const patternFns = createMockPatternFns();
+    (patternFns.detectAnomalies as any).mockReturnValue([
+      {
+        kind: 'unclassified',
+        sessionId: 'aggregate:5',
+        eventSequence: [],
+        description: '미분류 패턴 5건 감지',
+        severity: 'warning',
+        detectedAt: '2026-03-21T10:00:05Z',
+      },
+      {
+        kind: 'volume_spike',
+        sessionId: 's1',
+        eventSequence: [],
+        description: 'info 수준',
+        severity: 'info',
+        detectedAt: '2026-03-21T10:00:05Z',
+      },
+    ]);
+    (patternFns.buildPatternHealthReport as any).mockReturnValue({
+      totalSessions: 1,
+      stats: [
+        {
+          pattern: 'browse',
+          identificationMode: 'identified',
+          count: 3,
+          percentage: 0.75,
+          avgEventCount: 2,
+          avgDurationMs: 10,
+          lastSeen: '2026-03-21T10:00:05Z',
+        },
+      ],
+      classificationRate: 0.5,
+      identifiedRate: 1,
+      anomalyCount: 2,
+      generatedAt: '2026-03-21T10:00:05Z',
+    });
+    pipeline = new ConvergencePipelineRunner(
+      createDeps({ recordStore: createPatternRecordStore(), patternFns }),
+      { recordThreshold: 999 },
+    );
+
+    expect(pipeline.getPatternStats()).toBeNull();
+    pipeline.notifyCompletion(['t1']);
+    await pipeline.flush();
+
+    expect(pipeline.getPatternStats()).toEqual({
+      lastFlushAt: '2026-03-21T10:00:05Z',
+      sessionsClassified: 1,
+      classificationRate: 50,
+      anomaliesDetected: 2,
+      topPatterns: [{ pattern: 'browse', count: 3, ratio: 0.75 }],
+      recentAnomalies: [
+        {
+          kind: 'unclassified',
+          severity: 'warning',
+          sessionId: 'aggregate:5',
+          description: '미분류 패턴 5건 감지',
+          detectedAt: '2026-03-21T10:00:05Z',
+        },
+      ],
+    });
+  });
+
   it('패턴 없이도 기존 pipeline 정상 동작 (patternFns 미제공)', async () => {
     const deps = createDeps(); // patternFns 없음
     pipeline = new ConvergencePipelineRunner(deps, {

@@ -12,6 +12,27 @@ function createLogger() {
 }
 
 describe('createRuntimeStores', () => {
+  it('SQLite 모드는 마이그레이션된 테이블 위의 key observation store를 제공한다 (U-4)', async () => {
+    const stores = await createRuntimeStores({
+      env: { STORE_DRIVER: 'sqlite', SQLITE_PATH: undefined, TRACE_DATABASE_URL: undefined },
+      logger: createLogger(),
+      migrationsFolder,
+    });
+    const store = stores.keyObservationStore!;
+    await store.observeBatch([
+      {
+        packedKey: 'service:v1:3',
+        prefixId: 'service',
+        version: 'v1',
+        address: 3,
+        registered: false,
+        timestamp: '2026-10-29T00:00:00.000Z',
+      },
+    ]);
+    expect(await store.summary()).toMatchObject({ totalKeys: 1, unregisteredKeys: 1 });
+    expect((await store.findUnregistered()).map((o) => o.packedKey)).toEqual(['service:v1:3']);
+  });
+
   it.each(['memory', 'sqlite'] as const)(
     'STORE_DRIVER=%s → 경고 없이 SQLite(D1) store',
     async (driver) => {

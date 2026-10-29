@@ -41,7 +41,6 @@ import { createRuntimeStores, type RuntimeStores } from './stores/runtime-stores
 import { createDebugWsHandler } from './routes/debug-ws.js';
 import type {
   ConvergencePipelineRunner,
-  ConvergenceFunctions,
   ConvergenceGraphPort,
   PatternFunctions,
 } from './lib/convergence-pipeline.js';
@@ -119,16 +118,10 @@ async function startServer() {
         logger,
       });
 
-      // spec-core convergence 함수 동적 import
+      // convergence 분석 함수 묶음 (구성은 lib/convergence-functions.ts에서 테스트)
+      const { loadConvergenceFunctions } = await import('./lib/convergence-functions.js');
+      const convergenceFns = await loadConvergenceFunctions();
       const specConvergence = await import('@qa-sdk/convergence');
-      const specDkg = await import('@qa-sdk/spec-core/dkg');
-      const convergenceFns = {
-        aggregateUsageData: specConvergence.aggregateUsageData,
-        collectMetrics: specConvergence.collectMetrics,
-        metricsToObservations: specConvergence.metricsToObservations,
-        traceFlows: specDkg.traceFlows,
-        resolveRecoveredFlowObservations: specDkg.resolveRecoveredFlowObservations,
-      } as unknown as ConvergenceFunctions;
 
       // 패턴 분류 함수 (optional — 실패해도 convergence 전체는 동작)
       let patternFns: PatternFunctions | undefined;
@@ -236,10 +229,13 @@ async function startServer() {
   }
 
   // ── Catalog Validator (event/prefix 검증, fail-open) ──
+  let addressHealthIndex: import('./lib/enrich-address-context.js').AddressHealthIndex | undefined;
   let catalogValidator: import('./lib/catalog-validator.js').CatalogValidator | undefined;
   try {
     const { DEMO_CATALOG } = await import('demo-snapshot');
-    const knownPrefixes = new Set(Object.keys(DEMO_CATALOG.prefixes));
+    const { buildAddressHealthIndex } = await import('./lib/enrich-address-context.js');
+    addressHealthIndex = buildAddressHealthIndex(DEMO_CATALOG as unknown as Catalog);
+    const { knownPrefixes } = addressHealthIndex;
 
     // event-catalog 동적 import (optional — 미설치 시 eventKey 검증만 비활성화)
     let isCoreEvent: ((eventKey: string) => boolean) | undefined;
@@ -342,6 +338,10 @@ async function startServer() {
           }),
     dlqMaxRetryAttempts: env.DLQ_MAX_RETRY_ATTEMPTS,
     convergencePipeline,
+    getPatternStats: convergencePipeline ? () => convergencePipeline.getPatternStats() : undefined,
+    knownPrefixes: addressHealthIndex?.knownPrefixes,
+    latestVersions: addressHealthIndex?.latestVersions,
+    keyObservationStore: stores.keyObservationStore,
     transitionEngine,
     transitionCatalog,
     decodeServiceUrl: env.DECODE_SERVICE_URL,

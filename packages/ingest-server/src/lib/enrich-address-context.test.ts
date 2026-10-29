@@ -90,3 +90,17 @@ describe('enrichAddressContext', () => {
     expect(r2.address_context).toEqual({ prefix: 'prefix:v1:2' }); // override
   });
 });
+
+describe('buildAddressHealthIndex (U-3)', () => {
+  it('catalog의 prefix 집합과 prefix별 최신 version을 파생한다', async () => {
+    const { buildAddressHealthIndex } = await import('./enrich-address-context.js');
+    const { DEMO_CATALOG } = await import('demo-snapshot');
+    const { latestPrefixVersion } = await import('@qa-sdk/core');
+    const index = buildAddressHealthIndex(DEMO_CATALOG as never);
+    const prefixIds = Object.keys(DEMO_CATALOG.prefixes);
+    expect([...index.knownPrefixes].sort()).toEqual([...prefixIds].sort());
+    for (const id of prefixIds) {
+      expect(index.latestVersions.get(id)).toBe(latestPrefixVersion(DEMO_CATALOG as never, id));
+    }
+  });
+});

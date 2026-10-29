@@ -1,8 +1,8 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import type { TransmissionEnvelope, EventRecord } from '@qa-sdk/core';
-import { parseSerializedAddress } from '@qa-sdk/core';
+import type { Catalog, TransmissionEnvelope, EventRecord } from '@qa-sdk/core';
+import { latestPrefixVersion, parseSerializedAddress } from '@qa-sdk/core';
 
 /**
  * envelope.infra_context를 각 record의 address_context에 머지한다.
@@ -97,5 +97,20 @@ export function checkAddressHealth(
     orphanPrefixes: [...orphanSet],
     staleVersions: [...staleMap.values()],
     healthRate: totalAddresses > 0 ? validAddresses / totalAddresses : 1,
+  };
+}
+
+/** checkAddressHealth 입력 — catalog에서 파생한 prefix 집합과 prefix별 최신 version */
+export interface AddressHealthIndex {
+  readonly knownPrefixes: ReadonlySet<string>;
+  readonly latestVersions: ReadonlyMap<string, string>;
+}
+
+/** catalog → AddressHealthIndex. version은 latestPrefixVersion(SSOT)으로 조회한다 */
+export function buildAddressHealthIndex(catalog: Catalog): AddressHealthIndex {
+  const prefixIds = Object.keys(catalog.prefixes);
+  return {
+    knownPrefixes: new Set(prefixIds),
+    latestVersions: new Map(prefixIds.map((id) => [id, latestPrefixVersion(catalog, id)])),
   };
 }

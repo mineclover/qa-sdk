@@ -32,6 +32,7 @@ import type {
 } from '@qa-sdk/convergence';
 import type { Logger } from 'pino';
 import type { MetricsCollector } from './metrics-collector.js';
+import type { PatternStatsCache } from '../routes/patterns.js';
 
 /** convergence 버퍼에 쌓인 trace 수 gauge */
 export const CONVERGENCE_BUFFER_DEPTH_METRIC = 'convergence_buffer_depth';
@@ -204,6 +205,10 @@ export interface ConvergenceFlushResult {
 
 // ── Pipeline Runner ──────────────────────────────────
 
+/** `/v1/patterns/stats`에 노출하는 상위 패턴·최근 이상 개수 */
+const MAX_TOP_PATTERNS = 10;
+const MAX_RECENT_ANOMALIES = 20;
+
 export class ConvergencePipelineRunner {
   private readonly deps: ConvergencePipelineDeps;
   private readonly config: Required<ConvergencePipelineConfig>;
@@ -223,6 +228,11 @@ export class ConvergencePipelineRunner {
    * Phase 2 완료 후 traceId를 알린다.
    * threshold에 도달하면 자동 flush.
    */
+  /** 마지막 패턴 분류 통계 — `/v1/patterns` route 공급 (U-2) */
+  getPatternStats(): PatternStatsCache | null {
+    return this.latestPatternStats;
+  }
+
   notifyCompletion(traceIds: readonly string[]): void {
     if (this.closed) return;
 
@@ -292,6 +302,9 @@ export class ConvergencePipelineRunner {
 
   /** 이전 윈도우의 패턴 통계 (비율 비교용) */
   private previousPatternStats: PatternStats[] = [];
+
+  /** `/v1/patterns` 조회용 마지막 패턴 분류 결과 (분류가 한 번도 없으면 null) */
+  private latestPatternStats: PatternStatsCache | null = null;
 
   private async runPipeline(traceIds: string[]): Promise<ConvergenceFlushResult> {
     const {
@@ -605,6 +618,27 @@ export class ConvergencePipelineRunner {
     // 5. 건전성 보고서 생성 + 이전 통계 갱신
     const report = fns.buildPatternHealthReport(classifications, anomalies.length);
     this.previousPatternStats = [...report.stats];
+    this.latestPatternStats = {
+      lastFlushAt: report.generatedAt,
+      sessionsClassified: classifications.length,
+      classificationRate: report.classificationRate * 100,
+      anomaliesDetected: anomalies.length,
+      topPatterns: report.stats.slice(0, MAX_TOP_PATTERNS).map((stat) => ({
+        pattern: stat.pattern,
+        count: stat.count,
+        ratio: stat.percentage,
+      })),
+      recentAnomalies: anomalies
+        .filter((anomaly) => anomaly.severity !== 'info')
+        .slice(-MAX_RECENT_ANOMALIES)
+        .map((anomaly) => ({
+          kind: anomaly.kind,
+          severity: anomaly.severity,
+          sessionId: anomaly.sessionId,
+          description: anomaly.description,
+          detectedAt: anomaly.detectedAt,
+        })),
+    };
 
     logger?.info(
       {

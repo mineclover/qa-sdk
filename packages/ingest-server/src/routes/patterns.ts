@@ -18,10 +18,18 @@ export interface PatternRouteDeps {
 export interface PatternStatsCache {
   lastFlushAt: string;
   sessionsClassified: number;
+  /** 분류율 백분율 (0~100) */
   classificationRate: number;
   anomaliesDetected: number;
+  /** ratio: 전체 분류 세션 대비 비율 (0~1) */
   topPatterns: Array<{ pattern: string; count: number; ratio: number }>;
-  recentAnomalies: Array<{ kind: string; pattern: string; severity: string; detectedAt: string }>;
+  recentAnomalies: Array<{
+    kind: string;
+    severity: string;
+    sessionId: string;
+    description: string;
+    detectedAt: string;
+  }>;
 }
 
 export function createPatternRoutes(deps: PatternRouteDeps) {

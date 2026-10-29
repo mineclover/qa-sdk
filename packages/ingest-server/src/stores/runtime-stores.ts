@@ -18,6 +18,7 @@ import { withQueryTracing } from '@qa-sdk/otel';
 import type {
   DlqStore,
   GraphStore,
+  KeyObservationStore,
   RecordStore,
   ScenarioSpecStore,
   SessionStore,
@@ -29,6 +30,7 @@ import {
   createDb,
   DrizzleDlqStore,
   DrizzleGraphStore,
+  DrizzleKeyObservationStore,
   DrizzleRecordStore,
   DrizzleScenarioSpecStore,
   DrizzleSessionStore,
@@ -53,6 +55,8 @@ export interface RuntimeStores {
   d1Db?: unknown;
   dlqStore: DlqStore;
   graphStore: GraphStore;
+  /** packed_key 관측 추적 (U-4). InMemory fallback에는 구현이 없어 undefined */
+  keyObservationStore?: KeyObservationStore;
   recordStore: RecordStore;
   scenarioSpecStore: ScenarioSpecStore;
   sessionStore: SessionStore;
@@ -108,6 +112,7 @@ async function createSqliteStores(
   const { D1TraceStore } = await import('./d1-trace-store.js');
   const { D1SessionStore } = await import('./d1-session-store.js');
   const { D1VerdictStore } = await import('./d1-verdict-store.js');
+  const { D1KeyObservationStore } = await import('./d1-key-observation-store.js');
 
   const driver = new NodeSqliteDriver(sqlitePath, null);
   const plainDb = drizzle({ client: driver.$client as import('node:sqlite').DatabaseSync });
@@ -118,6 +123,7 @@ async function createSqliteStores(
     d1Db,
     dlqStore: new InMemoryDlqStore(),
     graphStore: new InMemoryGraphStore(),
+    keyObservationStore: new D1KeyObservationStore(d1Db),
     recordStore: new D1RecordStore(d1Db),
     scenarioSpecStore: new InMemoryScenarioSpecStore(),
     sessionStore: new D1SessionStore(d1Db),
@@ -150,6 +156,7 @@ function createPgStores(databaseUrl: string | undefined): RuntimeStores {
     db,
     dlqStore: new DrizzleDlqStore(db),
     graphStore: new DrizzleGraphStore(db),
+    keyObservationStore: new DrizzleKeyObservationStore(db),
     recordStore: new DrizzleRecordStore(db),
     scenarioSpecStore: new DrizzleScenarioSpecStore(db),
     sessionStore: new DrizzleSessionStore(db),

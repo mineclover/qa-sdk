@@ -5,6 +5,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type {
   GraphStore,
+  KeyObservationStore,
   RecordStore,
   ScenarioSpecStore,
   SessionStore,
@@ -30,6 +31,7 @@ import { createVerdictRoutes } from './routes/verdict.js';
 import { createDlqRoutes } from './routes/dlq.js';
 import { createCleanupRoutes } from './routes/cleanup.js';
 import { createMetricsRoutes } from './routes/metrics.js';
+import { createKeyObservationRoutes } from './routes/key-observations.js';
 import { createPatternRoutes, type PatternStatsCache } from './routes/patterns.js';
 import { createSessionRoutes } from './routes/session.js';
 import { createErrorHandler } from './middleware/error-handler.js';
@@ -82,6 +84,11 @@ export interface AppDeps {
   decodeServiceUrl?: string;
   metricsCollector?: MetricsCollector;
   getPatternStats?: () => PatternStatsCache | null;
+  /** address_context 건전성 경고용 prefix·최신 version (U-3, Track B snapshot gate로 흡수 예정) */
+  knownPrefixes?: ReadonlySet<string>;
+  latestVersions?: ReadonlyMap<string, string>;
+  /** packed_key 관측 기록·조회 (U-4) */
+  keyObservationStore?: KeyObservationStore;
   withTraceTransaction?: TraceTransactionRunner;
   logger?: Logger;
   streamConnectionRegistry?: StreamConnectionRegistry;
@@ -143,6 +150,7 @@ export function createApp(deps: AppDeps) {
   app.route('/', createSessionRoutes(deps));
   app.route('/', createVerdictRoutes(deps));
   app.route('/', createInsightsRoutes({ store: deps.insightsStore }));
+  app.route('/', createKeyObservationRoutes({ keyObservationStore: deps.keyObservationStore }));
   app.route('/', createLabelsRoutes({ driver: deps.sqlDriver }));
   app.route(
     '/',
