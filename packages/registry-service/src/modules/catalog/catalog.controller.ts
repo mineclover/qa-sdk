@@ -35,6 +35,16 @@ export class CatalogController {
     return this.catalogs.get(id);
   }
 
+  @Get(':id/snapshots/latest')
+  latestSnapshot(@Param('id') id: string) {
+    return this.catalogs.getLatestSnapshot(id);
+  }
+
+  @Get(':id/snapshots/:digest')
+  snapshot(@Param('id') id: string, @Param('digest') digest: string) {
+    return this.catalogs.getSnapshot(id, digest);
+  }
+
   @Put(':id')
   update(@Param('id') id: string, @Body() body: unknown) {
     return this.catalogs.update(id, body);

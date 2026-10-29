@@ -1,0 +1,1373 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "da5d00a7-54ee-44d5-a882-c8e5fac67257",
+  "prevIds": [
+    "0e3e4d0e-d3f6-42b9-8625-9538408cd76f"
+  ],
+  "ddl": [
+    {
+      "name": "axis_profile",
+      "entityType": "tables"
+    },
+    {
+      "name": "catalog_snapshots",
+      "entityType": "tables"
+    },
+    {
+      "name": "catalogs",
+      "entityType": "tables"
+    },
+    {
+      "name": "config",
+      "entityType": "tables"
+    },
+    {
+      "name": "draft_lock",
+      "entityType": "tables"
+    },
+    {
+      "name": "event_schema",
+      "entityType": "tables"
+    },
+    {
+      "name": "ontology_address_allocation",
+      "entityType": "tables"
+    },
+    {
+      "name": "ontology_address_segment",
+      "entityType": "tables"
+    },
+    {
+      "name": "ontology_axis",
+      "entityType": "tables"
+    },
+    {
+      "name": "ontology_namespace",
+      "entityType": "tables"
+    },
+    {
+      "name": "ontology_taxonomy",
+      "entityType": "tables"
+    },
+    {
+      "name": "prefix",
+      "entityType": "tables"
+    },
+    {
+      "name": "service_component_version",
+      "entityType": "tables"
+    },
+    {
+      "name": "service_endpoint",
+      "entityType": "tables"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "axis_profile"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'demo'",
+      "generated": null,
+      "name": "catalog_id",
+      "entityType": "columns",
+      "table": "axis_profile"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "name",
+      "entityType": "columns",
+      "table": "axis_profile"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'v1'",
+      "generated": null,
+      "name": "current_version",
+      "entityType": "columns",
+      "table": "axis_profile"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "32",
+      "generated": null,
+      "name": "capacity",
+      "entityType": "columns",
+      "table": "axis_profile"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "entry_count",
+      "entityType": "columns",
+      "table": "axis_profile"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "meta_json",
+      "entityType": "columns",
+      "table": "axis_profile"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "axis_profile"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "digest",
+      "entityType": "columns",
+      "table": "catalog_snapshots"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "catalog_id",
+      "entityType": "columns",
+      "table": "catalog_snapshots"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "snapshot_version",
+      "entityType": "columns",
+      "table": "catalog_snapshots"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "data",
+      "entityType": "columns",
+      "table": "catalog_snapshots"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "catalog_snapshots"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "catalogs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "name",
+      "entityType": "columns",
+      "table": "catalogs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "data",
+      "entityType": "columns",
+      "table": "catalogs"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "hash",
+      "entityType": "columns",
+      "table": "catalogs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "catalogs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "catalogs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "catalog_id",
+      "entityType": "columns",
+      "table": "config"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "config_type",
+      "entityType": "columns",
+      "table": "config"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "data",
+      "entityType": "columns",
+      "table": "config"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "config"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "prefix",
+      "entityType": "columns",
+      "table": "draft_lock"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "version_id",
+      "entityType": "columns",
+      "table": "draft_lock"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "locked_at",
+      "entityType": "columns",
+      "table": "draft_lock"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'demo'",
+      "generated": null,
+      "name": "catalog_id",
+      "entityType": "columns",
+      "table": "event_schema"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "service_id",
+      "entityType": "columns",
+      "table": "event_schema"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "event_key",
+      "entityType": "columns",
+      "table": "event_schema"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'1.0.0'",
+      "generated": null,
+      "name": "event_version",
+      "entityType": "columns",
+      "table": "event_schema"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "display_name",
+      "entityType": "columns",
+      "table": "event_schema"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "description",
+      "entityType": "columns",
+      "table": "event_schema"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'log'",
+      "generated": null,
+      "name": "record_kind",
+      "entityType": "columns",
+      "table": "event_schema"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'active'",
+      "generated": null,
+      "name": "status",
+      "entityType": "columns",
+      "table": "event_schema"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "event_schema"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "event_schema"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "allocation_id",
+      "entityType": "columns",
+      "table": "ontology_address_allocation"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ontology_id",
+      "entityType": "columns",
+      "table": "ontology_address_allocation"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "taxonomy_id",
+      "entityType": "columns",
+      "table": "ontology_address_allocation"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "prefix",
+      "entityType": "columns",
+      "table": "ontology_address_allocation"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "version_id",
+      "entityType": "columns",
+      "table": "ontology_address_allocation"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'product'",
+      "generated": null,
+      "name": "address_model",
+      "entityType": "columns",
+      "table": "ontology_address_allocation"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "capacity",
+      "entityType": "columns",
+      "table": "ontology_address_allocation"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "address_offset",
+      "entityType": "columns",
+      "table": "ontology_address_allocation"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "address_size",
+      "entityType": "columns",
+      "table": "ontology_address_allocation"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'reserved'",
+      "generated": null,
+      "name": "status",
+      "entityType": "columns",
+      "table": "ontology_address_allocation"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "allocation_id",
+      "entityType": "columns",
+      "table": "ontology_address_segment"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "segment_id",
+      "entityType": "columns",
+      "table": "ontology_address_segment"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "consumes_json",
+      "entityType": "columns",
+      "table": "ontology_address_segment"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "address_offset",
+      "entityType": "columns",
+      "table": "ontology_address_segment"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "address_size",
+      "entityType": "columns",
+      "table": "ontology_address_segment"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ontology_id",
+      "entityType": "columns",
+      "table": "ontology_axis"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "axis_id",
+      "entityType": "columns",
+      "table": "ontology_axis"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "version_id",
+      "entityType": "columns",
+      "table": "ontology_axis"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "values_json",
+      "entityType": "columns",
+      "table": "ontology_axis"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "values_hash",
+      "entityType": "columns",
+      "table": "ontology_axis"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "capacity",
+      "entityType": "columns",
+      "table": "ontology_axis"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'draft'",
+      "generated": null,
+      "name": "lifecycle",
+      "entityType": "columns",
+      "table": "ontology_axis"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ontology_id",
+      "entityType": "columns",
+      "table": "ontology_namespace"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "namespace",
+      "entityType": "columns",
+      "table": "ontology_namespace"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "owner",
+      "entityType": "columns",
+      "table": "ontology_namespace"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'draft'",
+      "generated": null,
+      "name": "lifecycle",
+      "entityType": "columns",
+      "table": "ontology_namespace"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "ontology_namespace"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "ontology_namespace"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ontology_id",
+      "entityType": "columns",
+      "table": "ontology_taxonomy"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "taxonomy_id",
+      "entityType": "columns",
+      "table": "ontology_taxonomy"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "version_id",
+      "entityType": "columns",
+      "table": "ontology_taxonomy"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "applies_to_json",
+      "entityType": "columns",
+      "table": "ontology_taxonomy"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "axis_ids_json",
+      "entityType": "columns",
+      "table": "ontology_taxonomy"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "identity_axis_ids_json",
+      "entityType": "columns",
+      "table": "ontology_taxonomy"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "space",
+      "entityType": "columns",
+      "table": "ontology_taxonomy"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'draft'",
+      "generated": null,
+      "name": "lifecycle",
+      "entityType": "columns",
+      "table": "ontology_taxonomy"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "prefix",
+      "entityType": "columns",
+      "table": "prefix"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "owner",
+      "entityType": "columns",
+      "table": "prefix"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "kind",
+      "entityType": "columns",
+      "table": "prefix"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'number'",
+      "generated": null,
+      "name": "number_type",
+      "entityType": "columns",
+      "table": "prefix"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "prefix"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "meta_json",
+      "entityType": "columns",
+      "table": "prefix"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "labels_json",
+      "entityType": "columns",
+      "table": "prefix"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'demo'",
+      "generated": null,
+      "name": "catalog_id",
+      "entityType": "columns",
+      "table": "service_component_version"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "kind",
+      "entityType": "columns",
+      "table": "service_component_version"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "service_id",
+      "entityType": "columns",
+      "table": "service_component_version"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "version",
+      "entityType": "columns",
+      "table": "service_component_version"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'draft'",
+      "generated": null,
+      "name": "state",
+      "entityType": "columns",
+      "table": "service_component_version"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "value_json",
+      "entityType": "columns",
+      "table": "service_component_version"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "service_component_version"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "service_component_version"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "published_at",
+      "entityType": "columns",
+      "table": "service_component_version"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "deprecated_at",
+      "entityType": "columns",
+      "table": "service_component_version"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "archived_at",
+      "entityType": "columns",
+      "table": "service_component_version"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'demo'",
+      "generated": null,
+      "name": "catalog_id",
+      "entityType": "columns",
+      "table": "service_endpoint"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "namespace",
+      "entityType": "columns",
+      "table": "service_endpoint"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "svc_name",
+      "entityType": "columns",
+      "table": "service_endpoint"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "env",
+      "entityType": "columns",
+      "table": "service_endpoint"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "region",
+      "entityType": "columns",
+      "table": "service_endpoint"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "url",
+      "entityType": "columns",
+      "table": "service_endpoint"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "service_endpoint"
+    },
+    {
+      "columns": [
+        "id",
+        "catalog_id"
+      ],
+      "nameExplicit": false,
+      "name": "axis_profile_pk",
+      "entityType": "pks",
+      "table": "axis_profile"
+    },
+    {
+      "columns": [
+        "catalog_id",
+        "config_type"
+      ],
+      "nameExplicit": false,
+      "name": "config_pk",
+      "entityType": "pks",
+      "table": "config"
+    },
+    {
+      "columns": [
+        "prefix",
+        "version_id"
+      ],
+      "nameExplicit": false,
+      "name": "draft_lock_pk",
+      "entityType": "pks",
+      "table": "draft_lock"
+    },
+    {
+      "columns": [
+        "catalog_id",
+        "service_id",
+        "event_key",
+        "event_version"
+      ],
+      "nameExplicit": false,
+      "name": "event_schema_pk",
+      "entityType": "pks",
+      "table": "event_schema"
+    },
+    {
+      "columns": [
+        "allocation_id",
+        "segment_id"
+      ],
+      "nameExplicit": false,
+      "name": "ontology_address_segment_pk",
+      "entityType": "pks",
+      "table": "ontology_address_segment"
+    },
+    {
+      "columns": [
+        "ontology_id",
+        "axis_id",
+        "version_id"
+      ],
+      "nameExplicit": false,
+      "name": "ontology_axis_pk",
+      "entityType": "pks",
+      "table": "ontology_axis"
+    },
+    {
+      "columns": [
+        "ontology_id",
+        "taxonomy_id",
+        "version_id"
+      ],
+      "nameExplicit": false,
+      "name": "ontology_taxonomy_pk",
+      "entityType": "pks",
+      "table": "ontology_taxonomy"
+    },
+    {
+      "columns": [
+        "catalog_id",
+        "kind",
+        "service_id",
+        "version"
+      ],
+      "nameExplicit": false,
+      "name": "service_component_version_pk",
+      "entityType": "pks",
+      "table": "service_component_version"
+    },
+    {
+      "columns": [
+        "catalog_id",
+        "namespace",
+        "svc_name",
+        "env",
+        "region"
+      ],
+      "nameExplicit": false,
+      "name": "service_endpoint_pk",
+      "entityType": "pks",
+      "table": "service_endpoint"
+    },
+    {
+      "columns": [
+        "digest"
+      ],
+      "nameExplicit": false,
+      "name": "catalog_snapshots_pk",
+      "table": "catalog_snapshots",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "catalogs_pk",
+      "table": "catalogs",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "allocation_id"
+      ],
+      "nameExplicit": false,
+      "name": "ontology_address_allocation_pk",
+      "table": "ontology_address_allocation",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "ontology_id"
+      ],
+      "nameExplicit": false,
+      "name": "ontology_namespace_pk",
+      "table": "ontology_namespace",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "prefix"
+      ],
+      "nameExplicit": false,
+      "name": "prefix_pk",
+      "table": "prefix",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        {
+          "value": "catalog_id",
+          "isExpression": false
+        },
+        {
+          "value": "snapshot_version",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "uq_catalog_snapshots_version",
+      "entityType": "indexes",
+      "table": "catalog_snapshots"
+    },
+    {
+      "columns": [
+        {
+          "value": "catalog_id",
+          "isExpression": false
+        },
+        {
+          "value": "service_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_event_schema_service",
+      "entityType": "indexes",
+      "table": "event_schema"
+    },
+    {
+      "columns": [
+        {
+          "value": "prefix",
+          "isExpression": false
+        },
+        {
+          "value": "version_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "uq_ontology_address_allocation_prefix_version",
+      "entityType": "indexes",
+      "table": "ontology_address_allocation"
+    },
+    {
+      "columns": [
+        {
+          "value": "ontology_id",
+          "isExpression": false
+        },
+        {
+          "value": "taxonomy_id",
+          "isExpression": false
+        },
+        {
+          "value": "version_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "uq_ontology_address_allocation_ontology_taxonomy_version",
+      "entityType": "indexes",
+      "table": "ontology_address_allocation"
+    },
+    {
+      "columns": [
+        {
+          "value": "namespace",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "uq_ontology_namespace_namespace",
+      "entityType": "indexes",
+      "table": "ontology_namespace"
+    },
+    {
+      "columns": [
+        {
+          "value": "owner",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_prefix_owner",
+      "entityType": "indexes",
+      "table": "prefix"
+    },
+    {
+      "columns": [
+        {
+          "value": "catalog_id",
+          "isExpression": false
+        },
+        {
+          "value": "service_id",
+          "isExpression": false
+        },
+        {
+          "value": "kind",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_service_component_lookup",
+      "entityType": "indexes",
+      "table": "service_component_version"
+    },
+    {
+      "value": "record_kind IN ('log', 'span', 'both')",
+      "name": "chk_event_schema_record_kind",
+      "entityType": "checks",
+      "table": "event_schema"
+    },
+    {
+      "value": "status IN ('active', 'deprecated', 'retired')",
+      "name": "chk_event_schema_status",
+      "entityType": "checks",
+      "table": "event_schema"
+    },
+    {
+      "value": "address_model IN ('product', 'sum')",
+      "name": "chk_ontology_address_allocation_address_model",
+      "entityType": "checks",
+      "table": "ontology_address_allocation"
+    },
+    {
+      "value": "status IN ('reserved', 'active', 'deprecated')",
+      "name": "chk_ontology_address_allocation_status",
+      "entityType": "checks",
+      "table": "ontology_address_allocation"
+    },
+    {
+      "value": "lifecycle IN ('draft', 'active', 'deprecated')",
+      "name": "chk_ontology_axis_lifecycle",
+      "entityType": "checks",
+      "table": "ontology_axis"
+    },
+    {
+      "value": "lifecycle IN ('draft', 'active', 'deprecated')",
+      "name": "chk_ontology_namespace_lifecycle",
+      "entityType": "checks",
+      "table": "ontology_namespace"
+    },
+    {
+      "value": "lifecycle IN ('draft', 'active', 'deprecated')",
+      "name": "chk_ontology_taxonomy_lifecycle",
+      "entityType": "checks",
+      "table": "ontology_taxonomy"
+    },
+    {
+      "value": "kind IN ('leaf', 'composite')",
+      "name": "chk_prefix_kind",
+      "entityType": "checks",
+      "table": "prefix"
+    },
+    {
+      "value": "number_type IN ('number', 'bigint')",
+      "name": "chk_prefix_number_type",
+      "entityType": "checks",
+      "table": "prefix"
+    },
+    {
+      "value": "kind IN ('service-unit', 'ownership', 'exposure', 'runtime-address', 'deployment-binding')",
+      "name": "chk_service_component_kind",
+      "entityType": "checks",
+      "table": "service_component_version"
+    },
+    {
+      "value": "state IN ('draft', 'published', 'deprecated', 'archived')",
+      "name": "chk_service_component_state",
+      "entityType": "checks",
+      "table": "service_component_version"
+    }
+  ],
+  "renames": []
+}

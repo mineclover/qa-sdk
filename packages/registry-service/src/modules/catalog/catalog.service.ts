@@ -2,13 +2,30 @@
 // @def.doc registry-system
 
 import { Inject, Injectable, Optional } from '@nestjs/common';
-import { AppError } from '@qa-sdk/core';
+import {
+  AppError,
+  buildCatalogSnapshot,
+  findUnversionedBreakingChanges,
+  type Catalog,
+  type CatalogSnapshot,
+  type SnapshotLayoutIssue,
+} from '@qa-sdk/core';
 import type { CatalogRecord, CatalogStore } from '../../stores/catalog-store.js';
+import type { CatalogSnapshotStore } from '../../stores/catalog-snapshot-store.js';
 import type { ConfigStore } from '../../stores/config-store.js';
 
 export const CATALOG_STORE = 'CATALOG_STORE';
 export const CONFIG_STORE = 'CONFIG_STORE';
 export const CATALOG_CHANGE_HANDLER = 'CATALOG_CHANGE_HANDLER';
+export const CATALOG_SNAPSHOT_STORE = 'CATALOG_SNAPSHOT_STORE';
+
+/** 다음 snapshot 후보 — 발행 전 판정 결과 */
+interface SnapshotCandidate {
+  readonly snapshot: CatalogSnapshot;
+  readonly issues: readonly SnapshotLayoutIssue[];
+  /** 최신 발행본과 내용이 같아 새 version이 필요 없음 */
+  readonly unchanged: boolean;
+}
 
 type CatalogPayload = {
   id?: string | null;
@@ -36,11 +53,15 @@ export class CatalogService {
     @Optional()
     @Inject(CATALOG_CHANGE_HANDLER)
     private readonly changeHandler?: CatalogChangeHandler,
+    @Optional()
+    @Inject(CATALOG_SNAPSHOT_STORE)
+    private readonly snapshotStore?: CatalogSnapshotStore,
   ) {}
 
   static fromStores(deps: {
     catalogStore: CatalogStore;
     configStore?: ConfigStore;
+    snapshotStore?: CatalogSnapshotStore;
     onCatalogChange?: (catalogId: string) => void | Promise<void>;
   }) {
     const handler = deps.onCatalogChange;
@@ -48,6 +69,7 @@ export class CatalogService {
       deps.catalogStore,
       deps.configStore,
       handler ? { catalogChanged: (catalogId: string) => handler(catalogId) } : undefined,
+      deps.snapshotStore,
     );
   }
 
@@ -62,6 +84,9 @@ export class CatalogService {
       throw new AppError('CONFLICT', `Catalog '${body.id}' already exists`, 409);
     }
 
+    // catalog 저장 전에 snapshot 판정 — 발행할 수 없는 catalog는 저장하지 않는다
+    const candidate = await this.prepareSnapshot(body.id, body.data);
+
     const now = new Date().toISOString();
     await this.catalogStore.register({
       id: body.id,
@@ -71,10 +96,13 @@ export class CatalogService {
       updatedAt: now,
     });
 
+    const snapshot = await this.publishCandidate(candidate);
+
     return {
       id: body.id,
       name: body.name,
       createdAt: now,
+      ...(snapshot ? { snapshot } : {}),
     };
   }
 
@@ -94,12 +122,90 @@ export class CatalogService {
   async update(id: string, input: unknown) {
     const existing = await this.requireCatalog(id);
     const body = this.asCatalogPayload(input);
+    const nextData = body.data ?? existing.data;
+    const candidate = await this.prepareSnapshot(id, nextData);
 
-    await this.catalogStore.update(id, body.name ?? existing.name, body.data ?? existing.data);
+    await this.catalogStore.update(id, body.name ?? existing.name, nextData);
+    await this.publishCandidate(candidate);
 
     const updated = await this.requireCatalog(id);
     await this.notifyCatalogChanged(id);
     return updated;
+  }
+
+  /**
+   * 현재 catalog의 최신 snapshot. 발행 기록이 없거나(시드처럼 store에 직접 쓴 catalog)
+   * 현재 내용과 다르면 지금 발행한다 — 같은 prefix version의 breaking 변경이면 422.
+   */
+  async getLatestSnapshot(id: string): Promise<CatalogSnapshot> {
+    const store = this.requireSnapshotStore();
+    const record = await this.requireCatalog(id);
+    // requireSnapshotStore 통과 후이므로 후보는 항상 존재한다
+    const candidate = (await this.prepareSnapshot(id, record.data))!;
+    if (candidate.unchanged) {
+      const latest = await store.latest(id);
+      if (latest) return latest;
+    }
+    await this.publishCandidate(candidate);
+    return candidate.snapshot;
+  }
+
+  async getSnapshot(id: string, digest: string): Promise<CatalogSnapshot> {
+    const snapshot = await this.requireSnapshotStore().get(digest);
+    if (!snapshot || snapshot.catalogId !== id) {
+      throw new AppError('NOT_FOUND', `snapshot ${digest} not found for catalog '${id}'`, 404, {
+        code: 'UnknownCatalogSnapshot',
+      });
+    }
+    return snapshot;
+  }
+
+  /** snapshot 후보 생성과 발행 가능 판정 (ADR-010). snapshot store가 없으면 null */
+  private async prepareSnapshot(id: string, data: string): Promise<SnapshotCandidate | null> {
+    if (!this.snapshotStore) return null;
+    let catalog: Catalog;
+    try {
+      catalog = JSON.parse(data) as Catalog;
+    } catch {
+      throw new AppError('INVALID_INPUT', 'data는 Catalog JSON이어야 합니다', 400);
+    }
+    const latest = await this.snapshotStore.latest(id);
+    const { snapshot, issues } = await buildCatalogSnapshot(catalog, {
+      snapshotVersion: (latest?.snapshotVersion ?? 0) + 1,
+      parentDigest: latest?.digest ?? null,
+    });
+    if (latest && latest.digest === snapshot.digest) {
+      return { snapshot: latest, issues, unchanged: true };
+    }
+    if (latest) {
+      const breaking = findUnversionedBreakingChanges(latest, snapshot);
+      if (breaking.length > 0) {
+        throw new AppError(
+          'UNVERSIONED_BREAKING_CHANGE',
+          '같은 prefix version 안에서 주소 layout이 바뀌었습니다 — 새 prefix version을 발행하세요',
+          422,
+          { code: 'MigrationRequired', breaking },
+        );
+      }
+    }
+    return { snapshot, issues, unchanged: false };
+  }
+
+  private async publishCandidate(candidate: SnapshotCandidate | null) {
+    if (!candidate || !this.snapshotStore) return null;
+    if (!candidate.unchanged) await this.snapshotStore.publish(candidate.snapshot);
+    return {
+      digest: candidate.snapshot.digest,
+      snapshotVersion: candidate.snapshot.snapshotVersion,
+      issues: candidate.issues,
+    };
+  }
+
+  private requireSnapshotStore(): CatalogSnapshotStore {
+    if (!this.snapshotStore) {
+      throw new AppError('SERVICE_UNAVAILABLE', 'snapshotStore not available', 503);
+    }
+    return this.snapshotStore;
   }
 
   async remove(id: string) {

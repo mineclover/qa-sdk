@@ -4,7 +4,7 @@
 /**
  * registry-service Drizzle ORM 스키마 정의
  *
- * 13개 테이블: prefix, draft_lock, axis_profile, catalogs,
+ * 14개 테이블: prefix, draft_lock, axis_profile, catalogs, catalog_snapshots,
  *             ontology_namespace, ontology_axis, ontology_taxonomy,
  *             ontology_address_allocation, ontology_address_segment,
  *             service_endpoint, config, event_schema, service_component_version
@@ -80,6 +80,20 @@ export const catalogs = sqliteTable('catalogs', {
   updatedAt: text('updated_at').notNull(),
 });
 
+// ─── catalog_snapshots ──────────────────────────────────
+// 불변 CatalogSnapshot (ADR-010). digest가 식별자이고 같은 digest의 내용은 바뀌지 않는다.
+export const catalogSnapshots = sqliteTable(
+  'catalog_snapshots',
+  {
+    digest: text('digest').primaryKey(),
+    catalogId: text('catalog_id').notNull(),
+    snapshotVersion: integer('snapshot_version').notNull(),
+    /** canonicalJson(CatalogSnapshot) */
+    data: text('data').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => [uniqueIndex('uq_catalog_snapshots_version').on(t.catalogId, t.snapshotVersion)],
+);
 // ─── ontology_namespace ───────────────────────────────
 export const ontologyNamespace = sqliteTable(
   'ontology_namespace',
