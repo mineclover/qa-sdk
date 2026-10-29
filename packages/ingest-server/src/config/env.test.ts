@@ -124,3 +124,16 @@ describe('STORE_DRIVER alias — d1 → sqlite (Plan 07a 옵션 A)', () => {
     expect(env.QA_PG_SCHEMA).toBe('ingest');
   });
 });
+
+describe('제거된 환경변수 (X-12, D-4)', () => {
+  it('소비처 없는 키는 스키마에 없다', () => {
+    const shape = envSchema._def.schema.shape as Record<string, unknown>;
+    for (const key of [
+      'TRANSITION_VIOLATION_MODE',
+      'TRANSITION_STATE_PATH',
+      'CONVERGENCE_FLUSH_INTERVAL_MS',
+    ]) {
+      expect(shape).not.toHaveProperty(key);
+    }
+  });
+});

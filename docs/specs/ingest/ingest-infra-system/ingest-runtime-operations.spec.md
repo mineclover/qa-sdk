@@ -167,7 +167,11 @@ SIGTERM/SIGINT 수신
 
 - `ingest_requests_total` — 요청 수 (status별)
 - `ingest_records_total` — 수집된 레코드 수
-- `/v1/metrics` 엔드포인트로 Prometheus 형식 노출
+- `phase_two_failures_total{stage}` — Phase 2 단계 실패 (`reconstruction`/`verdict`/`metric_aggregation`/`transition`/`convergence`)
+- `decode_skipped_total` — decode-service 응답이 없어 로컬 decode로 대체한 횟수
+- `convergence_buffer_depth` (gauge) — 다음 convergence flush 대기 trace 수
+- `/v1/metrics` 엔드포인트로 Prometheus 형식 노출. labeled counter·gauge는 이름별 `# TYPE` 1회
+- cardinality 보호: label 값 64자 절단, series 1,000 초과 시 `name{overflow="true"}`로 합침
 
 ## 환경 변수 전체 목록
 
@@ -177,7 +181,7 @@ SIGTERM/SIGINT 수신
 |------|--------|------|
 | `STORE_DRIVER` | `memory` | 저장소 드라이버 (`memory`/`sqlite`/`pg`/`clickhouse`, `d1` alias) |
 | `TRACE_DATABASE_URL` | - | PostgreSQL URL (`STORE_DRIVER=pg` 시 필수) |
-| `QA_PG_SCHEMA` | `ingest` | PostgreSQL schema (`STORE_DRIVER=pg` 시) |
+| `QA_PG_SCHEMA` | `ingest` | PostgreSQL schema. 현재 런타임 미배선 (Plan 07d PG adapter 전환 시 사용) |
 | `SQLITE_PATH` | - | SQLite 경로 (`STORE_DRIVER=sqlite`/`d1` 시 Node.js 로컬용) |
 | `REDIS_URL` | - | Redis URL (`TASK_QUEUE_ENABLED=true` 시 필수) |
 | `PORT` | `3200` | 서비스 포트 |
@@ -192,10 +196,9 @@ SIGTERM/SIGINT 수신
 | `REGISTRY_URL` | - | registry-service URL (이벤트 스키마 검증) |
 | `REGISTRY_VALIDATION_MODE` | `warn` | 검증 모드 (`strict`/`warn`/`off`) |
 | `CONVERGENCE_ENABLED` | `false` | Convergence Pipeline 활성화 |
-| `CONVERGENCE_FLUSH_INTERVAL_MS` | `60000` | convergence flush 주기 (ms) |
 | `CONVERGENCE_RECORD_THRESHOLD` | `100` | convergence 자동 flush 임계치 (레코드 수) |
 | `CONVERGENCE_DKG_SQLITE_PATH` | - | DKG SQLite 경로 |
-| `CONVERGENCE_SCHEDULE_INTERVAL_MS` | `300000` | convergence 스케줄 주기 (5분) |
+| `CONVERGENCE_SCHEDULE_INTERVAL_MS` | `300000` | convergence 주기 flush 간격 (5분). 주기 flush는 scheduler 단독 담당 |
 | `CONVERGENCE_REGISTRY_URL` | - | convergence용 registry URL |
 | `INSIGHTS_DRIVER` | `local` | 인사이트 저장소 드라이버 (`local`/`app-hub`) |
 | `APP_HUB_ENDPOINT` | - | App Hub endpoint (`INSIGHTS_DRIVER=app-hub` 시 필수) |
@@ -204,9 +207,7 @@ SIGTERM/SIGINT 수신
 | `CATALOG_ID` | `demo` | catalog ID |
 | `PATTERN_CLASSIFICATION_ENABLED` | `false` | 패턴 분류 활성화 |
 | `DECODE_SERVICE_URL` | - | decode-service URL (Phase 2 주소 디코딩) |
-| `TRANSITION_ENGINE_ENABLED` | `false` | Transition Engine 활성화 |
-| `TRANSITION_VIOLATION_MODE` | `warn` | 전이 위반 처리 모드 (`strict`/`warn`) |
-| `TRANSITION_STATE_PATH` | - | 전이 상태 파일 경로 |
+| `TRANSITION_ENGINE_ENABLED` | `false` | Transition Engine 활성화 (inline·queue 경로 공용) |
 
 **zod 교차 검증:** `TASK_QUEUE_ENABLED=true` + `REDIS_URL` 미설정 → 검증 에러.
 

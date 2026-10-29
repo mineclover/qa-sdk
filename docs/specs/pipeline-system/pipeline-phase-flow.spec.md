@@ -20,6 +20,9 @@ def:
     - packages/ingest-server/src/routes/ingest.test.ts
     - packages/ingest-server/src/lib/phase-two-worker.ts
     - packages/ingest-server/src/lib/phase-two-worker.test.ts
+    - packages/ingest-server/src/lib/post-verdict-stages.ts
+    - packages/ingest-server/src/lib/post-verdict-stages.test.ts
+    - packages/ingest-server/src/post-verdict-equivalence.test.ts
     - packages/ingest-server/src/lib/in-memory-task-queue.ts
     - packages/ingest-server/src/lib/bullmq-task-queue.ts
     - packages/ingest-server/src/async-worker.e2e.test.ts
@@ -93,7 +96,9 @@ Phase 2 (각 trace에 대해):
 
 ## Phase 2.5: Transition Engine (선택적)
 
-`TRANSITION_ENGINE_ENABLED=true` 시 활성화:
+`TRANSITION_ENGINE_ENABLED=true` 시 활성화. inline 경로(`processPendingPhaseTwo`)와 queue 경로(`processPhaseTwoTask`의 verdict job)는
+같은 `runPostVerdictStages`(`lib/post-verdict-stages.ts`)로 Phase 2.5와 convergence 통지를 실행한다.
+대상은 verdict 계산이 실패하지 않은 trace다 (두 경로 동일).
 
 ```
 Phase 2.5:
@@ -105,7 +110,9 @@ Phase 2.5:
     → 인코딩된 주소 컨텍스트를 entity 이름으로 디코딩
 ```
 
-- `TRANSITION_VIOLATION_MODE`: `strict` (에러) / `warn` (경고만)
+- 위반은 `logger.warn`으로만 남긴다. transition 결과 저장은 아직 없다 (G3 범위)
+- trace 단위로 오류를 격리한다. 실패는 `logger.error` + `phase_two_failures_total{stage="transition"}`이며 verdict·job 성공에 영향을 주지 않는다
+- `DECODE_SERVICE_URL` 설정 시 decode-service를 먼저 쓰고, 응답이 없으면 로컬 `decodeCtx`로 대체한다 (`decode_skipped_total`)
 - TransitionSpec은 `DEMO_TRANSITION_SPECS`에서 로드
 - Worker 모드에서도 동일하게 동작
 
@@ -140,5 +147,6 @@ convergencePipeline.notifyCompletion(traceIds)
     → classifyPattern (선택적)
 ```
 
-- 스케줄 기반 주기적 flush도 병행 (`CONVERGENCE_SCHEDULE_INTERVAL_MS`)
-- convergence 실패가 Phase 2 verdict를 차단하지 않음 (에러 격리)
+- 주기 flush는 `convergence-scheduler`가 단독 담당 (`CONVERGENCE_SCHEDULE_INTERVAL_MS`). runner 자체 timer는 없다 (D-4)
+- convergence 실패가 Phase 2 verdict를 차단하지 않음 (에러 격리, `phase_two_failures_total{stage="convergence"}`)
+- queue 경로는 trace당 verdict job마다 1건씩 통지한다. worker 프로세스에 convergence pipeline이 없으면 통지는 생략된다

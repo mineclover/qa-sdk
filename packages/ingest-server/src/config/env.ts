@@ -65,7 +65,11 @@ export const envSchema = z
     STORE_DRIVER: z.enum(['memory', 'sqlite', 'pg', 'clickhouse', 'd1']).default('memory'),
     /** PostgreSQL URL (STORE_DRIVER=pg 시 필수). 미설정 + STORE_DRIVER=memory 시 InMemory 사용. */
     TRACE_DATABASE_URL: z.preprocess(emptyStringToUndefined, z.string().url().optional()),
-    /** PG schema (STORE_DRIVER=pg 시). default "ingest". */
+    /**
+     * PG schema. default "ingest".
+     * 현재 런타임 미배선: server의 pg 경로는 `@qa-sdk/store` Drizzle store를 쓰고,
+     * 이 값을 받는 `stores/pg/factory.ts` createPgIngestStores는 Plan 07d 전환 전까지 호출되지 않는다.
+     */
     QA_PG_SCHEMA: z.string().default('ingest'),
     /** SQLite 경로 (STORE_DRIVER=d1 시 Node.js 로컬용). CF Workers에서는 D1 바인딩 사용. */
     SQLITE_PATH: z.preprocess(emptyStringToUndefined, z.string().optional()),
@@ -111,8 +115,6 @@ export const envSchema = z
     DECODE_SERVICE_URL: z.preprocess(emptyStringToUndefined, z.string().url().optional()),
     // ── Transition Engine (Phase 2.5) ─────────────────
     TRANSITION_ENGINE_ENABLED: booleanWithDefaultFalse,
-    TRANSITION_VIOLATION_MODE: z.enum(['strict', 'warn']).default('warn'),
-    TRANSITION_STATE_PATH: z.preprocess(emptyStringToUndefined, z.string().optional()),
   })
   .merge(otelEnvSchema)
   .superRefine((value, ctx) => {
