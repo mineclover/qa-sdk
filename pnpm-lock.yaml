@@ -382,6 +382,9 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@25.9.5)(happy-dom@20.8.4)(jsdom@29.1.1)(lightningcss@1.32.0)(stylus@0.64.0(supports-color@10.2.2))(supports-color@10.2.2)(terser@5.48.0)
 
   packages/cli:
     dependencies:
@@ -1718,6 +1721,9 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@25.9.5)(happy-dom@20.8.4)(jsdom@29.1.1)(lightningcss@1.32.0)(stylus@0.64.0(supports-color@10.2.2))(supports-color@10.2.2)(terser@5.48.0)
 
   packages/motion-workspace:
     dependencies:
