@@ -186,10 +186,7 @@ async function startServer() {
           logger,
           metrics: metricsCollector,
         },
-        {
-          recordThreshold: env.CONVERGENCE_RECORD_THRESHOLD,
-          flushIntervalMs: env.CONVERGENCE_FLUSH_INTERVAL_MS,
-        },
+        { recordThreshold: env.CONVERGENCE_RECORD_THRESHOLD },
       );
 
       convergenceScheduler = installConvergenceScheduler({

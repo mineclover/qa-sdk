@@ -89,9 +89,9 @@ export const envSchema = z
     REGISTRY_VALIDATION_MODE: z.enum(['strict', 'warn', 'off']).default('warn'),
     // ── Convergence Pipeline ──────────────────────────
     CONVERGENCE_ENABLED: booleanWithDefaultFalse,
-    CONVERGENCE_FLUSH_INTERVAL_MS: z.coerce.number().int().positive().default(60_000),
     CONVERGENCE_RECORD_THRESHOLD: z.coerce.number().int().positive().default(100),
     CONVERGENCE_DKG_SQLITE_PATH: z.preprocess(emptyStringToUndefined, z.string().optional()),
+    /** 주기 flush 간격 — convergence-scheduler가 단독 담당 (D-4) */
     CONVERGENCE_SCHEDULE_INTERVAL_MS: z.coerce.number().int().positive().default(300_000),
     CONVERGENCE_REGISTRY_URL: z.preprocess(emptyStringToUndefined, z.string().url().optional()),
     // ── Insights ─────────────────────────────────────────

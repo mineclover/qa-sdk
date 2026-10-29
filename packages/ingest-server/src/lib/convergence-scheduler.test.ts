@@ -6,7 +6,7 @@ import {
   installConvergenceScheduler,
   type ConvergenceSchedulerDeps,
 } from './convergence-scheduler.js';
-import type { ConvergencePipelineRunner } from './convergence-pipeline.js';
+import { ConvergencePipelineRunner } from './convergence-pipeline.js';
 
 function createMockPipeline() {
   return {
@@ -122,5 +122,57 @@ describe('installConvergenceScheduler', () => {
     expect((pipeline.flush as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThanOrEqual(
       2,
     );
+  });
+});
+
+describe('convergence 주기 flush 단일화 (D-4)', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('server 구성(runner + scheduler)에서 한 주기에 flush는 정확히 1회', async () => {
+    vi.useFakeTimers();
+    const intervalMs = 60_000;
+    const runner = new ConvergencePipelineRunner(
+      {
+        recordStore: { findByTraceId: vi.fn(async () => []) } as never,
+        convergenceFns: {
+          aggregateUsageData: vi.fn(),
+          collectMetrics: vi.fn(() => []),
+          metricsToObservations: vi.fn(() => []),
+        } as never,
+        graphProvider: () => ({ getNodesByKind: () => [] }),
+        catalogProvider: () => ({ id: 'test', name: 'test', axes: {}, prefixes: {} }) as never,
+      },
+      { recordThreshold: 999 },
+    );
+    const flushSpy = vi.spyOn(runner, 'flush');
+    const scheduler = installConvergenceScheduler({
+      enabled: true,
+      convergencePipeline: runner,
+      intervalMs,
+    });
+
+    await vi.advanceTimersByTimeAsync(intervalMs);
+    expect(flushSpy).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(intervalMs);
+    expect(flushSpy).toHaveBeenCalledTimes(2);
+
+    scheduler?.stop();
+    await runner.close();
+  });
+
+  it('runner 단독으로는 timer를 설치하지 않는다 (주기 flush는 scheduler 책임)', async () => {
+    vi.useFakeTimers();
+    const setIntervalSpy = vi.spyOn(globalThis, 'setInterval');
+    const runner = new ConvergencePipelineRunner({
+      recordStore: { findByTraceId: vi.fn(async () => []) } as never,
+      convergenceFns: {} as never,
+      graphProvider: () => ({ getNodesByKind: () => [] }),
+      catalogProvider: () => ({ id: 'test', name: 'test', axes: {}, prefixes: {} }) as never,
+    });
+    expect(setIntervalSpy).not.toHaveBeenCalled();
+    await runner.close();
   });
 });
