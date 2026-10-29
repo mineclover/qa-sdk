@@ -92,18 +92,19 @@ role: audit
 | envelope 타입 ✅ | `core/src/types/envelope.ts:45`, zod `core/src/schema/envelope.schema.ts:36` | version/snapshot/codec 필드 없음 |
 | wire 디코드 | `ingest-server/src/routes/ingest.ts` `deserializeEnvelope` :87 | proto3 경로는 zod 검증을 건너뜀. proto 실패 시 JSON fallback |
 | 저장 | `routes/ingest.ts` `storeEnvelope` :209, `persistTrace` :375 | SQLite 경로는 레코드당 INSERT 1회, 트랜잭션 없음 |
-| Phase 2 inline | `ingest-server/src/lib/phase-two-worker.ts` `processPendingPhaseTwo` :116 | 매 요청마다 미재구성 trace 전체 scan. transition 결과는 로그만 |
-| Phase 2 queue | 같은 파일 `processPhaseTwoTask` :77 | verdict까지만. transition·convergence·metric 미실행 |
-| convergence | `ingest-server/src/lib/convergence-pipeline.ts:202`, `convergence-scheduler.ts:28` | timer 2개 |
-| store 생성 | `ingest-server/src/server.ts` `createRuntimeStores` :506 | `clickhouse`는 조용히 SQLite로 대체 |
-| 미사용 factory | `ingest-server/src/stores/store-factory.ts` | 런타임 import 0건 |
+| Phase 2 inline | `ingest-server/src/lib/phase-two-worker.ts` `processPendingPhaseTwo` | 매 요청마다 미재구성 trace 전체 scan. ✅ verdict 이후 단계는 `runPostVerdictStages` (Track E) |
+| Phase 2 queue | 같은 파일 `processPhaseTwoTask` | ✅ verdict job 완료 지점에서 inline과 같은 `runPostVerdictStages` 호출 (Track E, D-5). metric aggregation은 여전히 inline 전용(서버가 `metricRollupStore`를 주입하지 않아 실사용 0) |
+| post-verdict ✅ | `ingest-server/src/lib/post-verdict-stages.ts` `runPostVerdictStages` | Phase 2.5 transition(trace별 오류 격리, 결과는 로그만 — 저장은 G3) + convergence 알림. 대상 = verdict 실패가 아닌 trace. 동등성: `src/post-verdict-equivalence.test.ts` |
+| convergence | `ingest-server/src/lib/convergence-pipeline.ts`, `convergence-scheduler.ts` | ✅ 주기 flush는 scheduler 단독 (Track E, D-4). runner는 threshold·cap 즉시 flush만 |
+| store 생성 ✅ | `ingest-server/src/stores/runtime-stores.ts` `createRuntimeStores` | server·worker 모드 단일 진입점. `d1`은 deprecation 경고, `clickhouse`는 미지원 경고 후 SQLite (Track E) |
+| 미사용 factory ✅ | ~~`ingest-server/src/stores/store-factory.ts`~~ | 삭제 (Track E, D-3) |
 | readiness | `ingest-server/src/routes/health.ts:35-58` | pg 모드에서만 `SELECT 1`. 그 외 항상 ready |
-| metrics | `ingest-server/src/lib/metrics-collector.ts:16`, `routes/metrics.ts` | counter 2개(`ingest_requests_total`, `ingest_records_total`)만 |
-| raw 테이블 | `ingest-server/src/db/schema.ts:59` `event_records` | `metric_*` 컬럼 없음 → metric 필드가 모든 SQL store에서 유실 |
-| DDL 출처 | drizzle schema, `stores/d1-schema.sql.ts`, `stores/clickhouse-schema.sql.ts`, `drizzle/` migration, pg schema | 4~5벌, 런타임 migration은 7개 테이블만 |
+| metrics ✅ | `ingest-server/src/lib/metrics-collector.ts`, `routes/metrics.ts` | labeled counter·gauge (`increment`/`setGauge`/`snapshot`, cardinality 보호). 계측: `phase_two_failures_total{stage}`, `decode_skipped_total`, `convergence_buffer_depth` (Track E) |
+| raw 테이블 | `ingest-server/src/db/schema.ts` `event_records` | ✅ SQLite(server·D1)는 `metric_*` 7컬럼 저장·조회 (Track E). PG(`packages/store` Drizzle, `stores/pg/schema.ts`)·ClickHouse DDL은 여전히 `metric_*` 없음 → 아래 X-18 |
+| DDL 출처 | drizzle schema, `stores/d1-schema.sql.ts`, `stores/clickhouse-schema.sql.ts`, `drizzle/` migration, pg schema | SQLite 3벌(schema·migration·D1 DDL)은 ✅ 정합, `src/db/schema-parity.test.ts`가 고정 (Track E). 런타임 migration 11개 테이블 |
 | benchmark | `packages/bench/src/runner.ts:12` (p50/p95/p99), `benchmarks/*.js` | codec microbench 없음, CI 미연결 |
 
-✅ `server.ts:232-246` `_transitionFns`/`_transitionCatalog`는 생성 후 어디에도 전달되지 않는다. `TRANSITION_ENGINE_ENABLED=true`로 server 모드를 띄우면 "enabled" 로그만 남고 inline Phase 2.5는 실행되지 않는다(배선 누락, Track E D-5).
+✅ (해소, Track E D-5) `server.ts`의 transition 초기화 결과(`transitionEngine`/`transitionCatalog`)와 `DECODE_SERVICE_URL`을 `createApp` deps로 전달한다. 이전에는 생성 후 어디에도 전달되지 않아 server 모드 inline Phase 2.5가 실행되지 않았다.
 
 ## 3. 분석(convergence·DKG)·codegen 경로
 
@@ -151,10 +152,11 @@ viz-3d/scripts ──► browser-codec/src/demo-catalog-browser.ts (생성물 �
 | X-6 | QAPB 프레임 구현 2벌 + proto 필드 레이아웃 3벌 | 필드 번호 정본 결정 후 정합 | B |
 | X-7 | `computeCatalogHash` 불완전·비결정 + registry 해시 별도 알고리즘 | T0 `computeCatalogDigest`로 통일 | D (codegen), B (registry) |
 | X-8 | browser catalog 생성기 재구현 + `BrowserCatalog` 타입 3벌 | 생성기는 core `flattenForBrowser` 사용 | D (생성기·core 타입), A (browser-codec import 교체) |
-| X-9 | `stores/store-factory.ts` 미사용 | D-3 | E |
-| X-10 | `server.ts` 미전달 transition 초기화 | D-5 (배선 or 제거) | E |
-| X-11 | convergence timer 2개 | D-4 | E |
-| X-12 | 미사용 env key `QA_PG_SCHEMA`, `TRANSITION_VIOLATION_MODE`, `TRANSITION_STATE_PATH` | 소비처 연결 또는 제거 | E |
+| X-9 | `stores/store-factory.ts` 미사용 | ✅ **Track E 처리 (D-3)**: 삭제. `createRuntimeStores`를 `stores/runtime-stores.ts`로 추출해 driver별 테스트. `resolveStoreDriver`는 store-factory가 아니라 테스트에서만 쓰이던 상태였고, 이제 런타임 선택에 사용. **후속 판정**: 삭제로 런타임 참조를 잃은 어댑터 — `ClickhouseRecordStore`, `stores/pg/factory.ts` `createPgIngestStores`(PgRecordStore·PgKeyObservationStore), D1 support store 5종(`D1GraphStore`·`D1DlqStore`·`D1TransmissionStore`·`D1ScenarioSpecStore`·`D1KeyObservationStore`)은 테스트에서만 생성된다 | E → 후속 |
+| X-10 | `server.ts` 미전달 transition 초기화 | ✅ **Track E 처리 (D-5)**: 배선. inline·queue가 `runPostVerdictStages` 공용 | E |
+| X-11 | convergence timer 2개 | ✅ **Track E 처리 (D-4)**: runner timer와 `CONVERGENCE_FLUSH_INTERVAL_MS` 제거. 주기는 `CONVERGENCE_SCHEDULE_INTERVAL_MS`(기본 5분)만 — 기본 설정에서 주기 flush 간격이 60초 → 5분으로 바뀐다 | E |
+| X-12 | 미사용 env key `QA_PG_SCHEMA`, `TRANSITION_VIOLATION_MODE`, `TRANSITION_STATE_PATH` | ✅ `TRANSITION_*` 2개 제거 (`createTransitionFunctions`가 specs만 받고 세션마다 InMemoryStateStore를 써서 배선할 자리 없음). `QA_PG_SCHEMA`는 **유지·미배선 명시**: 받는 곳이 `createPgIngestStores`뿐이고 runtime pg 경로는 `@qa-sdk/store`. 배선은 Plan 07d PG adapter 전환과 함께 | E (QA_PG_SCHEMA는 07d) |
+| X-18 | PG·ClickHouse `event_records`에 `metric_*` 컬럼 없음 (`packages/store/src/db/schema.ts` + `packages/store/drizzle`, `ingest-server/src/stores/pg/schema.ts`, `stores/clickhouse-schema.sql.ts`) | runtime PG(`packages/store`)에 additive migration + `DrizzleRecordStore` 매핑. ingest-server pg adapter·ClickHouse는 X-9 후속 판정과 함께 | 후속 (store 소유) |
 | X-13 | `QaLogger` ↔ `IngestForwarder` batching 중복 | G2에서 공용 buffer로 통합 | G2 |
 | X-14 | `convergence/src/dkg-types.ts` 타입 사본(`metadata` 누락으로 drift) | **Track F 처리**: `metadata`·`provenance` 동기화, `dkg-enrichment/src/type-drift.test.ts`가 `toEqualTypeOf`로 고정 (`test` 스크립트에 `tsc --noEmit`) | F |
 | X-15 | `scaffoldDecision` 2벌 (`dkg`, `convergence`), dkg ↔ dkg-enrichment skills 근사 중복 | **판정 완료 (§5.1)**: `scaffoldDecision` 정본 = `dkg`, skills 정본 = `dkg-enrichment`. 이동·삭제는 G3 | F → G3 |
@@ -180,3 +182,4 @@ Track F에서는 코드를 옮기지 않았다.
 |---|---|
 | `packages/cli/src/catalog-loader.ts`, `packages/cli/src/dkg-config-loader.ts` 삭제 | 저장소 전체 참조 0건 확인, `@qa-sdk/cli` build 성공, vitest 68 files / 673 passed / 1 skipped |
 | `packages/convergence/src/dkg-types.ts` 원본 경로 주석 정정 | `spec-core/src/dkg/index.ts`가 `export * from 'dkg'`임을 확인 |
+| Track E (X-9~X-12): store-factory 삭제, post-verdict 공용화·transition 배선, convergence timer 단일화, env 정리, labeled metrics, SQLite `metric_*` 컬럼·DDL 정합 | `@qa-sdk/ingest-server` build 성공, vitest 46 files / 372 passed / 68 skipped. inline·queue 동등성(`post-verdict-equivalence.test.ts`), DDL 3-way 정합·기존 DB additive 업그레이드(`db/schema-parity.test.ts`), metric round-trip(`d1-record-store.test.ts`) |
