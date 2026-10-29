@@ -117,15 +117,17 @@ async function deserializeEnvelope(c: {
       return transmissionEnvelopeSchema.parse(raw) as TransmissionEnvelope;
     }
 
-    // 진짜 Protobuf 바이너리 (codec-proto)
+    // 진짜 Protobuf 바이너리 (codec-proto). JSON fallback은 모듈 로드 실패일 때만 —
+    // decode 오류(CorruptEnvelope)는 JSON으로 다시 해석하지 않고 그대로 400으로 보낸다
+    let decodeEnvelope: typeof import('@qa-sdk/codec-proto').decodeEnvelope | undefined;
     try {
-      const { decodeEnvelope } = await import('@qa-sdk/codec-proto');
-      return decodeEnvelope(bytes);
+      ({ decodeEnvelope } = await import('@qa-sdk/codec-proto'));
     } catch {
-      // codec-proto 미설치 시 fallback → JSON 시도
       const text = new TextDecoder().decode(bytes);
       return transmissionEnvelopeSchema.parse(JSON.parse(text)) as TransmissionEnvelope;
     }
+    // proto 경로도 JSON과 같은 스키마 검증을 거친다 (필드 경계에서 잘린 메시지 포함)
+    return transmissionEnvelopeSchema.parse(decodeEnvelope(bytes)) as TransmissionEnvelope;
   }
 
   if (ct.includes('application/msgpack') || ct.includes('application/x-msgpack')) {

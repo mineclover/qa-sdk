@@ -8,7 +8,8 @@
  * proto3 wire format: varint + length-delimited.
  * proto/transmission.proto 스키마와 1:1 대응.
  */
-import type { TransmissionEnvelope, EventRecord } from '@qa-sdk/core';
+import type { CatalogSnapshotWire, TransmissionEnvelope, EventRecord } from '@qa-sdk/core';
+import { CodecContractError } from '@qa-sdk/core';
 
 // ═══ Wire format writers ═══
 
@@ -148,10 +149,29 @@ export function encodeEnvelope(env: TransmissionEnvelope): Uint8Array {
   if (env.infra_context) writeMap(b, 7, env.infra_context);
   if (env.entry_snapshot) writeString(b, 8, env.entry_snapshot);
   for (const r of env.records) writeMsg(b, 10, encodeRecord(r));
+  if (env.catalog_snapshot) {
+    const cs: number[] = [];
+    writeString(cs, 1, env.catalog_snapshot.catalog_id);
+    if (env.catalog_snapshot.snapshot_version !== undefined) {
+      writeTag(cs, 2, 0);
+      writeVarint(cs, env.catalog_snapshot.snapshot_version);
+    }
+    writeString(cs, 3, env.catalog_snapshot.digest);
+    writeString(cs, 4, env.catalog_snapshot.codec_version);
+    writeMsg(b, 12, cs);
+  }
   return new Uint8Array(b);
 }
 
 // ═══ Decode ═══
+
+/** 잘린·손상된 바이트를 정상 값처럼 읽지 않도록 모든 읽기에서 범위를 검사한다 */
+function corrupt(message: string, offset: number, length: number): never {
+  throw new CodecContractError('CorruptEnvelope', message, { offset, length });
+}
+
+/** 32비트 varint의 최대 길이 (0x0fffffff 초과분까지 5바이트) */
+const MAX_VARINT_BYTES = 5;
 
 class R {
   private p = 0;
@@ -159,23 +179,37 @@ class R {
   get done() {
     return this.p >= this.b.length;
   }
+  private need(n: number) {
+    if (n < 0 || this.p + n > this.b.length) {
+      corrupt(
+        `${n}바이트를 읽을 수 없습니다 (남은 ${this.b.length - this.p}바이트)`,
+        this.p,
+        this.b.length,
+      );
+    }
+  }
   varint(): number {
     let r = 0,
       s = 0;
-    while (this.p < this.b.length) {
+    for (let i = 0; i < MAX_VARINT_BYTES; i++) {
+      if (this.p >= this.b.length)
+        corrupt('varint가 끝나기 전에 바이트가 끝났습니다', this.p, this.b.length);
       const b = this.b[this.p++];
       r |= (b & 0x7f) << s;
       if (!(b & 0x80)) return r >>> 0;
       s += 7;
     }
-    return r;
+    return corrupt('varint가 32비트 범위를 넘습니다', this.p, this.b.length);
   }
   tag() {
     const v = this.varint();
-    return { f: v >>> 3, w: v & 7 };
+    const tag = { f: v >>> 3, w: v & 7 };
+    if (tag.f === 0) corrupt('field number 0은 허용되지 않습니다', this.p, this.b.length);
+    return tag;
   }
   bytes() {
     const l = this.varint();
+    this.need(l);
     const s = this.b.slice(this.p, this.p + l);
     this.p += l;
     return s;
@@ -187,15 +221,24 @@ class R {
     return this.varint() !== 0;
   }
   f64() {
+    this.need(8);
     const s = this.b.slice(this.p, this.p + 8);
     this.p += 8;
     return new DataView(s.buffer, s.byteOffset).getFloat64(0, true);
   }
   skip(w: number) {
     if (w === 0) this.varint();
-    else if (w === 1) this.p += 8;
-    else if (w === 2) this.p += this.varint();
-    else if (w === 5) this.p += 4;
+    else if (w === 1) {
+      this.need(8);
+      this.p += 8;
+    } else if (w === 2) {
+      const l = this.varint();
+      this.need(l);
+      this.p += l;
+    } else if (w === 5) {
+      this.need(4);
+      this.p += 4;
+    } else corrupt(`지원하지 않는 wire type ${w}`, this.p, this.b.length);
   }
   sub() {
     return new R(this.bytes());
@@ -293,6 +336,7 @@ export function decodeEnvelope(buf: Uint8Array): TransmissionEnvelope {
   };
   const infra_context: Record<string, string> = {};
   let entry_snapshot: string | undefined;
+  let catalog_snapshot: CatalogSnapshotWire | undefined;
   const records: EventRecord[] = [];
   while (!r.done) {
     const { f, w } = r.tag();
@@ -348,7 +392,28 @@ export function decodeEnvelope(buf: Uint8Array): TransmissionEnvelope {
       infra_context[k] = v;
     } else if (f === 8 && w === 2) entry_snapshot = r.str();
     else if (f === 10 && w === 2) records.push(decodeRec(r.sub()));
-    else r.skip(w);
+    else if (f === 12 && w === 2) {
+      const s = r.sub();
+      const cs: {
+        catalog_id: string;
+        snapshot_version?: number;
+        digest: string;
+        codec_version: string;
+      } = {
+        catalog_id: '',
+        digest: '',
+        codec_version: '',
+      };
+      while (!s.done) {
+        const { f: sf, w: sw } = s.tag();
+        if (sf === 1 && sw === 2) cs.catalog_id = s.str();
+        else if (sf === 2 && sw === 0) cs.snapshot_version = s.varint();
+        else if (sf === 3 && sw === 2) cs.digest = s.str();
+        else if (sf === 4 && sw === 2) cs.codec_version = s.str();
+        else s.skip(sw);
+      }
+      catalog_snapshot = cs;
+    } else r.skip(w);
   }
   return {
     transmission_id,
@@ -359,6 +424,7 @@ export function decodeEnvelope(buf: Uint8Array): TransmissionEnvelope {
     build,
     ...(Object.keys(infra_context).length ? { infra_context } : {}),
     ...(entry_snapshot ? { entry_snapshot } : {}),
+    ...(catalog_snapshot ? { catalog_snapshot } : {}),
     records,
   } as unknown as TransmissionEnvelope;
 }

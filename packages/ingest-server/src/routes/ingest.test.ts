@@ -16,6 +16,7 @@ import {
 } from '@qa-sdk/store';
 import type { StoredRecord, TaskPayload, TaskQueue, TransmissionEnvelope } from '@qa-sdk/core';
 import { createErrorHandler } from '../middleware/error-handler.js';
+import { encodeEnvelope } from '@qa-sdk/codec-proto';
 import { createIngestRoutes } from './ingest.js';
 import { PHASE_TWO_TASK_QUEUE_OPTIONS } from '../lib/phase-two-worker.js';
 import type { DebugStore } from '../lib/debug-store.js';
@@ -493,3 +494,47 @@ describe('POST /v1/ingest — keyObservationStore fail-open', () => {
     expect(failingStore.observeBatch).toHaveBeenCalledOnce();
   });
 });
+
+describe('POST /v1/ingest — protobuf (Track B)', () => {
+  const headers = { 'Content-Type': 'application/x-protobuf' };
+
+  it('catalog_snapshot을 담은 정상 proto envelope은 202', async () => {
+    const { app } = buildApp();
+    const catalog_snapshot = {
+      catalog_id: 'demo',
+      digest: `sha256:${'e'.repeat(64)}`,
+      codec_version: 'legacy-v1',
+    };
+    const res = await app.request('/v1/ingest', {
+      method: 'POST',
+      headers,
+      body: encodeEnvelope(buildEnvelope({ catalog_snapshot })),
+    });
+    expect(res.status).toBe(202);
+  });
+
+  it('필드 중간에서 잘린 proto는 JSON으로 재해석하지 않고 400 CorruptEnvelope', async () => {
+    const { app } = buildApp();
+    const bytes = encodeEnvelope(buildEnvelope());
+    const res = await app.request('/v1/ingest', {
+      method: 'POST',
+      headers,
+      body: bytes.slice(0, bytes.length - 1),
+    });
+    expect(res.status).toBe(400);
+    expect((await res.json()).error.code).toBe('CorruptEnvelope');
+  });
+
+  it('필드 경계에서 잘려 필수 필드가 빠진 proto는 스키마 검증으로 400', async () => {
+    const { app } = buildApp();
+    // records(field 10)를 뺀 envelope — proto 형식상 유효하지만 records.min(1) 위반
+    const res = await app.request('/v1/ingest', {
+      method: 'POST',
+      headers,
+      body: encodeEnvelope({ ...buildEnvelope(), records: [] }),
+    });
+    expect(res.status).toBe(400);
+    expect((await res.json()).error.code).toBe('INVALID_INPUT');
+  });
+});
+

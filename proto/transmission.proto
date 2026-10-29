@@ -15,8 +15,18 @@ message TransmissionEnvelope {
   Runtime runtime = 5;
   Build build = 6;
   map<string, string> infra_context = 7;
-  string entry_snapshot = 8;
+  string entry_snapshot = 8;  // deprecated — catalog_snapshot 사용 (D-2)
   repeated EventRecord records = 10;
+  // 11은 codegen-core 생성 proto(X-6)가 다른 의미로 쓰고 있어 비워 둔다
+  CatalogSnapshot catalog_snapshot = 12;
+}
+
+// 좌표 주소를 만든 CatalogSnapshot 문맥 (ADR-010)
+message CatalogSnapshot {
+  string catalog_id = 1;
+  optional uint32 snapshot_version = 2;
+  string digest = 3;          // sha256:<64 hex>
+  string codec_version = 4;   // 지원 여부는 ingest snapshot gate가 판정
 }
 
 message Owner {
