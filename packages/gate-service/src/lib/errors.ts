@@ -12,7 +12,12 @@ import {
 export { AppError } from '@qa-sdk/core';
 import { AppError } from '@qa-sdk/core';
 
-export type ErrorCode = 'INVALID_INPUT' | 'NOT_FOUND' | 'PARSE_ERROR' | 'INTERNAL_ERROR';
+export type ErrorCode =
+  | 'INVALID_INPUT'
+  | 'NOT_FOUND'
+  | 'PARSE_ERROR'
+  | 'INTERNAL_ERROR'
+  | 'GATE_ENGINE_NOT_CONFIGURED';
 
 export function fromIndexMetaError(err: unknown): AppError {
   if (err instanceof EntryNotFoundError) {

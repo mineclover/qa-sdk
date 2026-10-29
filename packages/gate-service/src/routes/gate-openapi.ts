@@ -12,6 +12,7 @@
 
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import type { GateLookupService } from '../lib/gate-service.js';
+import { assertEngineConfigured } from './gate.js';
 import {
   gateLookupRequestSchema,
   gateRecomputeRequestSchema,
@@ -48,10 +49,13 @@ const gateFilterResponseSchema = z
   })
   .openapi('GateFilterResponse');
 
+/** middleware/error-handler.ts 응답 형태 */
 const errorResponseSchema = z
   .object({
-    error: z.string(),
-    code: z.string().optional(),
+    error: z.object({
+      code: z.string(),
+      message: z.string(),
+    }),
   })
   .openapi('ErrorResponse');
 
@@ -100,6 +104,10 @@ const recomputeRoute = createRoute({
   request: { body: { content: { 'application/json': { schema: gateRecomputeRequestSchema } } } },
   responses: {
     204: { description: '재계산 완료' },
+    501: {
+      content: { 'application/json': { schema: errorResponseSchema } },
+      description: 'GateEngine 미구성 (code: GATE_ENGINE_NOT_CONFIGURED)',
+    },
   },
 });
 
@@ -112,6 +120,10 @@ const cascadeRecomputeRoute = createRoute({
   request: { body: { content: { 'application/json': { schema: gateRecomputeRequestSchema } } } },
   responses: {
     204: { description: 'cascade 재계산 완료' },
+    501: {
+      content: { 'application/json': { schema: errorResponseSchema } },
+      description: 'GateEngine 미구성 (code: GATE_ENGINE_NOT_CONFIGURED)',
+    },
   },
 });
 
@@ -195,12 +207,14 @@ export function createGateOpenAPIApp(deps: GateOpenAPIDeps) {
   });
 
   app.openapi(recomputeRoute, async (c) => {
+    assertEngineConfigured(deps.gateService);
     const req = c.req.valid('json');
     await deps.gateService.recompute(req.prefix, req.versionId);
     return c.body(null, 204);
   });
 
   app.openapi(cascadeRecomputeRoute, async (c) => {
+    assertEngineConfigured(deps.gateService);
     const req = c.req.valid('json');
     await deps.gateService.cascadeRecompute(req.prefix, req.versionId);
     return c.body(null, 204);

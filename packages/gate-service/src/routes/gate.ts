@@ -2,6 +2,7 @@
 // @def.doc gate-system
 
 import { Hono } from 'hono';
+import { AppError } from '../lib/errors.js';
 import type { GateLookupService } from '../lib/gate-service.js';
 import {
   gateFilterRangesRequestSchema,
@@ -11,6 +12,20 @@ import {
 
 export interface GateRoutesDeps {
   gateService: GateLookupService;
+}
+
+/**
+ * GateEngine이 없으면 재계산할 수 없다 — 204로 성공을 가장하지 않고 501로 알린다.
+ * 엔진 구성 여부는 `/health`의 `gate_engine_configured`로도 노출된다.
+ */
+export function assertEngineConfigured(gateService: GateLookupService): void {
+  if (!gateService.engine) {
+    throw new AppError(
+      'GATE_ENGINE_NOT_CONFIGURED',
+      'GateEngine이 구성되지 않아 주소 상태를 재계산할 수 없습니다',
+      501,
+    );
+  }
 }
 
 export function createGateRoutes(deps: GateRoutesDeps) {
@@ -35,6 +50,7 @@ export function createGateRoutes(deps: GateRoutesDeps) {
   });
 
   app.post('/gate/recompute', async (c) => {
+    assertEngineConfigured(deps.gateService);
     const body = await c.req.json();
     const req = gateRecomputeRequestSchema.parse(body);
 
@@ -43,6 +59,7 @@ export function createGateRoutes(deps: GateRoutesDeps) {
   });
 
   app.post('/gate/cascade-recompute', async (c) => {
+    assertEngineConfigured(deps.gateService);
     const body = await c.req.json();
     const req = gateRecomputeRequestSchema.parse(body);
 

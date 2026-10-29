@@ -12,7 +12,7 @@ export function createErrorHandler(logger: Logger): ErrorHandler {
     if (err instanceof AppError) {
       return c.json(
         { error: { code: err.code, message: err.message } },
-        err.statusCode as 400 | 404 | 500,
+        err.statusCode as 400 | 404 | 500 | 501,
       );
     }
 

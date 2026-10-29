@@ -75,6 +75,7 @@ prefix의 전체 상태 범위를 반환한다.
 ```
 요청: { prefix: string, versionId: string }
 응답: 204 No Content
+     501 { error: { code: "GATE_ENGINE_NOT_CONFIGURED", message } } — GateEngine 미구성
 ```
 
 ### POST /gate/cascade-recompute
@@ -84,7 +85,10 @@ leaf 변경을 composite까지 전파한다.
 ```
 요청: { prefix: string, versionId: string }
 응답: 204 No Content
+     501 { error: { code: "GATE_ENGINE_NOT_CONFIGURED", message } } — GateEngine 미구성
 ```
+
+> 현재 서비스 부팅 경로(`src/server.ts`, `src/worker.ts`)는 GateEngine을 주입하지 않는다. 엔진이 읽을 prefix·entry·flag 데이터는 registry DB에 있어 gate-service DB와 분리돼 있기 때문이다. 데이터 공급 경로가 정해질 때까지 recompute는 501이고, 상태가 없는 주소는 `check`에서 fail-open(active)으로 판정된다. `/health`의 `gate_engine_configured`로 확인한다.
 
 ### POST /gate/filter-ranges
 
@@ -103,6 +107,7 @@ NOT_FOUND, NOT_COMPUTED, STALE_CACHE 3종 ^overview
 |------|------|
 | NOT_FOUND | prefix/versionId 미등록 |
 | NOT_COMPUTED | recompute 미실행 (전체 active 취급) |
+| GATE_ENGINE_NOT_CONFIGURED | GateEngine 미구성 — recompute 불가 (HTTP 501) |
 | STALE_CACHE | open 상태 캐시 무효 가능 |
 
 ## 인증

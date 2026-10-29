@@ -191,6 +191,18 @@ describe('gate-service', () => {
     });
   });
 
+  describe('GateEngine 미구성', () => {
+    it.each(['/gate/recompute', '/gate/cascade-recompute'])(
+      '%s는 성공을 가장하지 않고 501을 돌려준다',
+      async (path) => {
+        const noEngineApp = createApp({ addressStateStore: ctx.addressStateStore });
+        const res = await req(noEngineApp, 'POST', path, { prefix: 'role', versionId: 'v1' });
+        expect(res.status).toBe(501);
+        expect((await res.json()).error.code).toBe('GATE_ENGINE_NOT_CONFIGURED');
+      },
+    );
+  });
+
   describe('POST /gate/recompute', () => {
     it('recomputes and overwrites the cached state', async () => {
       await ctx.entryFlagStore.setFlag({
@@ -307,9 +319,10 @@ describe('gate-service', () => {
       };
 
       const errorApp = createApp({ gateService: failingService });
-      const res = await req(errorApp, 'POST', '/gate/cascade-recompute', {
+      const res = await req(errorApp, 'POST', '/gate/classify', {
         prefix: 'role',
         versionId: 'v1',
+        address: 0,
       });
 
       expect(res.status).toBe(404);

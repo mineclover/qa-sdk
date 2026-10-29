@@ -30,10 +30,16 @@
         "type": "object",
         "properties": {
           "error": {
-            "type": "string"
-          },
-          "code": {
-            "type": "string"
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": ["code", "message"]
           }
         },
         "required": ["error"]
@@ -250,6 +256,16 @@
         "responses": {
           "204": {
             "description": "재계산 완료"
+          },
+          "501": {
+            "description": "GateEngine 미구성 (code: GATE_ENGINE_NOT_CONFIGURED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -282,6 +298,16 @@
         "responses": {
           "204": {
             "description": "cascade 재계산 완료"
+          },
+          "501": {
+            "description": "GateEngine 미구성 (code: GATE_ENGINE_NOT_CONFIGURED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
       }
