@@ -37,6 +37,7 @@ Drive 정본 계획(rev 0.1)의 Phase 0~6 로드맵을 **현재 코드 실측 �
 - 원본 이슈: Notion `SWC Next 원리 기반 QA-SDK 최적화·호환성 보완 로드맵`
 - 코드 인벤토리와 정리 대장: [00-code-inventory.md](./00-code-inventory.md)
 - 트랙 경계, 파일 소유권, 머지 규칙: [01-tracks.md](./01-tracks.md)
+- convergence 주기 flush 검토: [02-convergence-flush-review.md](./02-convergence-flush-review.md)
 - 트랙별 구현 계획: [plans/README.md](./plans/README.md)
 
 원본 계획의 목표·비목표·실패 상태 9종·버전 축 분리 원칙은 그대로 유지한다. 이 디렉토리는 원본을 대체하지 않고, **실행 단위로 번역**한다.
@@ -105,6 +106,7 @@ Wave 2 트랙은 [plans/gated-phases.md](./plans/gated-phases.md)에 진입 조�
 | D-6 | digest 표기 길이 | 전체 64 hex + `sha256:` 접두사. 표시용 12자는 파생값으로만 사용 | 12자 truncation은 충돌 판정용 식별자로 부족하다 | T0, D |
 | D-7 | benchmark CI 트리거 | `workflow_dispatch` + nightly. PR에서는 smoke 1회만 | 원본 인프라 매트릭스의 "CI 시간 증가" 대응 | C |
 | D-8 | 버전마다 dim 구성이 다른 prefix(R-11)의 모델 | ✅ **확정 (2026-10-29)**: `PrefixVersionDef`에 선택적 `labels`를 두어 버전별 dim 목록을 선언하고, 미선언 시 prefix 공통 `labels`를 쓴다 | v1 주소가 실제로 저장돼 있다면 v1 layout을 복원해야 decode할 수 있다. v1을 폐기하면 그 주소는 `MigrationRequired`가 된다 | A |
+| D-9 | convergence 주기 flush scheduler 제거 여부, worker 모드 convergence 부재 | 현재는 5분 유지(2026-10-29). 제거한다면 runner 내부 max-wait one-shot timer로 대체. 결정은 G3 착수 때 | [02-convergence-flush-review.md](./02-convergence-flush-review.md) | G3 |
 
 ## 4. 이번 작업에서 반영한 것
 

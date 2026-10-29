@@ -34,6 +34,7 @@
 - transition 결과 저장 (현재 로그만 남음)
 - full rebuild maintenance command와 full ↔ incremental differential test
 - X-15·X-17 중복 구현 정리
+- D-9: convergence 트리거 재설계 — scheduler 제거(runner 내부 max-wait로 대체) 여부와 worker 모드 convergence 배선 ([02-convergence-flush-review.md](../02-convergence-flush-review.md))
 
 ## G5 — Analyzer/plugin 계약 (원본 Phase 5, 범위 조정)
 

@@ -39,8 +39,9 @@ T0 머지 후 A·B·D(Task 2~)가 열린다.
 
 - **T0 구현 완료 (2026-10-28, 미커밋)**: `packages/core/src/catalog/snapshot/` 13개 파일, core barrel export, ADR-010. core vitest 89 files / 1238 tests PASS(신규 36), `tsc --noEmit` 오류 0, `@qa-sdk/browser`·`@qa-sdk/sdk`·`@qa-sdk/context` 빌드 성공, snapshot 모듈 `node:` import 0건.
 - **Track A 구현 완료 (2026-10-29)**: Task 1~6. R-1(DecodeMap shape)·R-11(버전별 dim) 해소, 3-way parity 83 + registry parity 83, legacy-v1 corpus 619 case, strict 주소 파서.
-- **Track C·F 구현 완료 (2026-10-29)**: 각 세션 브랜치에서 구현 후 main에 merge.
-- B·D·E 계획의 테스트 코드는 실행 검증 전이다. 각 계획 Task 0이 전제(시그니처·참조 위치)를 다시 확인한다.
+- **Track C·D·E·F 구현 완료 (2026-10-29)**: 각 세션 브랜치에서 구현 후 main에 merge. E 후속으로 runtime PG 마이그레이션 drift(X-18) 수정.
+- 남은 트랙: B (D-2 결정 대기), Wave 2 G2·G3·G5·G6 (측정 게이트). D-9는 G3에서 결정.
+- B 계획의 테스트 코드는 실행 검증 전이다. Task 0이 전제(시그니처·참조 위치)를 다시 확인한다.
 
 ## 환경 메모
 
