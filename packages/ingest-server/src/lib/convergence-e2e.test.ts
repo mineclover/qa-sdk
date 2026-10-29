@@ -63,7 +63,7 @@ describe('관측 루프 E2E', () => {
         catalogProvider: () => ({ id: 'test', name: 'test', axes: {}, prefixes: {} }),
         dkgStore,
       },
-      { recordThreshold: 999, flushIntervalMs: 999_999 },
+      { recordThreshold: 999 },
     );
     const app = createApp({
       recordStore,
@@ -270,7 +270,6 @@ describe('관측 루프 E2E', () => {
       },
       {
         recordThreshold: 999,
-        flushIntervalMs: 999_999, // 타이머 트리거 방지
       },
     );
 
@@ -351,7 +350,7 @@ describe('관측 루프 E2E', () => {
         graphProvider: () => ({ getAllNodes: () => [], getNodesByKind: () => [] }) as any,
         catalogProvider: () => ({ id: 'test', name: 'test', axes: {}, prefixes: {} }),
       },
-      { recordThreshold: 999, flushIntervalMs: 999_999 },
+      { recordThreshold: 999 },
     );
 
     try {
@@ -405,7 +404,7 @@ describe('관측 루프 E2E', () => {
         graphProvider: () => ({ getAllNodes: () => [], getNodesByKind: () => [] }) as any,
         catalogProvider: () => ({ id: 'test', name: 'test', axes: {}, prefixes: {} }),
       },
-      { recordThreshold: 999, flushIntervalMs: 999_999 },
+      { recordThreshold: 999 },
     );
 
     try {

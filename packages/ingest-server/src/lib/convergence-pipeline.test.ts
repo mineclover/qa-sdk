@@ -3,12 +3,14 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
+  CONVERGENCE_BUFFER_DEPTH_METRIC,
   ConvergencePipelineRunner,
   type ConvergencePipelineDeps,
   type ConvergenceFunctions,
   type PatternFunctions,
   type DkgStorePort,
 } from './convergence-pipeline.js';
+import { createMetricsCollector } from './metrics-collector.js';
 
 // ── Mock Factories ──────────────────────────────────
 
@@ -180,11 +182,24 @@ describe('ConvergencePipelineRunner', () => {
     await pipeline?.close();
   });
 
+  it('버퍼 depth gauge를 notify·flush 시점에 갱신한다', async () => {
+    const metrics = createMetricsCollector();
+    const deps = createDeps({ metrics });
+    pipeline = new ConvergencePipelineRunner(deps, { recordThreshold: 999 });
+    const depth = () =>
+      metrics.snapshot().find((s) => s.name === CONVERGENCE_BUFFER_DEPTH_METRIC)?.value;
+
+    pipeline.notifyCompletion(['t1', 't2']);
+    expect(depth()).toBe(2);
+
+    await pipeline.flush();
+    expect(depth()).toBe(0);
+  });
+
   it('threshold 도달 시 자동 flush', async () => {
     const deps = createDeps();
     pipeline = new ConvergencePipelineRunner(deps, {
       recordThreshold: 3,
-      flushIntervalMs: 999_999, // 타이머 트리거 방지
     });
 
     pipeline.notifyCompletion(['t1', 't2', 't3']);
@@ -202,7 +217,6 @@ describe('ConvergencePipelineRunner', () => {
     const deps = createDeps();
     pipeline = new ConvergencePipelineRunner(deps, {
       recordThreshold: 999,
-      flushIntervalMs: 999_999,
     });
 
     pipeline.notifyCompletion(['t1']);
@@ -219,7 +233,6 @@ describe('ConvergencePipelineRunner', () => {
     const deps = createDeps();
     pipeline = new ConvergencePipelineRunner(deps, {
       recordThreshold: 999,
-      flushIntervalMs: 999_999,
     });
 
     const result = await pipeline.flush();
@@ -236,7 +249,6 @@ describe('ConvergencePipelineRunner', () => {
     const deps = createDeps({ recordStore });
     pipeline = new ConvergencePipelineRunner(deps, {
       recordThreshold: 999,
-      flushIntervalMs: 999_999,
     });
 
     pipeline.notifyCompletion(['t1']);
@@ -263,7 +275,6 @@ describe('ConvergencePipelineRunner', () => {
     const deps = createDeps({ convergenceFns });
     pipeline = new ConvergencePipelineRunner(deps, {
       recordThreshold: 999,
-      flushIntervalMs: 999_999,
     });
 
     // 첫 번째: 실패
@@ -281,7 +292,6 @@ describe('ConvergencePipelineRunner', () => {
     const deps = createDeps();
     pipeline = new ConvergencePipelineRunner(deps, {
       recordThreshold: 999,
-      flushIntervalMs: 999_999,
       maxBufferSize: 5,
     });
 
@@ -298,7 +308,6 @@ describe('ConvergencePipelineRunner', () => {
     const deps = createDeps();
     pipeline = new ConvergencePipelineRunner(deps, {
       recordThreshold: 999,
-      flushIntervalMs: 999_999,
     });
 
     pipeline.notifyCompletion(['t1']);
@@ -314,7 +323,6 @@ describe('ConvergencePipelineRunner', () => {
     const deps = createDeps({ dkgStore: undefined });
     pipeline = new ConvergencePipelineRunner(deps, {
       recordThreshold: 999,
-      flushIntervalMs: 999_999,
     });
 
     pipeline.notifyCompletion(['t1']);
@@ -334,7 +342,6 @@ describe('ConvergencePipelineRunner', () => {
     });
     pipeline = new ConvergencePipelineRunner(deps, {
       recordThreshold: 999,
-      flushIntervalMs: 999_999,
     });
 
     pipeline.notifyCompletion(['t1']);
@@ -361,7 +368,6 @@ describe('ConvergencePipelineRunner', () => {
     });
     pipeline = new ConvergencePipelineRunner(deps, {
       recordThreshold: 999,
-      flushIntervalMs: 999_999,
     });
 
     pipeline.notifyCompletion(['t1']);
@@ -404,7 +410,6 @@ describe('ConvergencePipelineRunner', () => {
     });
     pipeline = new ConvergencePipelineRunner(deps, {
       recordThreshold: 999,
-      flushIntervalMs: 999_999,
     });
 
     pipeline.notifyCompletion(['t1']);
@@ -423,7 +428,6 @@ describe('ConvergencePipelineRunner', () => {
     const deps = createDeps(); // patternFns 없음
     pipeline = new ConvergencePipelineRunner(deps, {
       recordThreshold: 999,
-      flushIntervalMs: 999_999,
     });
 
     pipeline.notifyCompletion(['t1']);
@@ -466,7 +470,6 @@ describe('ConvergencePipelineRunner', () => {
     const deps = createDeps({ convergenceFns, dkgStore });
     pipeline = new ConvergencePipelineRunner(deps, {
       recordThreshold: 999,
-      flushIntervalMs: 999_999,
     });
 
     pipeline.notifyCompletion(['t1']);
@@ -555,7 +558,6 @@ describe('ConvergencePipelineRunner', () => {
     });
     pipeline = new ConvergencePipelineRunner(deps, {
       recordThreshold: 999,
-      flushIntervalMs: 999_999,
     });
 
     pipeline.notifyCompletion(['t1']);
@@ -575,7 +577,6 @@ describe('ConvergencePipelineRunner', () => {
     });
     pipeline = new ConvergencePipelineRunner(deps, {
       recordThreshold: 999,
-      flushIntervalMs: 999_999,
     });
 
     // 첫 번째 flush — previous 없음

@@ -4,7 +4,7 @@
 import { Hono } from 'hono';
 import type { DlqStore } from '@qa-sdk/core';
 import type { StreamConnectionRegistry } from '../lib/stream-connection-registry.js';
-import { type MetricsCollector, formatCounters, formatGauge } from '../lib/metrics-collector.js';
+import { type MetricsCollector, formatGauge, formatSeries } from '../lib/metrics-collector.js';
 
 export interface MetricsRouteDeps {
   metricsCollector?: MetricsCollector;
@@ -13,13 +13,17 @@ export interface MetricsRouteDeps {
   getUptimeSeconds?: () => number;
 }
 
-const COUNTER_HELP: Record<string, string> = {
+const METRIC_HELP: Record<string, string> = {
   ingest_requests_total: 'Total ingest HTTP requests by status',
   ingest_records_total: 'Total event records ingested',
   rate_limit_rejected_total: 'Total requests rejected by rate limiter',
   convergence_flush_total: 'Total convergence pipeline flushes',
   convergence_sessions_classified_total: 'Total sessions classified by pattern',
   convergence_anomalies_detected_total: 'Total anomalies detected by kind',
+  convergence_buffer_depth: 'Trace ids buffered for the next convergence flush',
+  phase_two_failures_total: 'Phase 2 stage failures by stage',
+  decode_skipped_total: 'decode-service lookups skipped in favor of local decoding',
+  metrics_type_conflict_total: 'Metric writes dropped because of a counter/gauge type conflict',
 };
 
 export function createMetricsRoutes(deps: MetricsRouteDeps) {
@@ -64,9 +68,9 @@ export function createMetricsRoutes(deps: MetricsRouteDeps) {
       );
     }
 
-    // ── counter metrics (from MetricsCollector) ──
+    // ── labeled counter·gauge (from MetricsCollector) ──
     if (deps.metricsCollector) {
-      lines.push(...formatCounters(deps.metricsCollector.getCounters(), COUNTER_HELP));
+      lines.push(...formatSeries(deps.metricsCollector.snapshot(), METRIC_HELP));
     }
 
     return c.text(lines.join('\n') + '\n', 200, {

@@ -12,7 +12,7 @@ def:
       type: traces_to
   sources:
     - packages/ingest-server/src/stores/app-hub-insights-store.ts
-    - packages/ingest-server/src/stores/store-factory.ts
+    - packages/ingest-server/src/stores/runtime-stores.ts
     - packages/ingest-server/src/stores/clickhouse-record-store.ts
     - packages/ingest-server/src/stores/clickhouse-record-store.test.ts
     - packages/ingest-server/src/config/env.ts
@@ -39,7 +39,7 @@ infra-engine이 주력 인프라 관측 파이프라인. App Hub은 현재 미�
 
 ## ClickHouse Adapter — 부분 구현
 
-코드: `packages/ingest-server/src/stores/store-factory.ts`, `packages/ingest-server/src/stores/clickhouse-record-store.ts`
+코드: `packages/ingest-server/src/stores/clickhouse-record-store.ts` (런타임 미배선 — `STORE_DRIVER=clickhouse`는 경고 후 SQLite, `stores/runtime-stores.ts`)
 
 - [x] ClickHouse `RecordStore` 구현 (`ClickhouseRecordStore`)
 - [x] 대량 분석 쿼리 포트 분리 (`ClickHouseAnalyticsStore`: time series/top keys/distribution/key observations/trace stats)

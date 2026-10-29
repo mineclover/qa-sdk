@@ -11,6 +11,7 @@ import {
   sqliteTable,
   text,
   integer,
+  real,
   index,
   uniqueIndex,
   primaryKey,
@@ -85,6 +86,14 @@ export const eventRecords = sqliteTable(
     userId: text('user_id'),
     userAttributes: text('user_attributes'),
     createdAt: text('created_at').notNull(),
+    // Metric (record_kind === 'metric') — additive migration으로 추가. labels/buckets/quantiles는 JSON 문자열
+    metricType: text('metric_type'),
+    metricName: text('metric_name'),
+    metricValue: real('metric_value'),
+    metricUnit: text('metric_unit'),
+    metricLabels: text('metric_labels'),
+    metricBuckets: text('metric_buckets'),
+    metricQuantiles: text('metric_quantiles'),
   },
   (t) => [
     index('idx_event_records_trace_id').on(t.traceId),

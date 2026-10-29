@@ -1,7 +1,7 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import { initTelemetry, withQueryTracing } from '@qa-sdk/otel';
+import { initTelemetry } from '@qa-sdk/otel';
 import 'dotenv/config';
 import { serve } from '@hono/node-server';
 import { createNodeWebSocket } from '@hono/node-ws';
@@ -10,36 +10,15 @@ import {
   createServiceBootConfig,
   warnPortConflict,
   type DlqStore,
-  type GraphStore,
-  type RecordStore,
-  type ScenarioSpecStore,
-  type SessionStore,
-  type TraceStore,
-  type TransmissionStore,
-  type VerdictStore,
   type Catalog,
 } from '@qa-sdk/core';
 import { RegistryClient } from '@qa-sdk/registry-client';
 import {
   closeClient,
-  createDb,
   withTransaction,
-  DrizzleDlqStore,
-  DrizzleGraphStore,
   DrizzleRecordStore,
-  DrizzleScenarioSpecStore,
   DrizzleSessionStore,
   DrizzleTraceStore,
-  DrizzleTransmissionStore,
-  DrizzleVerdictStore,
-  InMemoryDlqStore,
-  InMemoryGraphStore,
-  InMemoryRecordStore,
-  InMemoryScenarioSpecStore,
-  InMemorySessionStore,
-  InMemoryTraceStore,
-  InMemoryTransmissionStore,
-  InMemoryVerdictStore,
 } from '@qa-sdk/store';
 import { env } from './config/env.js';
 import { createApp } from './app.js';
@@ -50,6 +29,7 @@ import { installCleanupScheduler } from './lib/cleanup-scheduler.js';
 import { installGracefulShutdown } from './lib/graceful-shutdown.js';
 import { InMemoryDebugStore } from './lib/in-memory-debug-store.js';
 import { createLogger } from './lib/logger.js';
+import { createMetricsCollector } from './lib/metrics-collector.js';
 import { registerTaskQueueWorker } from './lib/phase-two-worker.js';
 import { RecordStreamBroker } from './lib/record-stream-broker.js';
 import { resolveRuntimeMode } from './lib/runtime-mode.js';
@@ -57,6 +37,7 @@ import { createStreamConnectionRegistry } from './lib/stream-connection-registry
 import { installWorkerShutdown } from './lib/worker-shutdown.js';
 import { createDbHealthChecker } from './routes/health.js';
 import { createWsHandler } from './routes/ws.js';
+import { createRuntimeStores, type RuntimeStores } from './stores/runtime-stores.js';
 import { createDebugWsHandler } from './routes/debug-ws.js';
 import type {
   ConvergencePipelineRunner,
@@ -71,18 +52,11 @@ import type { InsightsStore } from './ports/insights-store.port.js';
 
 const PHASE_TWO_QUEUE_NAME = 'ingest-phase-two';
 
-interface RuntimeStores {
-  db: ReturnType<typeof createDb> | null;
-  /** D1 모드 시 SQLite drizzle 인스턴스 (InsightsStore 공유용) */
-  d1Db?: unknown;
-  dlqStore: DlqStore;
-  graphStore: GraphStore;
-  recordStore: RecordStore;
-  scenarioSpecStore: ScenarioSpecStore;
-  sessionStore: SessionStore;
-  traceStore: TraceStore;
-  transmissionStore: TransmissionStore;
-  verdictStore: VerdictStore;
+/** drizzle SQLite migration 폴더 — tsup 번들(dist/server.js)과 tsx(src/server.ts) 모두 패키지 루트 기준 */
+const SQLITE_MIGRATIONS_FOLDER = new URL('../drizzle', import.meta.url).pathname;
+
+function loadRuntimeStores(logger: ReturnType<typeof createLogger>): Promise<RuntimeStores> {
+  return createRuntimeStores({ env, logger, migrationsFolder: SQLITE_MIGRATIONS_FOLDER });
 }
 
 async function main(argv = process.argv.slice(2)) {
@@ -99,7 +73,7 @@ async function main(argv = process.argv.slice(2)) {
 async function startServer() {
   const shutdownTelemetry = initTelemetry({ serviceName: 'ingest-server', env });
   const logger = createLogger('ingest-server');
-  const stores = await createRuntimeStores();
+  const stores = await loadRuntimeStores(logger);
   const appLifecycle = createAppLifecycle();
   const recordStreamBroker = new RecordStreamBroker();
   const debugStore = new InMemoryDebugStore();
@@ -127,6 +101,7 @@ async function startServer() {
     dlqStore: stores.dlqStore,
     logger,
   });
+  const metricsCollector = createMetricsCollector();
 
   // ── Convergence Pipeline (optional) ──────────────────
   let convergencePipeline: ConvergencePipelineRunner | undefined;
@@ -209,11 +184,9 @@ async function startServer() {
           catalogProvider: () => graphProvider.getCatalog() as Catalog,
           dkgStore: graphProvider.getDkgStore() ?? undefined,
           logger,
+          metrics: metricsCollector,
         },
-        {
-          recordThreshold: env.CONVERGENCE_RECORD_THRESHOLD,
-          flushIntervalMs: env.CONVERGENCE_FLUSH_INTERVAL_MS,
-        },
+        { recordThreshold: env.CONVERGENCE_RECORD_THRESHOLD },
       );
 
       convergenceScheduler = installConvergenceScheduler({
@@ -230,15 +203,15 @@ async function startServer() {
   }
 
   // ── Transition Engine (Phase 2.5, optional) ─────────
-  let _transitionFns: TransitionFunctions | undefined;
-  let _transitionCatalog: unknown;
+  let transitionEngine: TransitionFunctions | undefined;
+  let transitionCatalog: unknown;
   if (env.TRANSITION_ENGINE_ENABLED) {
     try {
       const { createTransitionFunctions, DEMO_TRANSITION_SPECS } =
         await import('@qa-sdk/spec-core/transition');
       const { DEMO_CATALOG } = await import('demo-snapshot');
-      _transitionFns = createTransitionFunctions(DEMO_TRANSITION_SPECS);
-      _transitionCatalog = DEMO_CATALOG;
+      transitionEngine = createTransitionFunctions(DEMO_TRANSITION_SPECS);
+      transitionCatalog = DEMO_CATALOG;
       logger.info(`transition engine enabled (${DEMO_TRANSITION_SPECS.length} specs)`);
     } catch (error) {
       logger.error({ err: error }, 'transition engine initialization failed — disabled');
@@ -295,9 +268,6 @@ async function startServer() {
   } catch {
     logger.warn('catalog validator 초기화 실패 — event/prefix 검증 비활성화');
   }
-
-  const { createMetricsCollector } = await import('./lib/metrics-collector.js');
-  const metricsCollector = createMetricsCollector();
 
   // ── InsightsStore (INSIGHTS_DRIVER 기반 선택) ────────
   let insightsStore: InsightsStore | undefined;
@@ -372,6 +342,9 @@ async function startServer() {
           }),
     dlqMaxRetryAttempts: env.DLQ_MAX_RETRY_ATTEMPTS,
     convergencePipeline,
+    transitionEngine,
+    transitionCatalog,
+    decodeServiceUrl: env.DECODE_SERVICE_URL,
     corsOrigin: env.CORS_ORIGIN,
     catalogValidator,
     insightsStore,
@@ -445,7 +418,7 @@ async function startServer() {
 async function startWorker() {
   const shutdownTelemetry = initTelemetry({ serviceName: 'ingest-worker', env });
   const logger = createLogger('ingest-worker');
-  const stores = await createRuntimeStores();
+  const stores = await loadRuntimeStores(logger);
   const taskQueue = createTaskQueue({
     dlqStore: stores.dlqStore,
     logger,
@@ -501,80 +474,6 @@ async function startWorker() {
     },
     logger,
   });
-}
-
-async function createRuntimeStores(): Promise<RuntimeStores> {
-  // D1/SQLite 모드 (SQLITE_PATH 또는 STORE_DRIVER=d1)
-  // D1/SQLite 모드 — memory(기본) 또는 d1 드라이버에서 자동 업그레이드
-  // insights가 D1 DB를 공유하므로 memory 모드에서도 D1+:memory:를 우선 시도
-  // pg 드라이버(STORE_DRIVER=pg)만 PG 경로로 진행
-  if (env.STORE_DRIVER !== 'pg') {
-    try {
-      const { NodeSqliteDriver } = await import('index-meta');
-      const { drizzle } = await import('drizzle-orm/node-sqlite');
-      const { migrate } = await import('drizzle-orm/node-sqlite/migrator');
-      const { createD1Drizzle } = await import('./stores/d1-db-type.js');
-      const { D1RecordStore } = await import('./stores/d1-record-store.js');
-      const { D1TraceStore } = await import('./stores/d1-trace-store.js');
-      const { D1SessionStore } = await import('./stores/d1-session-store.js');
-      const { D1VerdictStore } = await import('./stores/d1-verdict-store.js');
-
-      const sqlitePath = env.SQLITE_PATH ?? ':memory:';
-      const driver = new NodeSqliteDriver(sqlitePath, null);
-      const migrationsFolder = new URL('../drizzle', import.meta.url).pathname;
-      const plainDb = drizzle({ client: driver.$client as import('node:sqlite').DatabaseSync });
-      migrate(plainDb, { migrationsFolder });
-      const d1Db = createD1Drizzle(driver.$client);
-      return {
-        db: null,
-        d1Db,
-        dlqStore: new InMemoryDlqStore(),
-        graphStore: new InMemoryGraphStore(),
-        recordStore: new D1RecordStore(d1Db),
-        scenarioSpecStore: new InMemoryScenarioSpecStore(),
-        sessionStore: new D1SessionStore(d1Db),
-        traceStore: new D1TraceStore(d1Db),
-        transmissionStore: new InMemoryTransmissionStore(),
-        verdictStore: new D1VerdictStore(d1Db),
-      };
-    } catch (d1Err) {
-      // D1 초기화 실패 → 순수 InMemory fallback (insights 비활성)
-      console.warn(
-        '[ingest] D1 auto-upgrade 실패 — InMemory fallback:',
-        d1Err instanceof Error ? d1Err.message : String(d1Err),
-      );
-      return {
-        db: null,
-        dlqStore: new InMemoryDlqStore(),
-        graphStore: new InMemoryGraphStore(),
-        recordStore: new InMemoryRecordStore(),
-        scenarioSpecStore: new InMemoryScenarioSpecStore(),
-        sessionStore: new InMemorySessionStore(),
-        traceStore: new InMemoryTraceStore(),
-        transmissionStore: new InMemoryTransmissionStore(),
-        verdictStore: new InMemoryVerdictStore(),
-      };
-    }
-  }
-
-  // PG 모드 (STORE_DRIVER=pg, TRACE_DATABASE_URL 필수)
-  if (!env.TRACE_DATABASE_URL) {
-    throw new Error('STORE_DRIVER=pg requires TRACE_DATABASE_URL');
-  }
-  const rawDb = createDb(env.TRACE_DATABASE_URL);
-  const db = withQueryTracing(rawDb);
-
-  return {
-    db,
-    dlqStore: new DrizzleDlqStore(db),
-    graphStore: new DrizzleGraphStore(db),
-    recordStore: new DrizzleRecordStore(db),
-    scenarioSpecStore: new DrizzleScenarioSpecStore(db),
-    sessionStore: new DrizzleSessionStore(db),
-    traceStore: new DrizzleTraceStore(db),
-    transmissionStore: new DrizzleTransmissionStore(db),
-    verdictStore: new DrizzleVerdictStore(db),
-  };
 }
 
 function createTaskQueue({

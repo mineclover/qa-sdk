@@ -17,16 +17,14 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { createD1Drizzle, type D1Db } from './d1-db-type.js';
 import { D1KeyObservationStore } from './d1-key-observation-store.js';
-import { INGEST_D1_SCHEMA_DDL } from './d1-schema.sql.js';
 
 const migrationsFolder = new URL('../../drizzle', import.meta.url).pathname;
 
 function createDbWithKeyObs(): D1Db {
   const driver = new NodeSqliteDriver(':memory:', null);
   const drizzleDb = drizzle({ client: driver.$client });
-  // drizzle migration에 key_observations 미포함 — 새 DDL 직접 실행
+  // drizzle migration이 key_observations(version/address 복합 PK)를 포함한다
   migrate(drizzleDb, { migrationsFolder });
-  (driver.$client as { exec(sql: string): void }).exec(INGEST_D1_SCHEMA_DDL);
   return createD1Drizzle(driver.$client);
 }
 

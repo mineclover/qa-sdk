@@ -17,7 +17,7 @@ sources:
   - packages/ingest-server/src/server.ts
   - packages/ingest-server/src/worker.ts
   - packages/ingest-server/src/config/env.ts
-  - packages/ingest-server/src/stores/store-factory.ts
+  - packages/ingest-server/src/stores/runtime-stores.ts
   - packages/ingest-server/src/lib/graceful-shutdown.ts
   - packages/ingest-server/src/lib/worker-shutdown.ts
   - packages/ingest-server/src/lib/runtime-mode.ts
@@ -81,56 +81,33 @@ SIGTERM/SIGINT 수신
 
 ## Store Driver 선택
 
-두 가지 경로로 저장소를 결정한다. 현재 운영 부팅 경로(`server.ts`)와 재사용 팩토리(`stores/store-factory.ts`)는 완전히 동일하지 않으므로 문서에서 분리해 추적한다.
-
-### 경로 1: server.ts 직접 분기 (현행)
-
-`server.ts`의 `createRuntimeStores()`는 `STORE_DRIVER=pg`만 PostgreSQL 경로로 보낸다. 나머지 driver 값은 SQLite/D1-style 로컬 저장소를 우선 시도하고 실패 시 InMemory로 fallback한다.
+`stores/runtime-stores.ts`의 `createRuntimeStores({ env, logger, migrationsFolder })`가 server·worker 모드의 단일 진입점이다.
+`resolveStoreDriver`로 `STORE_DRIVER`를 해석하고 `pg`만 PostgreSQL 경로로 보낸다. 나머지 driver 값은 SQLite/D1-style 로컬 저장소를 우선 시도하고 실패 시 InMemory로 fallback한다.
+미사용 `stores/store-factory.ts`는 삭제했다 (SWC Next Track E D-3). CF Worker(`src/worker.ts`)는 D1 바인딩으로 store를 직접 만든다.
 
 | 조건 | 저장소 구성 | 용도 |
 |------|-----------|------|
 | `STORE_DRIVER=pg` + `TRACE_DATABASE_URL` 설정 | `createDb()` + `Drizzle*Store` (8종) | 운영 (PostgreSQL) |
-| `STORE_DRIVER!=pg` | `NodeSqliteDriver` + D1 core stores 4종, support stores InMemory | 개발/데모 및 SQLite 로컬 실행 |
-| SQLite/D1 초기화 실패 | 전체 `InMemory*Store` (8종) | fallback |
+| `STORE_DRIVER=pg` + URL 미설정 | 부팅 오류 | - |
+| `STORE_DRIVER=memory`/`sqlite` | `NodeSqliteDriver` + D1 core stores 4종, support stores InMemory | 개발/데모 및 SQLite 로컬 실행 |
+| `STORE_DRIVER=d1` | sqlite와 동일 + deprecation 경고 1회 | 하위 호환 |
+| `STORE_DRIVER=clickhouse` | sqlite와 동일 + 미지원 경고 1회 | server 모드 ClickHouse 미배선 |
+| SQLite/D1 초기화 실패 | 전체 `InMemory*Store` (8종), `logger.warn({ err })` | fallback |
 
 **pg 모드 Store 구성:**
 - `DrizzleDlqStore`, `DrizzleGraphStore`, `DrizzleRecordStore`
 - `DrizzleScenarioSpecStore`, `DrizzleSessionStore`, `DrizzleTraceStore`
 - `DrizzleTransmissionStore`, `DrizzleVerdictStore`
 
-**non-pg 직접 부팅 구성:**
+**non-pg 구성:**
 - `D1RecordStore`, `D1TraceStore`, `D1SessionStore`, `D1VerdictStore`
 - `InMemoryDlqStore`, `InMemoryGraphStore`, `InMemoryScenarioSpecStore`, `InMemoryTransmissionStore`
-- `keyObservationStore`는 `server.ts` 직접 부팅 경로에 아직 연결되지 않았다.
+- `keyObservationStore`는 런타임 부팅 경로에 아직 연결되지 않았다.
 
 **fallback 모드:** 동일 인터페이스의 `InMemory*Store` 사용 (DB 없이 동작).
 
-### 경로 2: store-factory.ts (STORE_DRIVER)
-
-`stores/store-factory.ts`의 `createStores(opts)` — `STORE_DRIVER` 환경변수 기반 자동 생성.
-
-| 드라이버 | 저장소 구성 | 비고 |
-|---------|-----------|------|
-| `memory` (기본) | InMemory store set | dynamic import, DB 없이 동작 |
-| `sqlite`/`d1` | D1/SQLite store set 9포트 | `d1`은 `sqlite` alias |
-| `pg` | PostgreSQL store set 9포트 | `TRACE_DATABASE_URL` 필수. Record/KeyObservation은 ingest-server PG adapter, 나머지는 `@qa-sdk/store` Drizzle |
-| `clickhouse` | ClickHouse RecordStore + 나머지 InMemory | runtime write path는 RecordStore만 ClickHouse. OLAP 조회는 별도 `ClickHouseAnalyticsStore` |
-
-**D1/SQLite 팩토리 store 매핑:**
-
-| Store | 구현 | 비고 |
-|-------|------|------|
-| `RecordStore` | `D1RecordStore` | SQL DDL 기반 |
-| `TraceStore` | `D1TraceStore` | SQL DDL 기반 |
-| `SessionStore` | `D1SessionStore` | SQL DDL 기반 |
-| `VerdictStore` | `D1VerdictStore` | SQL DDL 기반 |
-| `KeyObservationStore` | `D1KeyObservationStore` | version/address 복합키 |
-| `TransmissionStore` | `D1TransmissionStore` | SQL DDL 기반 |
-| `GraphStore` | `D1GraphStore` | SQL DDL 기반 |
-| `ScenarioSpecStore` | `D1ScenarioSpecStore` | SQL DDL 기반 |
-| `DlqStore` | `D1DlqStore` | SQL DDL 기반 |
-
-**ClickHouse 팩토리 모드:** runtime store set은 `ClickhouseRecordStore`만 사용하고, 나머지 support stores는 InMemory다. OLAP 조회는 runtime CRUD 포트가 아니라 `ClickHouseAnalyticsStore`를 별도 주입해 사용한다. `server.ts` 직접 부팅 경로에는 ClickHouse wiring이 아직 없다.
+**런타임 미배선 어댑터 (후속 판정):** `ClickhouseRecordStore`, `stores/pg/factory.ts` `createPgIngestStores`(PgRecordStore·PgKeyObservationStore),
+D1 support store 5종(`D1GraphStore`, `D1DlqStore`, `D1TransmissionStore`, `D1ScenarioSpecStore`, `D1KeyObservationStore`)은 테스트에서만 생성된다.
 
 ### 트랜잭션 경계
 
@@ -167,7 +144,11 @@ SIGTERM/SIGINT 수신
 
 - `ingest_requests_total` — 요청 수 (status별)
 - `ingest_records_total` — 수집된 레코드 수
-- `/v1/metrics` 엔드포인트로 Prometheus 형식 노출
+- `phase_two_failures_total{stage}` — Phase 2 단계 실패 (`reconstruction`/`verdict`/`metric_aggregation`/`transition`/`convergence`)
+- `decode_skipped_total` — decode-service 응답이 없어 로컬 decode로 대체한 횟수
+- `convergence_buffer_depth` (gauge) — 다음 convergence flush 대기 trace 수
+- `/v1/metrics` 엔드포인트로 Prometheus 형식 노출. labeled counter·gauge는 이름별 `# TYPE` 1회
+- cardinality 보호: label 값 64자 절단, series 1,000 초과 시 `name{overflow="true"}`로 합침
 
 ## 환경 변수 전체 목록
 
@@ -177,7 +158,7 @@ SIGTERM/SIGINT 수신
 |------|--------|------|
 | `STORE_DRIVER` | `memory` | 저장소 드라이버 (`memory`/`sqlite`/`pg`/`clickhouse`, `d1` alias) |
 | `TRACE_DATABASE_URL` | - | PostgreSQL URL (`STORE_DRIVER=pg` 시 필수) |
-| `QA_PG_SCHEMA` | `ingest` | PostgreSQL schema (`STORE_DRIVER=pg` 시) |
+| `QA_PG_SCHEMA` | `ingest` | PostgreSQL schema. 현재 런타임 미배선 (Plan 07d PG adapter 전환 시 사용) |
 | `SQLITE_PATH` | - | SQLite 경로 (`STORE_DRIVER=sqlite`/`d1` 시 Node.js 로컬용) |
 | `REDIS_URL` | - | Redis URL (`TASK_QUEUE_ENABLED=true` 시 필수) |
 | `PORT` | `3200` | 서비스 포트 |
@@ -192,10 +173,9 @@ SIGTERM/SIGINT 수신
 | `REGISTRY_URL` | - | registry-service URL (이벤트 스키마 검증) |
 | `REGISTRY_VALIDATION_MODE` | `warn` | 검증 모드 (`strict`/`warn`/`off`) |
 | `CONVERGENCE_ENABLED` | `false` | Convergence Pipeline 활성화 |
-| `CONVERGENCE_FLUSH_INTERVAL_MS` | `60000` | convergence flush 주기 (ms) |
 | `CONVERGENCE_RECORD_THRESHOLD` | `100` | convergence 자동 flush 임계치 (레코드 수) |
 | `CONVERGENCE_DKG_SQLITE_PATH` | - | DKG SQLite 경로 |
-| `CONVERGENCE_SCHEDULE_INTERVAL_MS` | `300000` | convergence 스케줄 주기 (5분) |
+| `CONVERGENCE_SCHEDULE_INTERVAL_MS` | `300000` | convergence 주기 flush 간격 (5분). 주기 flush는 scheduler 단독 담당 |
 | `CONVERGENCE_REGISTRY_URL` | - | convergence용 registry URL |
 | `INSIGHTS_DRIVER` | `local` | 인사이트 저장소 드라이버 (`local`/`app-hub`) |
 | `APP_HUB_ENDPOINT` | - | App Hub endpoint (`INSIGHTS_DRIVER=app-hub` 시 필수) |
@@ -204,9 +184,7 @@ SIGTERM/SIGINT 수신
 | `CATALOG_ID` | `demo` | catalog ID |
 | `PATTERN_CLASSIFICATION_ENABLED` | `false` | 패턴 분류 활성화 |
 | `DECODE_SERVICE_URL` | - | decode-service URL (Phase 2 주소 디코딩) |
-| `TRANSITION_ENGINE_ENABLED` | `false` | Transition Engine 활성화 |
-| `TRANSITION_VIOLATION_MODE` | `warn` | 전이 위반 처리 모드 (`strict`/`warn`) |
-| `TRANSITION_STATE_PATH` | - | 전이 상태 파일 경로 |
+| `TRANSITION_ENGINE_ENABLED` | `false` | Transition Engine 활성화 (inline·queue 경로 공용) |
 
 **zod 교차 검증:** `TASK_QUEUE_ENABLED=true` + `REDIS_URL` 미설정 → 검증 에러.
 

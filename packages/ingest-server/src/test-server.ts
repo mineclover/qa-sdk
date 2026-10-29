@@ -90,8 +90,16 @@ async function setupConvergence() {
         dkgStore: dkgStore as DkgStorePort | undefined,
         logger,
       },
-      { recordThreshold: 5, flushIntervalMs: 5_000 },
+      { recordThreshold: 5 },
     );
+    // 주기 flush는 scheduler가 담당 (runner는 timer 없음)
+    const { installConvergenceScheduler } = await import('./lib/convergence-scheduler.js');
+    const convergenceScheduler = installConvergenceScheduler({
+      enabled: true,
+      convergencePipeline: pipeline,
+      logger,
+      intervalMs: 5_000,
+    });
 
     // ingest 완료 시 convergence pipeline에 traceId 알림
     // InMemoryRecordStore.getTraceIds()로 새 traceId를 주기적으로 수집
@@ -183,8 +191,12 @@ async function setupConvergence() {
       }
     }
 
-    process.on('SIGTERM', () => void pipeline.close());
-    process.on('SIGINT', () => void pipeline.close());
+    const closeConvergence = () => {
+      convergenceScheduler?.stop();
+      void pipeline.close();
+    };
+    process.on('SIGTERM', closeConvergence);
+    process.on('SIGINT', closeConvergence);
     logger.info({ threshold: 5, intervalMs: 5_000 }, 'convergence pipeline enabled');
   } catch (err) {
     logger.warn({ err }, 'convergence setup 실패');

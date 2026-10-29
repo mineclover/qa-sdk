@@ -12,7 +12,7 @@ def:
     - target: infra-service-operations
       type: refines
 sources:
-  - packages/ingest-server/src/stores/store-factory.ts
+  - packages/ingest-server/src/stores/runtime-stores.ts
   - packages/ingest-server/src/config/env.ts
   - packages/ingest-server/src/stores/clickhouse-record-store.ts
   - packages/ingest-server/src/stores/clickhouse-record-store.test.ts
@@ -29,13 +29,14 @@ sources:
 | 드라이버 | 설정 | 비고 |
 |---------|------|------|
 | `memory` | (기본) | D1+`:memory:` 자동 업그레이드, insights 활성. 실패 시 InMemory fallback |
+| `sqlite` | `SQLITE_PATH` (선택) | node-sqlite 위의 D1 core store. 미설정 시 `:memory:` |
 | `pg` | `TRACE_DATABASE_URL` 필수 | Drizzle + PostgreSQL (운영, `packages/store`) |
-| `d1` | `SQLITE_PATH` | D1/SQLite via SqlDriver (CF Workers) |
-| `clickhouse` | `CLICKHOUSE_URL` | ClickHouse RecordStore + OLAP AnalyticsStore (대량 분석) |
+| `d1` | `SQLITE_PATH` | `sqlite`의 deprecation alias — 경고 1회 후 sqlite로 처리 |
+| `clickhouse` | - | server 모드 미지원 — 경고 1회 후 SQLite로 처리. `ClickhouseRecordStore`·`ClickHouseAnalyticsStore`는 런타임 미배선 |
 
 - D1 store: 4개 core (Record, Trace, Session, Verdict) + 나머지 InMemory
-- ClickHouse runtime store: RecordStore만 StoreSet에 포함, 나머지 InMemory. OLAP 조회는 `ClickHouseAnalyticsStore` 별도 사용.
-- `store-factory.ts`에서 드라이버 선택 + 생성
+- CF Worker(`src/worker.ts`)는 D1 바인딩으로 store를 직접 만든다 (이 선택 경로 미사용)
+- `stores/runtime-stores.ts` `createRuntimeStores`가 server·worker 모드의 단일 선택 진입점 (`resolveStoreDriver`로 d1 alias 해석)
 - 상세: `docs/specs/ingest/ingest-infra-system/ingest-store-drivers.todo.md`
 
 ## Insights Driver (INSIGHTS_DRIVER)

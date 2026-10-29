@@ -6,7 +6,8 @@
  *
  * Window-based 배치 처리:
  * - traceId를 버퍼에 축적
- * - threshold(건수) 또는 timer(시간) 도달 시 flush
+ * - threshold(건수) 또는 버퍼 cap 도달 시 즉시 flush
+ * - 주기 flush는 convergence-scheduler가 단독으로 담당한다 (D-4 — runner는 timer를 갖지 않음)
  * - flush: recordStore에서 레코드 조회 → aggregateUsageData → flow trace/evidence → collectMetrics → metricsToObservations → DKG store 저장
  *         + 세션별 패턴 분류 → 이상 감지 → observation 생성
  *
@@ -30,6 +31,10 @@ import type {
   ObservationNode,
 } from '@qa-sdk/convergence';
 import type { Logger } from 'pino';
+import type { MetricsCollector } from './metrics-collector.js';
+
+/** convergence 버퍼에 쌓인 trace 수 gauge */
+export const CONVERGENCE_BUFFER_DEPTH_METRIC = 'convergence_buffer_depth';
 
 // ── 동적 import 대상 함수 시그니처 (구체 타입) ─────────
 
@@ -157,8 +162,6 @@ export interface DkgStorePort {
 export interface ConvergencePipelineConfig {
   /** 건수 기반 flush 임계값 (default: 100) */
   recordThreshold?: number;
-  /** 타이머 기반 flush 주기 ms (default: 60_000) */
-  flushIntervalMs?: number;
   /** 버퍼 최대 크기 — 메모리 cap (default: 10_000) */
   maxBufferSize?: number;
 }
@@ -171,6 +174,8 @@ export interface ConvergencePipelineDeps {
   catalogProvider: () => Catalog;
   dkgStore?: DkgStorePort;
   logger?: Logger;
+  /** 버퍼 depth gauge (optional) */
+  metrics?: Pick<MetricsCollector, 'setGauge'>;
 }
 
 export interface PatternFlushResult {
@@ -203,7 +208,6 @@ export class ConvergencePipelineRunner {
   private readonly deps: ConvergencePipelineDeps;
   private readonly config: Required<ConvergencePipelineConfig>;
   private buffer: string[] = [];
-  private timer: ReturnType<typeof setInterval> | null = null;
   private flushing = false;
   private closed = false;
 
@@ -211,20 +215,8 @@ export class ConvergencePipelineRunner {
     this.deps = deps;
     this.config = {
       recordThreshold: config?.recordThreshold ?? 100,
-      flushIntervalMs: config?.flushIntervalMs ?? 60_000,
       maxBufferSize: config?.maxBufferSize ?? 10_000,
     };
-
-    // 타이머 기반 flush 설치
-    this.timer = setInterval(() => {
-      void this.flush().catch((err) => {
-        this.deps.logger?.error({ err }, 'convergence scheduled flush failed');
-      });
-    }, this.config.flushIntervalMs);
-
-    if ('unref' in this.timer && typeof this.timer.unref === 'function') {
-      this.timer.unref();
-    }
   }
 
   /**
@@ -245,6 +237,8 @@ export class ConvergencePipelineRunner {
       this.buffer.push(id);
     }
 
+    this.reportBufferDepth();
+
     if (this.buffer.length >= this.config.recordThreshold) {
       void this.flush().catch((err) => {
         this.deps.logger?.error({ err }, 'convergence threshold flush failed');
@@ -262,6 +256,7 @@ export class ConvergencePipelineRunner {
     // 버퍼 스왑 (flush 중 새 notification 수용)
     const traceIds = this.buffer;
     this.buffer = [];
+    this.reportBufferDepth();
 
     try {
       return await this.runPipeline(traceIds);
@@ -276,13 +271,9 @@ export class ConvergencePipelineRunner {
     }
   }
 
-  /** 정리: 타이머 해제 + 잔여 flush. */
+  /** 정리: 신규 알림 차단 + 잔여 flush. */
   async close(): Promise<void> {
     this.closed = true;
-    if (this.timer) {
-      clearInterval(this.timer);
-      this.timer = null;
-    }
     // 잔여 버퍼 flush
     if (this.buffer.length > 0) {
       await this.flush();
@@ -294,6 +285,10 @@ export class ConvergencePipelineRunner {
   }
 
   // ── Private ────────────────────────────────────────
+
+  private reportBufferDepth(): void {
+    this.deps.metrics?.setGauge(CONVERGENCE_BUFFER_DEPTH_METRIC, this.buffer.length);
+  }
 
   /** 이전 윈도우의 패턴 통계 (비율 비교용) */
   private previousPatternStats: PatternStats[] = [];

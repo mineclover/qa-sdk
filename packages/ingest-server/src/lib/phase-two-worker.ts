@@ -16,29 +16,29 @@ import {
   type VerdictStore,
 } from '@qa-sdk/core';
 import { computePendingVerdicts, reconstructPendingTraces } from '@qa-sdk/engine';
-import { aggregateMetrics } from './metric-aggregator.js';
-import { decodeAddressContext } from './decode-client.js';
 import type { Logger } from 'pino';
+import { aggregateMetrics } from './metric-aggregator.js';
+import type { MetricsCounterPort } from './metrics-collector.js';
+import {
+  countPhaseTwoFailure,
+  runPostVerdictStages,
+  type ConvergencePipelinePort,
+  type PhaseTwoStage,
+  type TransitionEnginePort,
+} from './post-verdict-stages.js';
+
+export {
+  DECODE_SKIPPED_METRIC,
+  PHASE_TWO_FAILURES_METRIC,
+  type ConvergencePipelinePort,
+  type PhaseTwoStage,
+  type TransitionEnginePort,
+} from './post-verdict-stages.js';
 
 export const PHASE_TWO_TASK_QUEUE_OPTIONS = {
   retryAttempts: 2,
   retryDelayMs: 1_000,
 } as const satisfies TaskQueueOptions;
-
-/** convergence 파이프라인 최소 인터페이스 (순환 의존 방지) */
-export interface ConvergencePipelinePort {
-  notifyCompletion(traceIds: readonly string[]): void;
-}
-
-/** TransitionFunctions 최소 인터페이스 (순환 의존 방지) */
-export interface TransitionEnginePort {
-  processSession(input: { readonly sessionId: string; readonly events: readonly unknown[] }): {
-    readonly instances: readonly unknown[];
-    readonly violations: readonly unknown[];
-    readonly unmatchedCount: number;
-  };
-  decodeCtx(catalog: unknown, encoded: Record<string, string>): Record<string, string>;
-}
 
 export interface PhaseTwoWorkerDeps {
   recordStore: RecordStore;
@@ -55,7 +55,13 @@ export interface PhaseTwoWorkerDeps {
   /** decode-service URL — 설정 시 address_context 디코딩에 외부 서비스 사용 */
   decodeServiceUrl?: string;
   logger?: Logger;
+  /** Phase 2 단계 실패·decode skip counter (optional) */
+  metricsCollector?: MetricsCounterPort;
   taskQueue?: TaskQueue<TaskPayload>;
+}
+
+function countFailure(deps: Pick<PhaseTwoWorkerDeps, 'metricsCollector'>, stage: PhaseTwoStage) {
+  countPhaseTwoFailure(deps.metricsCollector, stage);
 }
 
 export function buildReconstructionTask(traceId: string): TaskPayload {
@@ -101,6 +107,7 @@ export async function processPhaseTwoTask(
       'phase-two job completed',
     );
   } catch (error) {
+    countFailure(deps, task.phase);
     deps.logger?.error(
       {
         err: error,
@@ -123,6 +130,7 @@ export async function processPendingPhaseTwo(deps: PhaseTwoWorkerDeps): Promise<
     },
     {
       onError: (traceId, error) => {
+        countFailure(deps, 'reconstruction');
         deps.logger?.error(
           {
             err: error,
@@ -143,7 +151,7 @@ export async function processPendingPhaseTwo(deps: PhaseTwoWorkerDeps): Promise<
     return;
   }
 
-  await computePendingVerdicts(
+  const verdictResult = await computePendingVerdicts(
     {
       traceStore: deps.traceStore,
       sessionStore: deps.sessionStore,
@@ -155,6 +163,7 @@ export async function processPendingPhaseTwo(deps: PhaseTwoWorkerDeps): Promise<
     reconstructResult.reconstructedTraceIds,
     {
       onError: (traceId, error) => {
+        countFailure(deps, 'verdict');
         deps.logger?.error(
           {
             err: error,
@@ -166,75 +175,12 @@ export async function processPendingPhaseTwo(deps: PhaseTwoWorkerDeps): Promise<
     },
   );
 
-  // ── Phase 2.5: Transition Matching (에러 격리) ──────
-  if (deps.transitionEngine && deps.transitionCatalog) {
-    const transitionEngine = deps.transitionEngine;
-    const transitionCatalog = deps.transitionCatalog;
-    try {
-      for (const traceId of reconstructResult.reconstructedTraceIds) {
-        const records = await deps.recordStore.findByTraceId(traceId);
-        // address_context가 있는 레코드만 디코딩 + 전이 매칭
-        const withCtx = records.filter(
-          (r) => r.addressContext && typeof r.addressContext === 'object',
-        );
-        const decodedEvents: Array<Record<string, unknown>> = [];
-        for (const r of withCtx) {
-          const ctx = r.addressContext as Record<string, string>;
-          // 1) decode-service 우선 시도 (설정된 경우)
-          let decoded: Record<string, string> | undefined;
-          if (deps.decodeServiceUrl) {
-            const result = await decodeAddressContext(deps.decodeServiceUrl, ctx);
-            if (result) {
-              decoded = {};
-              for (const [k, v] of Object.entries(result)) {
-                for (const [ek, ev] of Object.entries(v.entities)) {
-                  decoded[`${k}.${ek}`] = ev;
-                }
-              }
-            }
-          }
-          // 2) 로컬 fallback
-          if (!decoded) {
-            decoded = transitionEngine.decodeCtx(transitionCatalog, ctx);
-          }
-          decodedEvents.push({
-            ...r,
-            log_id: r.logId ?? '',
-            timestamp: r.createdAt ?? r.timestamp ?? '',
-            address_context: decoded,
-          });
-        }
-
-        if (decodedEvents.length > 0) {
-          const result = deps.transitionEngine.processSession({
-            sessionId: traceId,
-            events: decodedEvents,
-          });
-
-          if (result.violations.length > 0) {
-            deps.logger?.warn(
-              { traceId, violations: result.violations.length, instances: result.instances.length },
-              'transition violations detected',
-            );
-          }
-        }
-      }
-    } catch (error) {
-      deps.logger?.error(
-        { err: error },
-        'transition matching failed (Phase 2.5) — verdict unaffected',
-      );
-    }
-  }
-
-  // convergence 파이프라인에 완료 알림 (에러 격리)
-  if (deps.convergencePipeline) {
-    try {
-      deps.convergencePipeline.notifyCompletion(reconstructResult.reconstructedTraceIds);
-    } catch (error) {
-      deps.logger?.error({ err: error }, 'convergence notification failed');
-    }
-  }
+  // ── Phase 2.5/3: verdict가 실패하지 않은 trace만 (queue 경로와 동일 조건) ──
+  const failed = new Set(verdictResult.failed);
+  await runPostVerdictStages(
+    deps,
+    reconstructResult.reconstructedTraceIds.filter((traceId) => !failed.has(traceId)),
+  );
 }
 
 export async function registerTaskQueueWorker(
@@ -270,6 +216,7 @@ async function aggregateMetricsForPendingTraces(deps: PhaseTwoWorkerDeps): Promi
         'metric aggregation completed',
       );
     } catch (error) {
+      countFailure(deps, 'metric_aggregation');
       deps.logger?.error({ err: error, traceId: trace.traceId }, 'metric aggregation failed');
     }
   }
@@ -301,6 +248,9 @@ async function computeTraceVerdictForTask(
   if (result.failed.includes(traceId)) {
     throw toWorkerTaskError('verdict', traceId, capturedFailure);
   }
+
+  // ── Phase 2.5/3: inline 경로와 같은 공용 단계 (fail-open — job 실패로 이어지지 않음) ──
+  await runPostVerdictStages(deps, [traceId]);
 }
 
 async function reconstructTraceForTask(traceId: string, deps: PhaseTwoWorkerDeps): Promise<void> {

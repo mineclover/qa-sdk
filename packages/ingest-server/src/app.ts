@@ -46,7 +46,7 @@ import {
 import { createShutdownMiddleware } from './middleware/shutdown.js';
 import { createNoopCleanupStore, type CleanupStore } from './lib/cleanup.js';
 import type { DebugStore } from './lib/debug-store.js';
-import type { ConvergencePipelinePort } from './lib/phase-two-worker.js';
+import type { ConvergencePipelinePort, TransitionEnginePort } from './lib/phase-two-worker.js';
 import type { MetricsCollector } from './lib/metrics-collector.js';
 import type { CatalogValidator } from './lib/catalog-validator.js';
 import { createInsightsRoutes } from './routes/insights.js';
@@ -75,6 +75,11 @@ export interface AppDeps {
   registryValidator?: RegistryEventValidator;
   taskQueue?: TaskQueue<TaskPayload>;
   convergencePipeline?: ConvergencePipelinePort;
+  /** Phase 2.5 transition engine (inline 경로, transitionCatalog와 함께 필요) */
+  transitionEngine?: TransitionEnginePort;
+  transitionCatalog?: unknown;
+  /** decode-service URL — transition 입력 address_context 디코딩 */
+  decodeServiceUrl?: string;
   metricsCollector?: MetricsCollector;
   getPatternStats?: () => PatternStatsCache | null;
   withTraceTransaction?: TraceTransactionRunner;

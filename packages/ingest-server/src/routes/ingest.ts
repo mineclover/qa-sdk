@@ -30,8 +30,10 @@ import {
   PHASE_TWO_TASK_QUEUE_OPTIONS,
   processPendingPhaseTwo,
   type ConvergencePipelinePort,
+  type TransitionEnginePort,
 } from '../lib/phase-two-worker.js';
 import type { CatalogValidator } from '../lib/catalog-validator.js';
+import type { MetricsCollector } from '../lib/metrics-collector.js';
 import { extractKeyObservations } from '../lib/extract-key-observations.js';
 
 export type RegistryValidationMode = 'strict' | 'warn' | 'off';
@@ -60,7 +62,12 @@ export interface IngestDeps {
   withTraceTransaction?: TraceTransactionRunner;
   taskQueue?: TaskQueue<TaskPayload>;
   convergencePipeline?: ConvergencePipelinePort;
-  metricsCollector?: { inc(name: string, labels?: Record<string, string>, delta?: number): void };
+  /** Phase 2.5 transition engine (inline 경로, transitionCatalog와 함께 필요) */
+  transitionEngine?: TransitionEnginePort;
+  transitionCatalog?: unknown;
+  /** decode-service URL — transition 입력 address_context 디코딩 */
+  decodeServiceUrl?: string;
+  metricsCollector?: Pick<MetricsCollector, 'inc' | 'increment'>;
   logger?: Logger;
   /** 건전성 검증용 prefix 메타 (설정 시 address_context 건전성 검증 활성화) */
   knownPrefixes?: ReadonlySet<string>;
