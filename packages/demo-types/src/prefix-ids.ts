@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" (hash: 9bf649aab9a4) at 2026-06-03T23:14:15
+// Generated from Catalog "demo" (hash: fd5672339df7) by codegen-core@0.1.0
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 /** Catalog prefix 이름 리터럴 유니온 (68개) */
@@ -436,9 +436,9 @@ export const VERSION_META = {
   /** Catalog ID */
   catalogId: 'demo' as const,
   /** Catalog 구조 content hash (SHA-256 prefix 12자) */
-  contentHash: '9bf649aab9a4' as const,
-  /** 생성 시각 (ISO 8601) */
-  generatedAt: '2026-06-03T23:14:15.219Z' as const,
+  contentHash: 'fd5672339df7' as const,
+  /** 생성기 식별자 (name@version) */
+  generator: 'codegen-core@0.1.0' as const,
   /** prefix별 version (생성 시점 기준) */
   prefixVersions: {
     auth_event: 'v2',
@@ -513,4 +513,4 @@ export const VERSION_META = {
 } as const;
 
 /** GENERATION — 빌드 시점 version 식별자. SDK 부트 시 전달. */
-export const GENERATION = 'demo:9bf649aab9a4' as const;
+export const GENERATION = 'demo:fd5672339df7' as const;

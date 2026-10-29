@@ -1,7 +1,7 @@
 /**
  * codegen 라이프사이클 통합 테스트.
  *
- * 1. VERSION_META — content hash, prefix versions, 생성 시각
+ * 1. VERSION_META — content hash, prefix versions, generator
  * 2. GENERATION — catalogId:hash 형식, SDK 부트에 전달
  * 3. SNAPSHOT_SUPPLY — prefix별 스냅샷 전략
  * 4. sdk encode/decode — 다중 prefix 라운드트립
@@ -38,9 +38,9 @@ describe('VERSION_META', () => {
     expect(VERSION_META.contentHash).toMatch(/^[0-9a-f]{12}$/);
   });
 
-  it('generatedAt이 ISO 8601 형식이다', () => {
-    expect(() => new Date(VERSION_META.generatedAt)).not.toThrow();
-    expect(new Date(VERSION_META.generatedAt).toISOString()).toBe(VERSION_META.generatedAt);
+  it('generator가 name@version 형식이고 생성 시각은 기록하지 않는다', () => {
+    expect(VERSION_META.generator).toMatch(/^codegen-core@\d+\.\d+\.\d+/);
+    expect(VERSION_META).not.toHaveProperty('generatedAt');
   });
 
   it('prefixVersions에 모든 PREFIX_IDS가 포함된다', () => {

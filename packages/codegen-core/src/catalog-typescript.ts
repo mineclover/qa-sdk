@@ -17,6 +17,7 @@
 import { createHash } from 'node:crypto';
 import type { Catalog, DkgConfig } from '@qa-sdk/core';
 import { latestPrefixVersion, encodePrefix, decodePrefix } from '@qa-sdk/core';
+import { GENERATOR_NAME, GENERATOR_VERSION } from './generator-info.js';
 import { toPascal, toTsConstKey } from './naming.js';
 
 // ── Types ──────────────────────────────────────────────
@@ -39,22 +40,23 @@ export interface CatalogCodegenOptions {
 
 // ── Hash ───────────────────────────────────────────────
 
+/** [key, value] 엔트리를 key의 UTF-16 code unit 순서로 정렬 — locale·OS와 무관한 결정론적 순서 */
+function byKey(a: readonly [string, unknown], b: readonly [string, unknown]): number {
+  return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0;
+}
+
 /** Catalog의 구조적 content hash (SHA-256 hex prefix 12자) */
 function computeCatalogHash(catalog: Catalog): string {
   // axes entries + capacity, prefix labels + dims 구조를 해시
   const parts: string[] = [catalog.id];
-  for (const [id, axis] of Object.entries(catalog.axes).toSorted((a, b) =>
-    a[0].localeCompare(b[0]),
-  )) {
+  for (const [id, axis] of Object.entries(catalog.axes).toSorted(byKey)) {
     const vkeys = Object.keys(axis.versions).toSorted();
     for (const vk of vkeys) {
       const snap = axis.versions[vk];
       parts.push(`${id}:${vk}:[${snap.entries.join(',')}]:${snap.capacity ?? snap.entries.length}`);
     }
   }
-  for (const [id, prefix] of Object.entries(catalog.prefixes).toSorted((a, b) =>
-    a[0].localeCompare(b[0]),
-  )) {
+  for (const [id, prefix] of Object.entries(catalog.prefixes).toSorted(byKey)) {
     parts.push(
       `${id}:${prefix.labels.join(',')}:${prefix.versions.map((v) => v.version).join(',')}`,
     );
@@ -73,9 +75,10 @@ function buildPrefixVersionMap(catalog: Catalog, lockVersion?: string): Record<s
 
 // ── Header ─────────────────────────────────────────────
 
-function header(catalogId: string, contentHash: string, timestamp: string): string {
+/** 생성물 공통 헤더 — 실행 시각·환경 값은 넣지 않는다 (같은 입력 → 같은 바이트) */
+function header(catalogId: string, contentHash: string): string {
   return [
-    `// Generated from Catalog "${catalogId}" (hash: ${contentHash}) at ${timestamp.slice(0, 19)}`,
+    `// Generated from Catalog "${catalogId}" (hash: ${contentHash}) by ${GENERATOR_NAME}@${GENERATOR_VERSION}`,
     `// !! 자동 생성 파일 — 직접 수정 금지 !!`,
     ``,
   ].join('\n');
@@ -90,23 +93,22 @@ export function generateCatalogTypes(
 ): CatalogCodegenResult {
   const contentHash = computeCatalogHash(catalog);
   const prefixVersions = buildPrefixVersionMap(catalog, options?.lockVersion);
-  const ts = new Date().toISOString(); // 전 파일 동일 timestamp
   const files: CatalogCodegenFile[] = [];
 
   files.push({
     path: 'prefix-ids.ts',
-    content: genPrefixIds(catalog, contentHash, prefixVersions, ts),
+    content: genPrefixIds(catalog, contentHash, prefixVersions),
   });
-  files.push({ path: 'axes.ts', content: genAxes(catalog, contentHash, ts) });
-  files.push({ path: 'dims.ts', content: genDims(catalog, contentHash, ts) });
-  files.push({ path: 'sdk-factory.ts', content: genSdkFactory(catalog, contentHash, ts) });
-  files.push({ path: 'context-types.ts', content: genContextTypes(catalog, contentHash, ts) });
+  files.push({ path: 'axes.ts', content: genAxes(catalog, contentHash) });
+  files.push({ path: 'dims.ts', content: genDims(catalog, contentHash) });
+  files.push({ path: 'sdk-factory.ts', content: genSdkFactory(catalog, contentHash) });
+  files.push({ path: 'context-types.ts', content: genContextTypes(catalog, contentHash) });
 
   if (dkgConfig) {
-    files.push({ path: 'dsl.ts', content: genDsl(catalog, dkgConfig, contentHash, ts) });
+    files.push({ path: 'dsl.ts', content: genDsl(catalog, dkgConfig, contentHash) });
   }
 
-  files.push({ path: 'index.ts', content: genBarrel(catalog, !!dkgConfig, contentHash, ts) });
+  files.push({ path: 'index.ts', content: genBarrel(catalog, !!dkgConfig, contentHash) });
 
   return { files, contentHash };
 }
@@ -117,13 +119,12 @@ function genPrefixIds(
   catalog: Catalog,
   contentHash: string,
   prefixVersions: Record<string, string>,
-  ts: string,
 ): string {
   const prefixIds = Object.keys(catalog.prefixes).toSorted();
   const axisIds = Object.keys(catalog.axes).toSorted();
   const tableIds = Object.keys(catalog.tables ?? {}).toSorted();
 
-  const lines = [header(catalog.id, contentHash, ts)];
+  const lines = [header(catalog.id, contentHash)];
 
   // PrefixId
   lines.push(`/** Catalog prefix 이름 리터럴 유니온 (${prefixIds.length}개) */`);
@@ -171,13 +172,11 @@ function genPrefixIds(
   lines.push(`  catalogId: "${catalog.id}" as const,`);
   lines.push(`  /** Catalog 구조 content hash (SHA-256 prefix 12자) */`);
   lines.push(`  contentHash: "${contentHash}" as const,`);
-  lines.push(`  /** 생성 시각 (ISO 8601) */`);
-  lines.push(`  generatedAt: "${ts}" as const,`);
+  lines.push(`  /** 생성기 식별자 (name@version) */`);
+  lines.push(`  generator: "${GENERATOR_NAME}@${GENERATOR_VERSION}" as const,`);
   lines.push(`  /** prefix별 version (생성 시점 기준) */`);
   lines.push(`  prefixVersions: {`);
-  for (const [prefixId, version] of Object.entries(prefixVersions).toSorted((a, b) =>
-    a[0].localeCompare(b[0]),
-  )) {
+  for (const [prefixId, version] of Object.entries(prefixVersions).toSorted(byKey)) {
     lines.push(`    "${prefixId}": "${version}",`);
   }
   lines.push(`  } as const,`);
@@ -192,12 +191,10 @@ function genPrefixIds(
 
 // ── axes.ts ────────────────────────────────────────────
 
-function genAxes(catalog: Catalog, contentHash: string, ts: string): string {
-  const lines = [header(catalog.id, contentHash, ts)];
+function genAxes(catalog: Catalog, contentHash: string): string {
+  const lines = [header(catalog.id, contentHash)];
 
-  for (const [axisId, axis] of Object.entries(catalog.axes).toSorted((a, b) =>
-    a[0].localeCompare(b[0]),
-  )) {
+  for (const [axisId, axis] of Object.entries(catalog.axes).toSorted(byKey)) {
     const versionKeys = Object.keys(axis.versions);
     const latestKey = versionKeys[versionKeys.length - 1];
     const latest = axis.versions[latestKey];
@@ -230,15 +227,13 @@ function genAxes(catalog: Catalog, contentHash: string, ts: string): string {
 
 // ── dims.ts ────────────────────────────────────────────
 
-function genDims(catalog: Catalog, contentHash: string, ts: string): string {
-  const lines = [header(catalog.id, contentHash, ts)];
+function genDims(catalog: Catalog, contentHash: string): string {
+  const lines = [header(catalog.id, contentHash)];
 
   lines.push(`import type * as Axes from "./axes.js";`);
   lines.push(``);
 
-  const prefixEntries = Object.entries(catalog.prefixes).toSorted((a, b) =>
-    a[0].localeCompare(b[0]),
-  );
+  const prefixEntries = Object.entries(catalog.prefixes).toSorted(byKey);
   const dimInterfaces: string[] = [];
 
   for (const [prefixId, prefix] of prefixEntries) {
@@ -293,8 +288,8 @@ function genDims(catalog: Catalog, contentHash: string, ts: string): string {
 
 // ── dsl.ts ─────────────────────────────────────────────
 
-function genDsl(_catalog: Catalog, dkgConfig: DkgConfig, contentHash: string, ts: string): string {
-  const lines = [header(_catalog.id, contentHash, ts)];
+function genDsl(_catalog: Catalog, dkgConfig: DkgConfig, contentHash: string): string {
+  const lines = [header(_catalog.id, contentHash)];
 
   // DSL bundles
   for (const dsl of dkgConfig.dslBundles) {
@@ -360,8 +355,8 @@ function genDsl(_catalog: Catalog, dkgConfig: DkgConfig, contentHash: string, ts
 
 // ── sdk-factory.ts ─────────────────────────────────────
 
-function genSdkFactory(catalog: Catalog, contentHash: string, ts: string): string {
-  const lines = [header(catalog.id, contentHash, ts)];
+function genSdkFactory(catalog: Catalog, contentHash: string): string {
+  const lines = [header(catalog.id, contentHash)];
 
   lines.push(`import { createIndexSDK } from "@qa-sdk/codec";`);
   lines.push(``);
@@ -401,9 +396,7 @@ function genSdkFactory(catalog: Catalog, contentHash: string, ts: string): strin
   lines.push(`  prefixes: {`);
 
   // prefix — axis dims만 포함
-  for (const [prefixId, prefix] of Object.entries(catalog.prefixes).toSorted((a, b) =>
-    a[0].localeCompare(b[0]),
-  )) {
+  for (const [prefixId, prefix] of Object.entries(catalog.prefixes).toSorted(byKey)) {
     const axisDims = prefix.labels.filter((l) => prefix.dims[l]?.kind === 'axis');
     if (axisDims.length === 0) continue;
 
@@ -420,9 +413,7 @@ function genSdkFactory(catalog: Catalog, contentHash: string, ts: string): strin
   // SNAPSHOT_SUPPLY — prefix별 스냅샷 전략
   lines.push(`/** prefix별 snapshot supply 전략 */`);
   lines.push(`export const SNAPSHOT_SUPPLY = {`);
-  for (const [prefixId, prefix] of Object.entries(catalog.prefixes).toSorted((a, b) =>
-    a[0].localeCompare(b[0]),
-  )) {
+  for (const [prefixId, prefix] of Object.entries(catalog.prefixes).toSorted(byKey)) {
     const hasPrefixRef = Object.values(prefix.dims).some((d) => d.kind === 'prefix_ref');
     const strategy = hasPrefixRef ? 'envelope' : 'implicit';
     lines.push(`  "${prefixId}": "${strategy}" as const,`);
@@ -435,8 +426,8 @@ function genSdkFactory(catalog: Catalog, contentHash: string, ts: string): strin
 
 // ── context-types.ts ───────────────────────────────────
 
-function genContextTypes(catalog: Catalog, contentHash: string, ts: string): string {
-  const lines = [header(catalog.id, contentHash, ts)];
+function genContextTypes(catalog: Catalog, contentHash: string): string {
+  const lines = [header(catalog.id, contentHash)];
 
   lines.push(`import type { QaContext } from "@qa-sdk/context";`);
   lines.push(`import type { ServiceBootConfig } from "@qa-sdk/core";`);
@@ -602,8 +593,8 @@ export function testMigration(
 
 // ── index.ts (barrel) ──────────────────────────────────
 
-function genBarrel(_catalog: Catalog, hasDkg: boolean, contentHash: string, ts: string): string {
-  const lines = [header(_catalog.id, contentHash, ts)];
+function genBarrel(_catalog: Catalog, hasDkg: boolean, contentHash: string): string {
+  const lines = [header(_catalog.id, contentHash)];
 
   lines.push(`export * from "./prefix-ids.js";`);
   lines.push(`export * from "./axes.js";`);

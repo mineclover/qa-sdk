@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" (hash: 9bf649aab9a4) at 2026-06-03T23:14:15
+// Generated from Catalog "demo" (hash: fd5672339df7) by codegen-core@0.1.0
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 /** action — 액션 (entries: 4, capacity: 32) */
