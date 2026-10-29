@@ -1,15 +1,8 @@
 {
-  "//": "테스트 파일 전체 타입 검사 (expectTypeOf 단언 포함). exclude 5개는 registry NestJS 전환(2026-03-27)으로 사라진 Hono createApp API를 쓰는 describe.skip 테스트 — 이식 또는 삭제 결정 대기 (docs/proposals/swc-next-qa-sdk-optimization/06-feature-cleanup-candidates.md T-6)",
+  "//": "테스트 파일 전체 타입 검사 (expectTypeOf 단언 포함)",
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["src"],
-  "exclude": [
-    "src/registry-hardening-e2e.test.ts",
-    "src/registry-schema-diff-e2e.test.ts",
-    "src/registry-schema-import-e2e.test.ts",
-    "src/registry-service-e2e.test.ts",
-    "src/registry-service-format-exploration.test.ts"
-  ]
+  "include": ["src"]
 }

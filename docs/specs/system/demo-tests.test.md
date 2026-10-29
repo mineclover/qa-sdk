@@ -18,7 +18,7 @@ def:
 sources:
   - packages/demo-tests/src/schema-consistency.test.ts
   - packages/demo-tests/src/index-meta/invariants.test.ts
-  - packages/demo-tests/src/registry-service-e2e.test.ts
+  - packages/registry-service/src/e2e/registry-service-e2e.test.ts
   - packages/demo-tests/src/permission-engine/scenario.test.ts
   - packages/demo-tests/src/merge-contract/error-parity.test.ts
 ---
@@ -35,7 +35,7 @@ sources:
 |-----------|--------|
 | demo-snapshot service/role/feature consistency | `packages/demo-tests/src/schema-consistency.test.ts` |
 | index-meta encode/decode invariant gaps | `packages/demo-tests/src/index-meta/invariants.test.ts` |
-| registry service integration path | `packages/demo-tests/src/registry-service-e2e.test.ts` |
+| registry service integration path | `packages/registry-service/src/e2e/registry-service-e2e.test.ts` |
 | permission scenario compatibility | `packages/demo-tests/src/permission-engine/scenario.test.ts` |
 | merge-contract error parity | `packages/demo-tests/src/merge-contract/error-parity.test.ts` |
 
