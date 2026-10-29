@@ -43,8 +43,8 @@ Phase 2.6: Convergence Notification (transition 결과 포함)
 | 변수 | 기본값 | 설명 |
 |------|--------|------|
 | `TRANSITION_ENGINE_ENABLED` | `false` | Phase 2.5 활성화 |
-| `TRANSITION_VIOLATION_MODE` | `"warn"` | `"strict"` = 위반 시 에러, `"warn"` = 로깅만 |
-| `TRANSITION_STATE_PATH` | — | SqliteStateStore 경로 (미설정 시 InMemory) |
+| `TRANSITION_VIOLATION_MODE` | — | **미구현·제거됨** (2026-10-29). 엔진이 specs만 받아 배선할 자리가 없어 env 스키마에서 삭제 — `docs/proposals/swc-next-qa-sdk-optimization/00-code-inventory.md` X-12 |
+| `TRANSITION_STATE_PATH` | — | **미구현·제거됨** (2026-10-29). 세션마다 InMemoryStateStore 사용. 위와 같음 |
 
 ## Metric 정의
 

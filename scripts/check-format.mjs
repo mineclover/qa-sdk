@@ -17,7 +17,7 @@ const formatExtensions = new Set([
   '.tsx',
 ]);
 const generatedPath =
-  /(^|\/)(?:\.omx|\.ralph-tui|coverage|dist|node_modules|test-results)(\/|$)|(?:^|\/)(?:[^/]+\.golden\/|packages\/docs-explorer\/public\/data\.json|packages\/platform-demo\/public\/def-catalog-data\.json$)/;
+  /(^|\/)(?:\.omx|\.ralph-tui|coverage|dist|node_modules|test-results)(\/|$)|(?:^|\/)(?:[^/]+\.golden\/|packages\/docs-explorer\/public\/data\.json|packages\/platform-demo\/public\/def-catalog-data\.json$|packages\/browser-codec\/src\/demo-catalog-browser\.ts$)/;
 
 const args = process.argv.slice(2).filter((arg, index) => !(index === 0 && arg === '--'));
 const all = args.includes('--all');
