@@ -53,6 +53,8 @@ export interface RuntimeStores {
   db: ReturnType<typeof createDb> | null;
   /** SQLite 모드 시 drizzle 인스턴스 (InsightsStore 공유용) */
   d1Db?: unknown;
+  /** SQLite 모드 시 raw SQL 드라이버 (`/v1/labels` 등 SQL 직접 사용 라우트 공유용) */
+  sqlDriver?: import('index-meta').SqlDriver;
   dlqStore: DlqStore;
   graphStore: GraphStore;
   /** packed_key 관측 추적 (U-4). InMemory fallback에는 구현이 없어 undefined */
@@ -125,6 +127,7 @@ async function createSqliteStores(
   return {
     db: null,
     d1Db,
+    sqlDriver: driver,
     dlqStore: new D1DlqStore(d1Db),
     graphStore: new D1GraphStore(d1Db),
     keyObservationStore: new D1KeyObservationStore(d1Db),

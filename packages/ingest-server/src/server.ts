@@ -75,7 +75,7 @@ async function startServer() {
   const stores = await loadRuntimeStores(logger);
   const appLifecycle = createAppLifecycle();
   const recordStreamBroker = new RecordStreamBroker();
-  const debugStore = new InMemoryDebugStore();
+  const debugStore = new InMemoryDebugStore({ ttlMs: env.DEBUG_STORE_TTL_MS });
   const streamConnectionRegistry = createStreamConnectionRegistry();
   const cleanupStore = env.TRACE_DATABASE_URL
     ? createDatabaseCleanupStore(env.TRACE_DATABASE_URL)
@@ -369,6 +369,7 @@ async function startServer() {
     keyObservationStore: stores.keyObservationStore,
     snapshotGate,
     checkSnapshotRegistry,
+    sqlDriver: stores.sqlDriver,
     transitionEngine,
     transitionCatalog,
     decodeServiceUrl: env.DECODE_SERVICE_URL,
@@ -408,15 +409,15 @@ async function startServer() {
   injectWebSocket(server);
 
   // gRPC Debug Server (GRPC_PORT 설정 시 활성화)
-  const grpcPort = process.env['GRPC_PORT'];
-  if (grpcPort) {
+  const grpcPort = env.GRPC_PORT;
+  if (grpcPort !== undefined) {
     import('./grpc/debug-server.js')
       .then(({ startGrpcDebugServer }) => {
         startGrpcDebugServer({
           recordStreamBroker,
           traceStore: stores.traceStore,
           logger,
-          port: parseInt(grpcPort),
+          port: grpcPort,
         }).catch((err) => logger.warn({ err }, 'gRPC server failed to start'));
         return undefined;
       })
