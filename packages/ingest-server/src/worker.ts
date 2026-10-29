@@ -18,12 +18,10 @@ import { D1TraceStore } from './stores/d1-trace-store.js';
 import { D1SessionStore } from './stores/d1-session-store.js';
 import { D1VerdictStore } from './stores/d1-verdict-store.js';
 import type { D1Db } from './stores/d1-db-type.js';
-import {
-  InMemoryTransmissionStore,
-  InMemoryGraphStore,
-  InMemoryScenarioSpecStore,
-  InMemoryDlqStore,
-} from '@qa-sdk/store';
+import { D1TransmissionStore } from './stores/d1-transmission-store.js';
+import { D1GraphStore } from './stores/d1-graph-store.js';
+import { D1ScenarioSpecStore } from './stores/d1-scenario-spec-store.js';
+import { D1DlqStore } from './stores/d1-dlq-store.js';
 import { InMemoryDebugStore } from './lib/in-memory-debug-store.js';
 import { RecordStreamBroker } from './lib/record-stream-broker.js';
 
@@ -156,10 +154,10 @@ export default {
       traceStore: new D1TraceStore(db),
       sessionStore: new D1SessionStore(db),
       verdictStore: new D1VerdictStore(db),
-      transmissionStore: new InMemoryTransmissionStore(),
-      graphStore: new InMemoryGraphStore(),
-      scenarioSpecStore: new InMemoryScenarioSpecStore(),
-      dlqStore: new InMemoryDlqStore(),
+      transmissionStore: new D1TransmissionStore(db),
+      graphStore: new D1GraphStore(db),
+      scenarioSpecStore: new D1ScenarioSpecStore(db),
+      dlqStore: new D1DlqStore(db),
       debugStore: new InMemoryDebugStore(),
       recordStreamBroker: broker,
       sqlDriver: driver,

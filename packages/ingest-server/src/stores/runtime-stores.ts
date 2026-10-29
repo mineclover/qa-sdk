@@ -113,6 +113,10 @@ async function createSqliteStores(
   const { D1SessionStore } = await import('./d1-session-store.js');
   const { D1VerdictStore } = await import('./d1-verdict-store.js');
   const { D1KeyObservationStore } = await import('./d1-key-observation-store.js');
+  const { D1DlqStore } = await import('./d1-dlq-store.js');
+  const { D1GraphStore } = await import('./d1-graph-store.js');
+  const { D1ScenarioSpecStore } = await import('./d1-scenario-spec-store.js');
+  const { D1TransmissionStore } = await import('./d1-transmission-store.js');
 
   const driver = new NodeSqliteDriver(sqlitePath, null);
   const plainDb = drizzle({ client: driver.$client as import('node:sqlite').DatabaseSync });
@@ -121,14 +125,14 @@ async function createSqliteStores(
   return {
     db: null,
     d1Db,
-    dlqStore: new InMemoryDlqStore(),
-    graphStore: new InMemoryGraphStore(),
+    dlqStore: new D1DlqStore(d1Db),
+    graphStore: new D1GraphStore(d1Db),
     keyObservationStore: new D1KeyObservationStore(d1Db),
     recordStore: new D1RecordStore(d1Db),
-    scenarioSpecStore: new InMemoryScenarioSpecStore(),
+    scenarioSpecStore: new D1ScenarioSpecStore(d1Db),
     sessionStore: new D1SessionStore(d1Db),
     traceStore: new D1TraceStore(d1Db),
-    transmissionStore: new InMemoryTransmissionStore(),
+    transmissionStore: new D1TransmissionStore(d1Db),
     verdictStore: new D1VerdictStore(d1Db),
   };
 }

@@ -100,14 +100,12 @@ SIGTERM/SIGINT 수신
 - `DrizzleTransmissionStore`, `DrizzleVerdictStore`
 
 **non-pg 구성:**
-- `D1RecordStore`, `D1TraceStore`, `D1SessionStore`, `D1VerdictStore`
-- `InMemoryDlqStore`, `InMemoryGraphStore`, `InMemoryScenarioSpecStore`, `InMemoryTransmissionStore`
-- `keyObservationStore`는 런타임 부팅 경로에 아직 연결되지 않았다.
+- `D1RecordStore`, `D1TraceStore`, `D1SessionStore`, `D1VerdictStore`, `D1KeyObservationStore`
+- `D1DlqStore`, `D1GraphStore`, `D1ScenarioSpecStore`, `D1TransmissionStore` — 같은 SQLite 파일(`SQLITE_PATH`)에 저장되어 재시작 후에도 유지된다. CF worker도 같은 D1 store를 쓴다
 
 **fallback 모드:** 동일 인터페이스의 `InMemory*Store` 사용 (DB 없이 동작).
 
-**런타임 미배선 어댑터 (후속 판정):** `stores/pg/factory.ts` `createPgIngestStores`(PgRecordStore·PgKeyObservationStore),
-D1 support store 5종(`D1GraphStore`, `D1DlqStore`, `D1TransmissionStore`, `D1ScenarioSpecStore`, `D1KeyObservationStore`)은 테스트에서만 생성된다.
+**런타임 미배선 어댑터 (후속 판정):** `stores/pg/factory.ts` `createPgIngestStores`(PgRecordStore·PgKeyObservationStore)는 테스트에서만 생성된다 (Plan 07d).
 
 ### 트랜잭션 경계
 

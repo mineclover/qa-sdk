@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import { InMemoryRecordStore } from '@qa-sdk/store';
@@ -49,6 +52,44 @@ describe('createRuntimeStores', () => {
       expect(logger.warn).not.toHaveBeenCalled();
     },
   );
+
+  it('SQLite 모드는 DLQ·graph·scenario spec을 파일에 저장해 재시작 후에도 유지한다 (S-6)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ingest-runtime-stores-'));
+    const env = {
+      STORE_DRIVER: 'sqlite' as const,
+      SQLITE_PATH: join(dir, 'ingest.sqlite'),
+      TRACE_DATABASE_URL: undefined,
+    };
+    try {
+      const first = await createRuntimeStores({ env, logger: createLogger(), migrationsFolder });
+      await first.dlqStore.insert({
+        id: 'dlq-1',
+        traceId: 'trace-1',
+        phase: 'verdict',
+        errorMessage: 'boom',
+      });
+      await first.graphStore.upsert('trace-1', { trace_id: 'trace-1', nodes: [], edges: [] });
+      await first.scenarioSpecStore.upsert({
+        scenario_id: 'checkout',
+        version: '1',
+        domain: 'shop',
+        steps: [],
+      });
+
+      const restarted = await createRuntimeStores({
+        env,
+        logger: createLogger(),
+        migrationsFolder,
+      });
+      expect((await restarted.dlqStore.findPending()).map((item) => item.id)).toEqual(['dlq-1']);
+      expect(await restarted.graphStore.findByTraceId('trace-1')).toMatchObject({
+        trace_id: 'trace-1',
+      });
+      expect(await restarted.scenarioSpecStore.findById('checkout')).not.toBeNull();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 
   it('STORE_DRIVER=clickhouse → 경고 1회 + SQLite store', async () => {
     const logger = createLogger();
