@@ -95,9 +95,7 @@ Phase 2 (각 trace에 대해):
 
 ## Phase 2.5: Transition Engine (선택적)
 
-`TRANSITION_ENGINE_ENABLED=true` 시 활성화. inline 경로(`processPendingPhaseTwo`)와 queue 경로(`processPhaseTwoTask`의 verdict job)는
-같은 `runPostVerdictStages`(`lib/post-verdict-stages.ts`)로 Phase 2.5와 convergence 통지를 실행한다.
-대상은 verdict 계산이 실패하지 않은 trace다 (두 경로 동일).
+`TRANSITION_ENGINE_ENABLED=true` 시 활성화. inline(`processPendingPhaseTwo`)·queue(`processPhaseTwoTask` verdict job) 경로 모두 verdict가 실패하지 않은 trace에 같은 `runPostVerdictStages`(`lib/post-verdict-stages.ts`)로 Phase 2.5와 convergence 통지를 실행한다.
 
 ```
 Phase 2.5:
@@ -112,8 +110,7 @@ Phase 2.5:
 - 위반은 `logger.warn`으로만 남긴다. transition 결과 저장은 아직 없다 (G3 범위)
 - trace 단위로 오류를 격리한다. 실패는 `logger.error` + `phase_two_failures_total{stage="transition"}`이며 verdict·job 성공에 영향을 주지 않는다
 - `DECODE_SERVICE_URL` 설정 시 decode-service를 먼저 쓰고, 응답이 없으면 로컬 `decodeCtx`로 대체한다 (`decode_skipped_total`)
-- TransitionSpec은 `DEMO_TRANSITION_SPECS`에서 로드
-- Worker 모드에서도 동일하게 동작
+- TransitionSpec은 `DEMO_TRANSITION_SPECS`에서 로드 (Worker 모드도 동일)
 
 ## DLQ 연계
 

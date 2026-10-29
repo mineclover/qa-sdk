@@ -74,7 +74,7 @@ F  좌표계 (기반) ─ Catalog 하나에서 주소·코덱·snapshot·생성�
 
 | 역량 | 진입점 | 패키지 | 상태 |
 |---|---|---|---|
-| 테스트 선언·좌표 부여·커버리지 | `qa-sdk test scan·assign·scaffold·status·report` | test-scenario-store, test-types | 🟡 이번 정리 범위 밖 — 미검증 |
+| 테스트 선언·좌표 부여·커버리지 | `qa-sdk test scan·assign·scaffold·status·report` | test-scenario-store, test-types | 🟡 declared→assigned는 흐름 테스트로 고정. **assigned→collected·verified로 넘기는 실행 기록(`recordRun`) 호출 경로가 CLI에 없다** — report는 진행 상태를 끝까지 보여 줄 수 없다. `test scaffold` stub은 `expect(true).toBe(true)`라 항상 통과한다 |
 | 품질 게이트 번들 | `qa-sdk quality` 9개 | definition-catalog gate 문서, quality-ledger | 🟡 미검증 |
 | facet 테스트 | `qa-sdk facet scan·inject`, facet-tests | facet-tests | 🟡 미검증 |
 | 시나리오 판정 (verdict) | ingest `/v1/traces/:id/verdicts`, scenario routes | ingest-server, spec-core | ✅ Phase 2 verdict 테스트 |
@@ -152,6 +152,19 @@ F  좌표계 (기반) ─ Catalog 하나에서 주소·코덱·snapshot·생성�
 | P5 | SDK 이벤트 → trace 재구성 → convergence observation → `dkg observations` |
 
 기존 `workflow-smoke`(L3, 12건)를 이 표 기준으로 재편한다.
+
+**1단계 반영 (2026-10-29).** 목적마다 흐름 테스트 `*.purpose-flow.test.ts`를 흐름의 마지막 단계를 소유한 패키지에 두고, 파일 머리에 `@purpose <id>`를 단다. ci-local `purpose flows cover F·P1~P5` 단계가 목적별 흐름 존재와 소유 패키지의 CI 포함 여부를 확인한다. CLAUDE.md가 말하는 `workflow-smoke`(def-gate.yml)는 저장소에 없다 — 현재 workflow는 `def-verification.yml`이다.
+
+| 목적 | 흐름 테스트 | 흐름을 만들며 드러난 것 |
+|---|---|---|
+| F | `decode-service/src/coordinate.purpose-flow.test.ts` — catalog → registry decode-map → decode-map 동기화 → HTTP `/decode`가 모든 product prefix에서 SDK encode 값과 같음. entry를 덧붙여도 예전 주소 유지 | — |
+| P1 | `registry-service/src/e2e/design.purpose-flow.test.ts` — draft → simulate → lock·release·activate → active, overflow는 OVERFLOW | 첫 차원 capacity 확대는 stride 불변(마이그레이션 불필요)이라는 simulate 판정이 맞았다 — 흐름 작성자(나)의 기대가 틀렸다 |
+| P2 | `cli/src/commands/test-list.purpose-flow.test.ts` — spec `tests:` → scan → assign → report (assigned까지) | ① 같은 spec·같은 kind 선언 둘째부터 조용히 버려짐 → scan이 경고하도록 수정 ② definition-catalog yaml-lite가 블록 배열 항목 값의 따옴표를 벗기지 않아 `module: '@qa-sdk/…'`가 파일 경로를 깨뜨림 → `unquote`로 수정 ③ collected·verified 경로 없음 (위 표) |
+| P3 | `ingest-server/src/integrity.purpose-flow.test.ts` — 구버전 SDK 수락, catalog 밖 prefix key는 미등록 관측(warn), layout 밖 주소는 enforce 422 | — |
+| P4 | `cli/src/commands/intent.purpose-flow.test.ts` — recordDecision → DKG 저장 → 재로드 후 `traceNode`에서 결정 추적, 결정 문서 링크 검증 | — |
+| P5 | `ingest-server/src/observation.purpose-flow.test.ts` — 이벤트 3건 → trace 재구성 → 실제 convergence·DKG 분석 → usage snapshot에 관측량 반영 | — |
+
+부수 정리: 이번 세션 spec 수정으로 approved leaf 2건이 150줄을 넘어 definition-catalog 크기 게이트(로컬 CI 밖이었다)가 실패 — snapshot gate 절을 `ingest-snapshot-gate.spec.md`로 분리하고 pipeline-phase-flow를 줄였다. definition-catalog를 로컬 CI 테스트 대상에 추가.
 
 ### 단계 2 — 분석 출력 검증 (§3)
 

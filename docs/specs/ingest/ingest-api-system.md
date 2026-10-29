@@ -13,6 +13,8 @@ def:
   links:
     - target: ingest-interface-contract
       type: contains
+    - target: ingest-snapshot-gate
+      type: contains
     - target: ingest-interface-pipeline
       type: contains
     - target: ingest-system
@@ -35,6 +37,7 @@ Transmission Envelope 수신 API를 엔드포인트 계약과 저장/후속 파�
 ## 구성 ^overview
 
 - `ingest-interface-contract`: 수집 엔드포인트의 입력, 응답, rate-limit/shutdown, 의존 저장소 계약.
+- `ingest-snapshot-gate`: envelope `catalog_snapshot` 판정(ok·missing·degraded·violation), warn/enforce 동작, 설정·관측 계약.
 - `ingest-interface-pipeline`: registry/catalog validation, trace transaction, 관측 저장, Phase 2/DLQ 연결까지 포함한 후속 처리 경로.
 
 원본: `docs/specs/pipeline/ingest.spec.md` (`ingest-api-spec`)
