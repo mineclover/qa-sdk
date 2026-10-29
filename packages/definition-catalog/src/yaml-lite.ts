@@ -57,7 +57,7 @@ export function parseYaml(yaml: string): Record<string, unknown> {
       currentArrayItem = {};
       const kvMatch = trimmed.slice(2).match(/^(\S[^:]*?):\s*(.+)$/);
       if (kvMatch) {
-        currentArrayItem[kvMatch[1].trim()] = kvMatch[2].trim();
+        currentArrayItem[kvMatch[1].trim()] = unquote(kvMatch[2].trim());
       }
       continue;
     }
@@ -66,7 +66,7 @@ export function parseYaml(yaml: string): Record<string, unknown> {
     if (inArray && indent > arrayIndent && !trimmed.startsWith('- ')) {
       const kvMatch = trimmed.match(/^(\S[^:]*?):\s*(.*)$/);
       if (kvMatch && kvMatch[2].trim().length > 0) {
-        currentArrayItem[kvMatch[1].trim()] = kvMatch[2].trim();
+        currentArrayItem[kvMatch[1].trim()] = unquote(kvMatch[2].trim());
       }
       continue;
     }
@@ -112,7 +112,7 @@ export function parseYaml(yaml: string): Record<string, unknown> {
 
       const kvMatch = trimmed.slice(2).match(/^(\S[^:]*?):\s*(.+)$/);
       if (kvMatch) {
-        currentArrayItem[kvMatch[1].trim()] = kvMatch[2].trim();
+        currentArrayItem[kvMatch[1].trim()] = unquote(kvMatch[2].trim());
       }
       continue;
     }
@@ -162,9 +162,19 @@ export function parseScalar(value: string): string | number | boolean {
   if (value === 'false') return false;
   const num = Number(value);
   if (!isNaN(num) && value.trim() !== '') return num;
+  return unquote(value);
+}
+
+/**
+ * 따옴표로 감싼 스칼라의 따옴표를 벗긴다 (타입 변환 없음).
+ * 배열 항목 값(`- key: value`)은 문자열로 유지하되, `'@scope/pkg'`처럼 YAML 규칙상 따옴표가 필요한 값도
+ * 최상위 값과 같은 문자열이 되어야 한다.
+ */
+export function unquote(value: string): string {
   if (
-    (value.startsWith('"') && value.endsWith('"')) ||
-    (value.startsWith("'") && value.endsWith("'"))
+    value.length >= 2 &&
+    ((value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'")))
   ) {
     return value.slice(1, -1);
   }

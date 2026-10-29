@@ -81,4 +81,19 @@ describe('parseYaml', () => {
     expect(def.tags as string[]).toEqual(['structural', 'security']);
     expect((def.links as Record<string, string>[])[0].target).toBe('gate-engine-func');
   });
+
+  it('블록 배열 항목 값의 따옴표를 벗긴다 — 최상위 스칼라와 같은 문자열 (타입 변환 없음)', () => {
+    const parsed = parseYaml(
+      [
+        'tests:',
+        '  - kind: unit',
+        "    module: '@qa-sdk/shop/checkout'",
+        '    intent: "a b"',
+        '    count: 3',
+      ].join('\n'),
+    );
+    expect(parsed.tests).toEqual([
+      { kind: 'unit', module: '@qa-sdk/shop/checkout', intent: 'a b', count: '3' },
+    ]);
+  });
 });
