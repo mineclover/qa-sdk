@@ -108,6 +108,8 @@ export function testScan(opts: { dir?: string; db?: string }): void {
 
   const store = new SqliteTestScenarioStore(dbPath);
   let declared = 0;
+  /** A 좌표(spec 주소/kind) → 첫 선언 intent. 같은 spec에 같은 kind가 둘이면 뒤 선언은 등록되지 않는다 */
+  const firstIntentByACoord = new Map<string, string>();
 
   function walk(dir: string): void {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -132,6 +134,14 @@ export function testScan(opts: { dir?: string; db?: string }): void {
 
       const parsed = parseTestsDeclaration(rawTests, specAddress);
       for (const p of parsed) {
+        const first = firstIntentByACoord.get(p.aCoord);
+        if (first !== undefined) {
+          console.warn(
+            `⚠ ${p.aCoord}: 같은 spec에 kind '${p.kind}' 선언이 여럿 — 첫 선언("${first}")만 등록, "${p.intent}"는 제외 (${fullPath})`,
+          );
+          continue;
+        }
+        firstIntentByACoord.set(p.aCoord, p.intent);
         store.upsertDeclared(p);
         declared++;
       }
