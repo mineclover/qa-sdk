@@ -1,5 +1,6 @@
 import {
   buildCatalogSnapshot,
+  prefixLayoutKey,
   toSnapshotWire,
   type CatalogSnapshot,
   type TransmissionEnvelope,
@@ -121,6 +122,20 @@ describe('snapshot gate', () => {
     expect(await gateFor(target).check(envelope(wire))).toMatchObject({
       status: 'violation',
       code,
+    });
+  });
+
+  it('주소가 layout 주소 공간을 벗어나면 AddressOutOfRange', async () => {
+    const target = await snapshotOf(['dev', 'prod']);
+    const totalSpace = Number(target.layouts[prefixLayoutKey('svc', 'v1')].totalSpace);
+    const gate = gateFor(target);
+    const wire = toSnapshotWire(target);
+    expect(await gate.check(envelope(wire, `svc:v1:${totalSpace - 1}`))).toMatchObject({
+      status: 'ok',
+    });
+    expect(await gate.check(envelope(wire, `svc:v1:${totalSpace}`))).toMatchObject({
+      status: 'violation',
+      code: 'AddressOutOfRange',
     });
   });
 

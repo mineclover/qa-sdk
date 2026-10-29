@@ -4,11 +4,15 @@
 /**
  * snapshot gate — envelope의 catalog_snapshot 문맥으로 좌표 주소를 해석해도 되는지 판정한다 (ADR-010).
  *
+ * prefix@version마다 decode layout을 정한 뒤(resolveDecodeLayout), 그 version의 주소가
+ * layout 주소 공간 안에 있는지 확인한다(assertAddressInLayout).
+ *
  * - missing: 문맥이 없는 envelope (구버전 SDK) — 허용
  * - degraded: registry 조회 실패 등 판정 불가 — fail-open 허용
  * - violation: 판정이 확정된 계약 위반 (CatalogMismatch, MigrationRequired, …) — enforce 모드에서만 거부
  */
 import {
+  assertAddressInLayout,
   isCodecContractError,
   parseSerializedAddress,
   resolveDecodeLayout,
@@ -39,11 +43,15 @@ export interface SnapshotGate {
   check(envelope: TransmissionEnvelope): Promise<SnapshotGateResult>;
 }
 
-/** envelope이 사용한 prefix@version 목록 (infra_context + record address_context) */
-function collectPrefixVersions(
-  envelope: TransmissionEnvelope,
-): { prefixId: string; version: string }[] {
-  const seen = new Map<string, { prefixId: string; version: string }>();
+interface UsedPrefixVersion {
+  readonly prefixId: string;
+  readonly version: string;
+  readonly addresses: Set<number>;
+}
+
+/** envelope이 사용한 prefix@version과 주소 (infra_context + record address_context) */
+function collectPrefixVersions(envelope: TransmissionEnvelope): UsedPrefixVersion[] {
+  const seen = new Map<string, UsedPrefixVersion>();
   const contexts = [envelope.infra_context, ...envelope.records.map((r) => r.address_context)];
   for (const context of contexts) {
     for (const serialized of Object.values(context ?? {})) {
@@ -53,10 +61,13 @@ function collectPrefixVersions(
       } catch {
         continue; // 형식이 깨진 주소는 스키마 검증(AddressContextV1)이 이미 거부한다
       }
-      seen.set(`${parsed.prefix}@${parsed.version}`, {
-        prefixId: parsed.prefix,
-        version: parsed.version,
-      });
+      const key = `${parsed.prefix}@${parsed.version}`;
+      let used = seen.get(key);
+      if (!used) {
+        used = { prefixId: parsed.prefix, version: parsed.version, addresses: new Set() };
+        seen.set(key, used);
+      }
+      used.addresses.add(parsed.address);
     }
   }
   return [...seen.values()];
@@ -88,8 +99,9 @@ export function createSnapshotGate(options: SnapshotGateOptions): SnapshotGate {
       const lookup = (digest: string) => (producer?.digest === digest ? producer : undefined);
       const pairs = collectPrefixVersions(envelope);
       try {
-        for (const { prefixId, version } of pairs) {
-          resolveDecodeLayout({ ref, prefixId, version }, target, lookup);
+        for (const { prefixId, version, addresses } of pairs) {
+          const layout = resolveDecodeLayout({ ref, prefixId, version }, target, lookup);
+          for (const address of addresses) assertAddressInLayout(layout, address);
         }
       } catch (error) {
         if (isCodecContractError(error)) {
