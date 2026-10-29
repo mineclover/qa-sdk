@@ -37,8 +37,8 @@ Catalog/Registry 기반 codegen을 CLI 실행 계약과 TypeScript 산출물 규
 ## 구성 ^overview
 
 - `codegen-cli-contract`: Catalog/Registry 입력, 명령 실행, 생성 순서를 담당하는 CLI 계약.
-- `codegen-schema-output`: protobuf 메시지와 TypeScript 타입 산출물의 구조와 확장 포인트를 정리한 문서.
-- `codegen-core`: SchemaSnapshot/Catalog 입력에서 TypeScript/Proto 문자열을 생성하는 순수 함수 경계.
+- `codegen-schema-output`: (deprecated) SchemaSnapshot → protobuf·TypeScript envelope 산출물. 생성기 삭제, wire 계약은 core `TransmissionEnvelope`·`proto/transmission.proto`.
+- `codegen-core`: Catalog 입력에서 TypeScript 문자열을 생성하는 순수 함수 경계.
 - `snapshot-io`: SchemaSnapshot JSON 읽기/쓰기/검증 I/O 경계.
 
 ## 검증 ^validation

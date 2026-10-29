@@ -17,8 +17,7 @@ def:
       type: depends_on
 sources:
   - packages/cli/src/scenarios.e2e.test.ts
-  - packages/codegen-core/src/proto.test.ts
-  - packages/codegen-core/src/typescript.test.ts
+  - packages/codegen-core/src/catalog-typescript.test.ts
   - packages/snapshot-io/scripts/smoke.test.mjs
 ---
 
@@ -32,7 +31,7 @@ sources:
 
 **전제**: `apm-schema-system`이 고정한 DSL 스키마 스냅샷이 파일시스템에 존재한다.
 
-**동작**: `apm-codegen` CLI가 `--snapshot <path>` 인자로 스냅샷을 읽어 protobuf + TypeScript 코드를 생성한다.
+**동작**: `apm-codegen` CLI가 `--snapshot <path>` 인자로 스냅샷을 읽어 TypeScript 코드를 생성한다 (envelope protobuf는 생성하지 않는다 — `proto/transmission.proto`가 정본).
 
 **기대**:
 - 같은 스냅샷 입력 → 같은 contentHash 산출 (결정론적)
@@ -55,13 +54,13 @@ sources:
 
 ## 시나리오 3: CLI 계약 실행 순서 ^overview
 
-**전제**: `codegen-cli-contract`가 `load → validate → emit-proto → emit-ts → write` 순서를 규정한다.
+**전제**: `codegen-cli-contract`가 `load → validate → emit-ts → write` 순서를 규정한다.
 
 **동작**: 중간 단계가 실패하면(`ValidationError`, `IOError`) 다음 단계는 실행되지 않는다.
 
 **기대**:
 - validate 실패 → exit code 2, write 스킵, 기존 산출물 불변
-- proto/ts 생성 실패 → exit code 3, partial write 금지 (atomic rename 사용)
+- ts 생성 실패 → exit code 3, partial write 금지 (atomic rename 사용)
 
 **실패 시 수정 대상**: `apm-system`의 `cli-contract-spec`이 실행 순서와 exit code를 명시해야 한다. 순서 변경이 필요하면 apm-system 스펙을 먼저 갱신.
 

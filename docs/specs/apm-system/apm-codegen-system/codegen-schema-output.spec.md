@@ -6,7 +6,7 @@ def:
   scope: data
   aspect: domain_data
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   layer: domain
   svc: cli
   tags: [structural, observability, contract]
@@ -14,13 +14,13 @@ def:
     - target: apm-codegen-system
       type: refines
 sources:
-  - packages/codegen-core/src/proto.ts
-  - packages/codegen-core/src/typescript.ts
-  - packages/codegen-core/src/proto.test.ts
-  - packages/codegen-core/src/typescript.test.ts
+  - packages/core/src/types/envelope.ts
+  - packages/codec-proto/src/codec.ts
 ---
 
-# 코드젠 산출물 계약
+# 코드젠 산출물 계약 — deprecated
+
+> 2026-10-29 삭제 — `generateTypescript`·`generateProto`(SchemaSnapshot → `ApmEnvelope`·proto)는 프로덕션 호출이 없었고, 생성하는 envelope이 실제 계약과 달랐다 (owner·source 평탄화, `entry_snapshot` 필드 번호 11 vs 8, `catalog_snapshot` 없음). wire 계약의 정본은 `@qa-sdk/core` `TransmissionEnvelope`과 `proto/transmission.proto`다. 근거: `docs/proposals/swc-next-qa-sdk-optimization/05-interface-map.md` I-1.
 
 ## 목적 ^purpose
 

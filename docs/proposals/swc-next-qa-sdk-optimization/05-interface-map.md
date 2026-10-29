@@ -119,7 +119,7 @@ Catalog ──codegen──▶ CATALOG_SNAPSHOT (Node) / BROWSER_CATALOG_SNAPSHO
 
 | # | 대상 | 상태 | 권장 |
 |---|---|---|---|
-| I-1 | codegen-core `generateTypescript`·`generateProto` (SchemaSnapshot DSL → `ApmEnvelope`·proto) | 프로덕션 호출 0 (테스트·CLI e2e만). 생성하는 envelope이 `TransmissionEnvelope`·`proto/transmission.proto`와 다르다 (owner·source 평탄화, `entry_snapshot = 11` vs 실제 8, `catalog_snapshot` 없음) | **삭제**. 실제 envelope 계약은 core 타입과 `proto/transmission.proto`가 SSOT. 같은 이름의 두 번째 정의는 오해만 낳는다 |
+| I-1 | codegen-core `generateTypescript`·`generateProto` (SchemaSnapshot DSL → `ApmEnvelope`·proto) | 프로덕션 호출 0 (테스트·CLI e2e만). 생성하는 envelope이 `TransmissionEnvelope`·`proto/transmission.proto`와 다르다 (owner·source 평탄화, `entry_snapshot = 11` vs 실제 8, `catalog_snapshot` 없음) | ✅ 2026-10-29 삭제 — 생성기·전용 테스트(CLI `type-safety.e2e`, `scenarios.e2e` S2·S7·S9 등)·spec `codegen-schema-output` deprecated |
 | I-2 | `entry_snapshot` / `entrySnapshot` | D-2로 deprecated 유지. ingest·store 어디도 읽지 않는다 | 외부 SDK 배포본이 보내는 동안은 schema 수용만 유지하고, SDK 설정 3곳의 옵션은 다음 major에서 제거 |
 | I-3 | `toSnapshotWire` | 테스트만 사용 | 유지 — registry에서 받은 snapshot을 런타임에 SDK로 넘기는 정식 경로. 쓰는 앱이 생기기 전까지 추가 기능 금지 |
 | I-4 | `encodeDetailed`·`decodeDetailed` | 사내 소비자 없음 | 유지 — 실패 원인을 알아야 하는 외부 소비자용 공개 API (오류 전환에서 승인) |

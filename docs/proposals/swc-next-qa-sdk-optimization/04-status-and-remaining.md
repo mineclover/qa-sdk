@@ -61,7 +61,7 @@ role: status
 | **P1** | ✅ Track B — registry generation이 digest 기준이 되어 SDK GENERATION 비교가 일치. 남은 #15 재료: batch 문맥 조회 API, VerdictReport artifact digest | — |
 | **P1** | ✅ core runtime 오류 전환, browser-codec 원인 코드 노출 | — | — |
 | **P2** | 2순위 정리: 의존 0 라이브러리 8개, consumer 그룹(시각화 7·시뮬 6·데모 8), `stores/pg/*`(Plan 07d), 구조 중복 | 관리 비용 축소 | 그룹별 사람 결정 |
-| **P2** | 인터페이스 정리 후보 I-1(codegen-core 구 envelope 생성기 삭제)·I-2(`entrySnapshot` 옵션 제거 시점) — [05-interface-map.md](./05-interface-map.md) §4 | 실제 envelope 계약과 다른 두 번째 정의 | 사람 결정 |
+| **P2** | ✅ I-1 삭제. 남은 인터페이스 정리 후보 I-2(`entrySnapshot` 옵션 제거 시점) — [05-interface-map.md](./05-interface-map.md) §4 | 실제 envelope 계약과 다른 두 번째 정의 | 사람 결정 |
 | **P2** | demo-tests 기존 타입 오류 21건 정리 후 전체 `tsc` 검사 | 지금은 `codec-compat`만 타입 검사 | 없음 |
 | **P3** | Wave 2 (G2·G3·G5·G6) | 측정 게이트 이후 | C baseline 분산 기록, B, E·F 완료 |
 | — | Notion 이슈 공식 번호 발급, Drive 계획 rev 0.2(R-1~R-11 반영) | 원본 이슈·계획과 저장소 상태 동기화 | Notion 연결 인증 |
