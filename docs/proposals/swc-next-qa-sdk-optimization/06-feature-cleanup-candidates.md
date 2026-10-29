@@ -55,6 +55,16 @@ sources:
 | S-8 | decode-service decode-map | registry decode-map을 부팅 때 한 번만 가져옴 → catalog가 바뀌어도 갱신하지 않음 | `decode-service/src/server.ts:30-55,79` | registry snapshot digest(ADR-010) 기준 갱신 |
 | S-9 | env 규칙 위반 | `GRPC_PORT`·`DEBUG_STORE_TTL_MS`(ingest), gateway 전체가 zod 밖에서 직접 읽음. registry `CONSTRAINT_GATE_DKG_PATH`는 정의만 있고 읽는 곳이 없음 | `ingest-server/src/server.ts:411-425`, `lib/debug-store.ts:30`, `registry-service/src/config/env.ts:32` | 스키마로 옮기거나 삭제 |
 
+### 1.1 처리 결과 (2026-10-29)
+
+| # | 처리 |
+|---|---|
+| S-1·S-2 | ✅ `gateway/lib/route-table.ts` 단일 테이블 — 세그먼트 경계·최장 접두사 매칭, strip은 별칭에만. server·worker 공유, registry seed의 gate·decode `stripPrefix` 제거. 경로 대응 19 case 테스트 (`scripts/route-table.test.ts`) |
+| S-4 | 🟡 부분 — 엔진을 배선할 데이터 공급 경로가 없다 (prefix·entry·flag 데이터는 registry DB에 있고 gate-service DB와 분리, recompute 호출자 0). 성공을 가장하던 204를 `501 GATE_ENGINE_NOT_CONFIGURED`로 바꾸고 OpenAPI 오류 형태를 실제 응답에 맞춤. **엔진 데이터 공급(registry → gate) 설계는 사람 결정** |
+| S-5 | ✅ 쓰는 곳 없는 빈 stateStore 제거 → 현재 상태 조회는 `{}` 대신 501. `/transitions`는 목록만 마운트 (`createTransitionRoutes`) |
+| S-6 | ✅ SQLite 모드와 CF worker 모두 DLQ·graph·scenario spec·transmission을 D1 store로 저장 — 재시작 유지 테스트 |
+| S-3·S-7·S-8·S-9 | 대기 |
+
 ## 2. stub·no-op·하드코딩
 
 | # | 대상 | 상태 | 제안 |
