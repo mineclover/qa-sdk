@@ -245,10 +245,11 @@ export interface InsightsStore {
 
   // ── 쓰기 (수집) ──
   /**
-   * 수집된 데이터를 인사이트 저장소에 기록한다.
+   * 수집된 데이터를 외부 인사이트 저장소로 전달한다 (선택).
    *
-   * - local 모드: no-op (ingest pipeline이 같은 DB에 이미 기록)
-   * - app-hub 모드: 외부 서비스로 전달
+   * - 구현하지 않음: local 모드 — ingest pipeline이 같은 DB에 이미 기록하므로 전달할 것이 없다.
+   *   호출부는 이 메서드가 없으면 batch를 만들지 않는다.
+   * - 구현: app-hub처럼 별도 저장소로 보내는 드라이버
    */
-  collect(batch: InsightsCollectBatch): Promise<void>;
+  collect?(batch: InsightsCollectBatch): Promise<void>;
 }

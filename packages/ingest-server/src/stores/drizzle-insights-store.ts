@@ -4,7 +4,7 @@
 /**
  * DrizzleInsightsStore — SQLite 기반 InsightsStore 구현.
  *
- * ingest pipeline이 같은 DB에 이미 기록하므로 collect()는 no-op.
+ * ingest pipeline이 같은 DB에 이미 기록하므로 collect()를 구현하지 않는다 (port에서 선택 메서드).
  * 읽기 메서드는 drizzle query builder로 집계 쿼리 수행.
  */
 
@@ -33,7 +33,6 @@ import {
 } from '../db/json-types.js';
 import type {
   InsightsStore,
-  InsightsCollectBatch,
   InsightsSummary,
   ServiceInsight,
   EventKeyInsight,
@@ -88,12 +87,6 @@ function categorizeEventKey(key: string): string {
 
 export class DrizzleInsightsStore implements InsightsStore {
   constructor(private readonly db: DrizzleDb) {}
-
-  // ── 쓰기: no-op (같은 DB에 이미 기록됨) ──
-
-  async collect(_batch: InsightsCollectBatch): Promise<void> {
-    // local 모드 — ingest pipeline이 같은 DB에 직접 기록하므로 추가 작업 없음
-  }
 
   // ── 읽기 ──
 

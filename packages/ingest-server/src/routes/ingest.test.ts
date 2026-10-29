@@ -23,6 +23,7 @@ import { PHASE_TWO_TASK_QUEUE_OPTIONS } from '../lib/phase-two-worker.js';
 import type { DebugStore } from '../lib/debug-store.js';
 import { RecordStreamBroker } from '../lib/record-stream-broker.js';
 import type { RegistryEventValidator, RegistryValidationMode } from './ingest.js';
+import type { InsightsStore } from '../ports/insights-store.port.js';
 
 interface IngestTestDeps {
   recordStore: InMemoryRecordStore;
@@ -586,5 +587,35 @@ describe('POST /v1/ingest — snapshot gate (Track B)', () => {
       snapshotGate: gate('enforce', { status: 'degraded', reason: 'down' }),
     });
     expect((await post(app)).status).toBe(202);
+  });
+});
+
+describe('POST /v1/ingest — InsightsStore.collect (N-2)', () => {
+  async function ingestWith(insightsStore: Record<string, unknown>) {
+    const app = new Hono();
+    app.onError(createErrorHandler(pino({ level: 'silent' })));
+    app.route(
+      '/',
+      createIngestRoutes({
+        ...buildDeps(),
+        insightsStore: insightsStore as unknown as InsightsStore,
+      }),
+    );
+    return app.request('/v1/ingest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildEnvelope()),
+    });
+  }
+
+  it('collect를 구현한 외부 저장소 드라이버에는 batch를 전달한다', async () => {
+    const collect = vi.fn().mockResolvedValue(undefined);
+    expect((await ingestWith({ collect })).status).toBe(202);
+    expect(collect).toHaveBeenCalledTimes(1);
+    expect(collect.mock.calls[0][0].records).toHaveLength(1);
+  });
+
+  it('collect가 없는 local 드라이버여도 정상 수집한다', async () => {
+    expect((await ingestWith({})).status).toBe(202);
   });
 });

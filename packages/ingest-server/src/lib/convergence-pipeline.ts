@@ -479,18 +479,16 @@ export class ConvergencePipelineRunner {
           }
         }
 
-        // OBS-PATTERN → CON-005 prompts 자동 연결
-        const patternObs = observations.filter((o) => o.id.startsWith('OBS-PATTERN-'));
-        if (patternObs.length > 0) {
-          const promptsEdges = patternObs.map((o) => ({
-            type: 'prompts' as const,
-            from: o.id,
-            to: 'CON-005',
-          }));
+        // OBS-PATTERN → 관련 constraint prompts 연결 (scope가 observation subjects와 겹치는 active constraint)
+        const promptsEdges = patternPromptEdges(
+          observations.filter((o) => o.id.startsWith('OBS-PATTERN-')),
+          graph,
+        );
+        if (promptsEdges.length > 0) {
           try {
             dkgStore.saveNodes?.([], promptsEdges, 'auto');
-          } catch {
-            /* prompts 저장 실패는 무시 */
+          } catch (error) {
+            logger?.warn({ err: error }, 'convergence: pattern prompts edge 저장 실패');
           }
         }
       } catch (error) {
@@ -656,4 +654,30 @@ export class ConvergencePipelineRunner {
       classificationRate: report.classificationRate,
     };
   }
+}
+
+/**
+ * pattern observation이 검토를 촉구(prompts)할 constraint를 DKG에서 찾는다.
+ * constraint id를 코드에 두지 않고, scope가 observation subjects와 겹치는 active constraint를 고른다
+ * (예: subjects `pattern_anomaly` → scope에 `pattern_anomaly`가 있는 CON-004·CON-005).
+ */
+export function patternPromptEdges(
+  observations: readonly ObservationNode[],
+  graph: Pick<ConvergenceGraphPort, 'getNodesByKind'>,
+): { type: 'prompts'; from: string; to: string }[] {
+  if (observations.length === 0) return [];
+  const constraints = graph
+    .getNodesByKind('constraint')
+    .filter((node) => node.lifecycle === undefined || node.lifecycle === 'active');
+  const edges: { type: 'prompts'; from: string; to: string }[] = [];
+  for (const observation of observations) {
+    const subjects = new Set(observation.subjects ?? []);
+    for (const constraint of constraints) {
+      const scope = Array.isArray(constraint.scope) ? (constraint.scope as unknown[]) : [];
+      if (scope.some((item) => typeof item === 'string' && subjects.has(item))) {
+        edges.push({ type: 'prompts', from: observation.id, to: constraint.id });
+      }
+    }
+  }
+  return edges;
 }

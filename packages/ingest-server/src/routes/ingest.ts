@@ -169,8 +169,8 @@ async function processEnvelope(envelope: TransmissionEnvelope, deps: IngestDeps)
   // Phase 1: 저장 (응답 경로)
   const persistedTraceIds = await storeEnvelope(envelope, deps);
 
-  // InsightsStore collect — app-hub 모드에서 외부 전달, local 모드에서 no-op
-  if (deps.insightsStore) {
+  // InsightsStore collect — 외부 저장소 드라이버(app-hub)만 구현한다. local 모드는 batch를 만들지 않는다
+  if (deps.insightsStore?.collect) {
     try {
       await deps.insightsStore.collect({
         records: envelope.records.map((r) => ({

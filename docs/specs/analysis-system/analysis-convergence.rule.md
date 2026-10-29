@@ -35,6 +35,7 @@ convergence-pipeline을 소비할 때 확인해야 하는 타입 제약, 포트 
 
 - `ConvergenceFunctions`: `Catalog`, `UsageData`, `MetricValue[]`, `ObservationNode[]` 사용. **`unknown` 금지**
 - `OBS-PATTERN`: DKG ObservationNode 스키마 준수 (`subjects[]`, `finding`, `intent`)
+- `OBS-PATTERN` → constraint `prompts` 엣지: constraint id를 코드에 두지 않는다. DKG의 active constraint 중 `scope`가 observation `subjects`와 겹치는 것에 연결한다 (`patternPromptEdges`, 예: `pattern_anomaly` → CON-004·CON-005). 저장 실패는 warn 로그
 - `GraphPort` vs `ConvergenceGraphPort`: 서비스는 최소 포트, CLI는 GraphRegistry(최대)
 - `as unknown as ConcreteType`: 동적 import 구조적 캐스트. **`as any` 금지**
 - runtime flow recovery는 현재 `addressRecords`에서 endpoint가 관측된 IntentLink에만

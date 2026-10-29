@@ -5,11 +5,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   CONVERGENCE_BUFFER_DEPTH_METRIC,
   ConvergencePipelineRunner,
+  patternPromptEdges,
   type ConvergencePipelineDeps,
   type ConvergenceFunctions,
   type PatternFunctions,
   type DkgStorePort,
 } from './convergence-pipeline.js';
+import type { ObservationNode } from '@qa-sdk/convergence';
 import { createMetricsCollector } from './metrics-collector.js';
 
 // ── Mock Factories ──────────────────────────────────
@@ -659,5 +661,55 @@ describe('ConvergencePipelineRunner', () => {
     expect(secondCall.previous).toBeDefined();
     expect(secondCall.previous.length).toBeGreaterThan(0);
     expect(secondCall.previous[0].pattern).toBe('purchase_complete');
+  });
+});
+
+describe('patternPromptEdges (N-3)', () => {
+  const graph = {
+    getNodesByKind: (kind: string) =>
+      kind === 'constraint'
+        ? [
+            { kind: 'constraint', id: 'CON-RATE', scope: ['pattern_match', 'pattern_anomaly'] },
+            {
+              kind: 'constraint',
+              id: 'CON-AUTO-OBS',
+              scope: ['pattern_anomaly'],
+              lifecycle: 'active',
+            },
+            { kind: 'constraint', id: 'CON-OTHER', scope: ['getPrefixProfile'] },
+            {
+              kind: 'constraint',
+              id: 'CON-OLD',
+              scope: ['pattern_anomaly'],
+              lifecycle: 'deprecated',
+            },
+          ]
+        : [],
+  };
+  const observation = (id: string, subjects: string[]): ObservationNode =>
+    ({
+      kind: 'observation',
+      id,
+      date: '2026-10-29',
+      source: 'runtime',
+      subjects,
+      finding: 'f',
+    }) as ObservationNode;
+
+  it('scope가 subjects와 겹치는 active constraint만 연결한다 (id 하드코딩 없음)', () => {
+    expect(
+      patternPromptEdges(
+        [observation('OBS-PATTERN-volume_spike-2026-10-29', ['pattern_anomaly', 'volume_spike'])],
+        graph,
+      ),
+    ).toEqual([
+      { type: 'prompts', from: 'OBS-PATTERN-volume_spike-2026-10-29', to: 'CON-RATE' },
+      { type: 'prompts', from: 'OBS-PATTERN-volume_spike-2026-10-29', to: 'CON-AUTO-OBS' },
+    ]);
+  });
+
+  it('관련 constraint가 없거나 observation이 없으면 edge를 만들지 않는다', () => {
+    expect(patternPromptEdges([observation('OBS-PATTERN-x', ['unrelated'])], graph)).toEqual([]);
+    expect(patternPromptEdges([], graph)).toEqual([]);
   });
 });

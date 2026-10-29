@@ -36,11 +36,11 @@ InsightsStore 포트를 통해 prefix 사용률, 서비스별 분포, 공출현 
 
 ### InsightsStore 포트
 
-`ingest-server/src/ports/insights-store.port.ts` — 읽기 12메서드 + `collect()` 쓰기.
+`ingest-server/src/ports/insights-store.port.ts` — 읽기 12메서드 + 선택 메서드 `collect()`. `collect()`는 외부 저장소로 보내는 드라이버만 구현하고, 없으면 ingest가 batch를 만들지 않는다.
 
 | 드라이버 | 구현체 | collect() 동작 | 읽기 소스 |
 |----------|--------|---------------|----------|
-| `local` | `DrizzleInsightsStore` | no-op (같은 DB) | SQLite |
+| `local` | `DrizzleInsightsStore` | 구현 안 함 (ingest pipeline이 같은 DB에 이미 기록) | SQLite |
 | `app-hub` | `AppHubInsightsStore` | App Hub API 전달 | App Hub API |
 
 ### 엔드포인트 (12개)

@@ -365,22 +365,9 @@ describe('InsightsStore E2E', () => {
     expect(summary.services).toBe(3);
   });
 
-  it('store.collect() — local 모드는 no-op', async () => {
-    // collect 호출해도 에러 없이 통과
-    await expect(
-      store.collect({
-        records: [
-          {
-            logId: 'test',
-            timestamp: now(),
-            traceId: 'tx',
-            eventKey: 'test',
-            eventVersion: '001',
-            recordKind: 'log',
-          },
-        ],
-      }),
-    ).resolves.toBeUndefined();
+  it('local 모드는 collect를 구현하지 않는다 — ingest가 batch를 만들지 않도록 (N-2)', () => {
+    // 같은 DB에 ingest pipeline이 이미 기록하므로 전달할 대상이 없다
+    expect(store.collect).toBeUndefined();
   });
 
   it('store.getServicePrefixes() — 서비스별 prefix 매핑', async () => {
