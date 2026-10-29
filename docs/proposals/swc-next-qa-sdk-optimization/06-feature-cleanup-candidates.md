@@ -63,7 +63,10 @@ sources:
 | S-4 | 🟡 부분 — 엔진을 배선할 데이터 공급 경로가 없다 (prefix·entry·flag 데이터는 registry DB에 있고 gate-service DB와 분리, recompute 호출자 0). 성공을 가장하던 204를 `501 GATE_ENGINE_NOT_CONFIGURED`로 바꾸고 OpenAPI 오류 형태를 실제 응답에 맞춤. **엔진 데이터 공급(registry → gate) 설계는 사람 결정** |
 | S-5 | ✅ 쓰는 곳 없는 빈 stateStore 제거 → 현재 상태 조회는 `{}` 대신 501. `/transitions`는 목록만 마운트 (`createTransitionRoutes`) |
 | S-6 | ✅ SQLite 모드와 CF worker 모두 DLQ·graph·scenario spec·transmission을 D1 store로 저장 — 재시작 유지 테스트 |
-| S-3·S-7·S-8·S-9 | 대기 |
+| S-7 | ✅ SQLite 런타임 store가 `sqlDriver`를 노출하고 Node server가 `createApp`에 전달 → Node 모드에서도 `/v1/labels*` 등록. pg·InMemory 구성은 SQL 드라이버가 없어 미등록(명시) |
+| S-8 | ✅ 문서보다 심각했다 — Node pool이 L2 캐시 TTL(`CACHE_TTL_MS`)을 함께 써서 부팅 60초 뒤 모든 decoder가 만료되고 다시 불러올 경로가 없었다. decoder는 만료하지 않고(`DecoderPool(0)`), `lib/decode-map-sync.ts`가 `DECODE_MAP_REFRESH_MS`마다 registry catalog digest를 보고 바뀌었을 때만 재로드. spec의 "TTL 만료 → 클라이언트 재요청" 계약을 갱신 |
+| S-9 | ✅ ingest `GRPC_PORT`·`DEBUG_STORE_TTL_MS`를 zod 스키마로(InMemoryDebugStore는 `process.env`를 읽지 않음), gateway `config/env.ts` 신설(서비스 URL 키는 route-table에서 파생, 미지원 `AUTH_MODE`는 부팅 거부), registry 미사용 `CONSTRAINT_GATE_DKG_PATH` 삭제. 함께 발견: gateway 동적 라우트 조회 env가 `GATEWAY_ENV`가 아니라 `AUTH_MODE`에서 파생되던 것 수정 |
+| S-3 | 대기 (사람 결정) |
 
 ## 2. stub·no-op·하드코딩
 
