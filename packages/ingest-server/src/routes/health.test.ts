@@ -85,4 +85,38 @@ describe('createHealthRoutes', () => {
     await expect(response.json()).resolves.toEqual({ ok: true });
     expect(checkDbHealth).not.toHaveBeenCalled();
   });
+
+  it('readiness에 snapshot registry 상태를 표시하고 장애여도 503으로 내리지 않는다 (fail-open)', async () => {
+    const checkDbHealth = vi.fn().mockResolvedValue({ connected: true, latencyMs: 1 });
+    const statuses: string[] = [];
+    for (const checker of [
+      async () => ({ ok: true }),
+      async () => ({ ok: false }),
+      async () => {
+        throw new Error('down');
+      },
+    ]) {
+      const app = new Hono();
+      app.route(
+        '/',
+        createHealthRoutes({ checkDbHealth, checkSnapshotRegistry: checker, version: '1' }),
+      );
+      const res = await app.request('/health/ready');
+      expect(res.status).toBe(200);
+      statuses.push((await res.json()).snapshot_registry);
+    }
+    expect(statuses).toEqual(['ok', 'degraded', 'degraded']);
+  });
+
+  it('snapshot registry checker가 없으면 필드를 내지 않는다', async () => {
+    const app = new Hono();
+    app.route(
+      '/',
+      createHealthRoutes({
+        checkDbHealth: async () => ({ connected: true, latencyMs: 1 }),
+        version: '1',
+      }),
+    );
+    expect((await (await app.request('/health/ready')).json()).snapshot_registry).toBeUndefined();
+  });
 });

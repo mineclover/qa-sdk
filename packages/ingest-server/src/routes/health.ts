@@ -12,8 +12,12 @@ export interface DbHealthStatus {
 
 export type DbHealthChecker = () => Promise<DbHealthStatus>;
 
+/** snapshot registry 도달 여부. 미설정이면 readiness에 disabled로 표시 */
+export type SnapshotRegistryChecker = () => Promise<{ ok: boolean }>;
+
 export interface HealthRoutesOptions {
   checkDbHealth: DbHealthChecker;
+  checkSnapshotRegistry?: SnapshotRegistryChecker;
   getUptimeSeconds?: () => number;
   version?: string;
 }
@@ -50,6 +54,7 @@ export function createHealthRoutes(options: HealthRoutesOptions) {
   routes.get('/health/ready', (c) =>
     respondWithHealth(c, {
       checkDbHealth: options.checkDbHealth,
+      checkSnapshotRegistry: options.checkSnapshotRegistry,
       getUptimeSeconds,
       version,
     }),
@@ -81,12 +86,20 @@ async function respondWithHealth(
   c: Context,
   options: {
     checkDbHealth: DbHealthChecker;
+    checkSnapshotRegistry?: SnapshotRegistryChecker;
     getUptimeSeconds: () => number;
     version: string;
   },
 ) {
   const db = await options.checkDbHealth();
   const ok = db.connected;
+  // snapshot registry 장애는 gate가 fail-open(degraded)으로 처리하므로 readiness를 내리지 않는다
+  const snapshotRegistry = options.checkSnapshotRegistry
+    ? await options
+        .checkSnapshotRegistry()
+        .then((r) => (r.ok ? 'ok' : 'degraded'))
+        .catch(() => 'degraded')
+    : undefined;
 
   return c.json(
     {
@@ -97,6 +110,7 @@ async function respondWithHealth(
         connected: db.connected,
         latency_ms: db.latencyMs,
       },
+      ...(snapshotRegistry ? { snapshot_registry: snapshotRegistry } : {}),
     },
     ok ? 200 : 503,
   );

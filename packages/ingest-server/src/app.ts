@@ -89,6 +89,9 @@ export interface AppDeps {
   latestVersions?: ReadonlyMap<string, string>;
   /** packed_key 관측 기록·조회 (U-4) */
   keyObservationStore?: KeyObservationStore;
+  /** envelope catalog_snapshot 판정 (Track B, SNAPSHOT_GATE_MODE≠off) */
+  snapshotGate?: import('./lib/snapshot-gate.js').SnapshotGate;
+  checkSnapshotRegistry?: import('./routes/health.js').SnapshotRegistryChecker;
   withTraceTransaction?: TraceTransactionRunner;
   logger?: Logger;
   streamConnectionRegistry?: StreamConnectionRegistry;
@@ -125,6 +128,7 @@ export function createApp(deps: AppDeps) {
     '/',
     createHealthRoutes({
       checkDbHealth: deps.checkDbHealth ?? (async () => ({ connected: true, latencyMs: 0 })),
+      checkSnapshotRegistry: deps.checkSnapshotRegistry,
       getUptimeSeconds: deps.getUptimeSeconds,
       version: deps.version,
     }),

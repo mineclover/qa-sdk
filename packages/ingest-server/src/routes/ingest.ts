@@ -3,6 +3,7 @@
 
 import { Hono } from 'hono';
 import {
+  CodecContractError,
   type GraphStore,
   type TaskPayload,
   type TaskQueue,
@@ -25,6 +26,7 @@ import { createNoopDebugStore, type DebugStore } from '../lib/debug-store.js';
 import type { Logger } from 'pino';
 import { badRequest } from '../lib/errors.js';
 import { enrichAddressContext, checkAddressHealth } from '../lib/enrich-address-context.js';
+import type { SnapshotGate } from '../lib/snapshot-gate.js';
 import {
   buildReconstructionTask,
   PHASE_TWO_TASK_QUEUE_OPTIONS,
@@ -78,6 +80,8 @@ export interface IngestDeps {
   insightsStore?: import('../ports/insights-store.port.js').InsightsStore;
   /** Key Observation — packed_key 관측 영속 기록 (fail-open) */
   keyObservationStore?: KeyObservationStore;
+  /** envelope catalog_snapshot 판정 (Track B). 미설정이면 판정하지 않음 */
+  snapshotGate?: SnapshotGate;
 }
 
 export interface TracePersistenceStores {
@@ -215,7 +219,41 @@ async function processEnvelope(envelope: TransmissionEnvelope, deps: IngestDeps)
 }
 
 /** Phase 1: transmission 메타 + trace/session/record 저장 + SSE 발행 */
+/** snapshot gate 판정 결과 counter (label: result, code) */
+export const SNAPSHOT_GATE_METRIC = 'snapshot_gate_total';
+
+/** 상태·SDK 조합별 경고를 프로세스당 한 번만 남긴다 (요청마다 로그 폭주 방지) */
+const warnedGateKeys = new WeakMap<SnapshotGate, Set<string>>();
+
+/** snapshot gate 판정. enforce 모드의 계약 위반은 CodecContractError(422)로 거부한다 */
+async function applySnapshotGate(envelope: TransmissionEnvelope, deps: IngestDeps): Promise<void> {
+  const gate = deps.snapshotGate;
+  if (!gate) return;
+  const result = await gate.check(envelope);
+  deps.metricsCollector?.increment(SNAPSHOT_GATE_METRIC, {
+    result: result.status,
+    ...(result.status === 'violation' ? { code: result.code } : {}),
+  });
+  if (result.status === 'ok') return;
+  if (result.status === 'violation' && gate.mode === 'enforce') {
+    throw new CodecContractError(result.code, result.message, {
+      transmissionId: envelope.transmission_id,
+    });
+  }
+  const warned = warnedGateKeys.get(gate) ?? new Set<string>();
+  warnedGateKeys.set(gate, warned);
+  const key = `${result.status}:${result.status === 'violation' ? result.code : ''}:${envelope.source.sdk_name}`;
+  if (warned.has(key)) return;
+  warned.add(key);
+  deps.logger?.warn(
+    { gate: result, sdk: envelope.source.sdk_name, mode: gate.mode },
+    'snapshot gate: 좌표 문맥을 확인할 수 없거나 계약 위반 (이 조합은 이후 경고 생략)',
+  );
+}
+
 async function storeEnvelope(envelope: TransmissionEnvelope, deps: IngestDeps): Promise<string[]> {
+  await applySnapshotGate(envelope, deps);
+
   // address context 머지: infra_context(base) ← record.address_context(override)
   enrichAddressContext(envelope, envelope.records);
 

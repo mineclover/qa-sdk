@@ -17,6 +17,7 @@ import {
 import type { StoredRecord, TaskPayload, TaskQueue, TransmissionEnvelope } from '@qa-sdk/core';
 import { createErrorHandler } from '../middleware/error-handler.js';
 import { encodeEnvelope } from '@qa-sdk/codec-proto';
+import type { SnapshotGate, SnapshotGateResult } from '../lib/snapshot-gate.js';
 import { createIngestRoutes } from './ingest.js';
 import { PHASE_TWO_TASK_QUEUE_OPTIONS } from '../lib/phase-two-worker.js';
 import type { DebugStore } from '../lib/debug-store.js';
@@ -37,6 +38,8 @@ interface IngestTestDeps {
   registryValidationMode?: RegistryValidationMode;
   registryValidator?: RegistryEventValidator;
   taskQueue?: TaskQueue<TaskPayload>;
+  snapshotGate?: SnapshotGate;
+  metricsCollector?: { inc: ReturnType<typeof vi.fn>; increment: ReturnType<typeof vi.fn> };
 }
 
 function buildDeps(overrides: Partial<IngestTestDeps> = {}): IngestTestDeps {
@@ -538,3 +541,50 @@ describe('POST /v1/ingest — protobuf (Track B)', () => {
   });
 });
 
+describe('POST /v1/ingest — snapshot gate (Track B)', () => {
+  const wire = {
+    catalog_id: 'demo',
+    digest: `sha256:${'f'.repeat(64)}`,
+    codec_version: 'legacy-v1',
+  };
+  const gate = (mode: 'warn' | 'enforce', result: SnapshotGateResult): SnapshotGate => ({
+    mode,
+    check: vi.fn(async () => result),
+  });
+  const violation: SnapshotGateResult = {
+    status: 'violation',
+    code: 'CatalogMismatch',
+    message: 'catalog 다름',
+  };
+  const post = (app: Hono) =>
+    app.request('/v1/ingest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildEnvelope({ catalog_snapshot: wire })),
+    });
+
+  it('enforce 모드의 계약 위반은 422와 code로 거부하고 저장하지 않는다', async () => {
+    const { app, deps } = buildApp({ snapshotGate: gate('enforce', violation) });
+    const res = await post(app);
+    expect(res.status).toBe(422);
+    expect((await res.json()).error.code).toBe('CatalogMismatch');
+    expect(await deps.recordStore.findByTraceId('trc_001')).toEqual([]);
+  });
+
+  it('warn 모드의 위반은 수락하고 counter에 code를 남긴다', async () => {
+    const metricsCollector = { inc: vi.fn(), increment: vi.fn() };
+    const { app } = buildApp({ snapshotGate: gate('warn', violation), metricsCollector });
+    expect((await post(app)).status).toBe(202);
+    expect(metricsCollector.increment).toHaveBeenCalledWith('snapshot_gate_total', {
+      result: 'violation',
+      code: 'CatalogMismatch',
+    });
+  });
+
+  it('degraded(registry 장애)는 enforce 모드에서도 수락한다 (fail-open)', async () => {
+    const { app } = buildApp({
+      snapshotGate: gate('enforce', { status: 'degraded', reason: 'down' }),
+    });
+    expect((await post(app)).status).toBe(202);
+  });
+});

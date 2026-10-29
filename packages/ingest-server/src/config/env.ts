@@ -91,6 +91,11 @@ export const envSchema = z
         .default(getServiceDevUrl('registry-service') ?? 'http://localhost:3300'),
     ),
     REGISTRY_VALIDATION_MODE: z.enum(['strict', 'warn', 'off']).default('warn'),
+    // ── Snapshot gate (ADR-010) ───────────────────────
+    /** envelope catalog_snapshot 판정: off | warn(기본, 위반도 수락) | enforce(계약 위반 422) */
+    SNAPSHOT_GATE_MODE: z.enum(['off', 'warn', 'enforce']).default('warn'),
+    /** snapshot 조회 registry. 미설정 시 REGISTRY_URL */
+    SNAPSHOT_REGISTRY_URL: z.preprocess(emptyStringToUndefined, z.string().url().optional()),
     // ── Convergence Pipeline ──────────────────────────
     CONVERGENCE_ENABLED: booleanWithDefaultFalse,
     CONVERGENCE_RECORD_THRESHOLD: z.coerce.number().int().positive().default(100),

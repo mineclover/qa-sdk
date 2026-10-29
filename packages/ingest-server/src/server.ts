@@ -102,6 +102,31 @@ async function startServer() {
   });
   const metricsCollector = createMetricsCollector();
 
+  // ── Snapshot gate (ADR-010, envelope catalog_snapshot 판정) ──
+  let snapshotGate: import('./lib/snapshot-gate.js').SnapshotGate | undefined;
+  let checkSnapshotRegistry: import('./routes/health.js').SnapshotRegistryChecker | undefined;
+  const snapshotRegistryUrl = env.SNAPSHOT_REGISTRY_URL ?? env.REGISTRY_URL;
+  if (env.SNAPSHOT_GATE_MODE !== 'off') {
+    const { createSnapshotGate } = await import('./lib/snapshot-gate.js');
+    const { createSnapshotRegistryClient } = await import('./lib/snapshot-registry-client.js');
+    const client = createSnapshotRegistryClient({ registryUrl: snapshotRegistryUrl });
+    snapshotGate = createSnapshotGate({
+      mode: env.SNAPSHOT_GATE_MODE,
+      loadTarget: (catalogId) => client.latest(catalogId),
+      loadSnapshot: (catalogId, digest) => client.byDigest(catalogId, digest),
+    });
+    checkSnapshotRegistry = async () => {
+      const res = await fetch(`${snapshotRegistryUrl.replace(/\/+$/, '')}/health/live`, {
+        signal: AbortSignal.timeout(5_000),
+      });
+      return { ok: res.ok };
+    };
+    logger.info(
+      { mode: env.SNAPSHOT_GATE_MODE, registry: snapshotRegistryUrl },
+      'snapshot gate enabled',
+    );
+  }
+
   // ── Convergence Pipeline (optional) ──────────────────
   let convergencePipeline: ConvergencePipelineRunner | undefined;
   let convergenceScheduler: ConvergenceSchedulerHandle | null = null;
@@ -342,6 +367,8 @@ async function startServer() {
     knownPrefixes: addressHealthIndex?.knownPrefixes,
     latestVersions: addressHealthIndex?.latestVersions,
     keyObservationStore: stores.keyObservationStore,
+    snapshotGate,
+    checkSnapshotRegistry,
     transitionEngine,
     transitionCatalog,
     decodeServiceUrl: env.DECODE_SERVICE_URL,
