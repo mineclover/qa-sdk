@@ -19,6 +19,7 @@ import { spawnSync } from 'node:child_process';
 /** 회귀를 막아야 하는 패키지 — 빌드는 `...`로 의존 패키지까지 포함한다 */
 const TEST_PACKAGES = [
   '@qa-sdk/core',
+  'index-meta',
   '@qa-sdk/demo-tests',
   '@qa-sdk/ingest-server',
   '@qa-sdk/registry-service',

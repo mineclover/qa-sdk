@@ -138,7 +138,7 @@ sources:
 | T-2 | ✅ `canvas-viewport` test 스크립트 추가 (2개 통과). `browser-layout-inspector-extension`은 playwright `test:extension`이 이미 있어 유지 |
 | T-4 | ✅ ci-local `TEST_PACKAGES`에 유지·안정화 7개 추가 (decision-flow, operational-ontology, viz-3d, viz-core, authorization-ontology, db-traffic-control, infra-engine). 대상 이름을 workspace와 먼저 대조하는 단계 추가 — `pnpm --filter`는 틀린 이름에도 exit 0이다. `typecheck` 그룹 신설 (스크립트 있는 대상 전부) |
 | T-5 | ✅ ingest-server `typecheck` 스크립트 |
-| T-6 | 🟡 16건 수정 (demo-snapshot 브리지 `DimKind`·`entries` 타입을 index-meta 입력과 일치, 테스트의 `PatternRule.id`·null 처리·`EntityId`). 전체 검사는 `tsconfig.typecheck.json`. **남은 5개 파일**(`registry-hardening-e2e`, `registry-schema-diff-e2e`, `registry-schema-import-e2e`, `registry-service-e2e`, `registry-service-format-exploration`, 2,131줄)은 registry NestJS 전환(2026-03-27)으로 사라진 Hono `createApp`을 쓰는 `describe.skip` 테스트라 제외했다. 순환 참조·schema diff·schema import 동작은 registry-service 테스트에 대응 케이스가 보이지 않는다 — **NestJS 테스트로 이식할지, 삭제할지 사람 결정** |
+| T-6 | ✅ 16건 수정 (demo-snapshot 브리지 `DimKind`·`entries` 타입을 index-meta 입력과 일치, 테스트의 `PatternRule.id`·null 처리·`EntityId`), demo-tests 전체 `tsc` 검사 (`tsconfig.typecheck.json`). 죽은 registry skip 테스트 5개(45 case)는 `registry-service/src/e2e/`로 NestJS 이식 (`registry-test-app.ts`: 테스트마다 AppModule + 앱이 쓰는 store·RegistryService). 이식 중 **실제 결함 발견**: overflow composite draft(number 타입, product > 2^53)를 SQL store가 INTEGER로 읽다 node:sqlite RangeError → release가 OVERFLOW/NOT_READY 대신 500. capacity 계열 컬럼을 `CAST(... AS REAL)`로 읽도록 수정 (index-meta `realColumn`, 정밀도 테스트) |
 | T-3·T-7 | 대기 |
 
 ## 7. 배포 계약
