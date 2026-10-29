@@ -54,37 +54,71 @@ export interface EncodeResult {
 }
 
 /**
- * 차원 값 → serialized 주소.
+ * 실패 원인 코드. @qa-sdk/core CodecErrorCode의 부분집합 + 주소 문자열 형식 오류.
+ * browser-codec은 의존성 없는 번들이라 core 타입을 import하지 않는다.
  */
-export function encode(
+export type BrowserCodecErrorCode =
+  | 'UnknownPrefix'
+  | 'AddressOutOfRange'
+  | 'InvalidDimensionValue'
+  | 'MalformedAddress';
+
+export type BrowserCodecResult<T> =
+  | { readonly ok: true; readonly value: T }
+  | { readonly ok: false; readonly code: BrowserCodecErrorCode; readonly message: string };
+
+export interface DecodeValue {
+  readonly prefix: string;
+  readonly version: string;
+  readonly values: Record<string, string | number>;
+}
+
+function fail<T>(code: BrowserCodecErrorCode, message: string): BrowserCodecResult<T> {
+  return { ok: false, code, message };
+}
+
+/** 정규 주소 숫자 — canonical: @qa-sdk/core parseSerializedAddress (브라우저 번들 격리 위해 인라인) */
+const CANONICAL_ADDRESS_RE = /^(0|[1-9]\d*)$/;
+
+/**
+ * 차원 값 → serialized 주소. 실패 시 원인 코드를 돌려준다.
+ */
+export function encodeDetailed(
   catalog: BrowserCatalog,
   prefixId: string,
   values: Record<string, string | number>,
-): EncodeResult | null {
+): BrowserCodecResult<EncodeResult> {
   const def = catalog[prefixId];
-  if (!def) return null;
+  if (!def) return fail('UnknownPrefix', `Unknown prefix: ${prefixId}`);
 
   const shape: number[] = [];
   const positions: number[] = [];
 
   for (const label of def.labels) {
     const dim = def.dims[label];
-    if (!dim) return null;
+    if (!dim) return fail('UnknownPrefix', `${prefixId}@${def.version}에 dim ${label} 정의 없음`);
 
     if (dim.kind === 'axis') {
       const entries = dim.entries ?? [];
       shape.push(dim.capacity ?? entries.length);
       const idx = entries.indexOf(values[label] as string);
-      if (idx < 0) return null;
+      if (idx < 0) {
+        return fail(
+          'InvalidDimensionValue',
+          `Unknown entry "${values[label]}" for ${prefixId}.${label}`,
+        );
+      }
       positions.push(idx);
     } else {
       const vals = dim.values ?? [];
-      if (vals.length === 0) return null;
+      if (vals.length === 0) {
+        return fail('InvalidDimensionValue', `${prefixId}.${label}: refEntries가 없는 prefix_ref`);
+      }
       shape.push(vals.length);
       const v = values[label];
-      if (v === undefined) return null;
-      const idx = vals.indexOf(v as number);
-      if (idx < 0) return null;
+      const idx = v === undefined ? -1 : vals.indexOf(v as number);
+      if (idx < 0)
+        return fail('InvalidDimensionValue', `Unknown ref value ${v} for ${prefixId}.${label}`);
       positions.push(idx);
     }
   }
@@ -98,33 +132,61 @@ export function encode(
   for (let i = 0; i < positions.length; i++) addr += positions[i] * strides[i];
 
   return {
-    prefix: prefixId,
-    version: def.version,
-    address: addr,
-    serialized: `${prefixId}:${def.version}:${addr}`,
+    ok: true,
+    value: {
+      prefix: prefixId,
+      version: def.version,
+      address: addr,
+      serialized: `${prefixId}:${def.version}:${addr}`,
+    },
   };
 }
 
 /**
- * serialized 주소 → 차원 값.
+ * 차원 값 → serialized 주소. 실패하면 null — 원인이 필요하면 encodeDetailed.
  */
-export function decode(
+export function encode(
+  catalog: BrowserCatalog,
+  prefixId: string,
+  values: Record<string, string | number>,
+): EncodeResult | null {
+  const result = encodeDetailed(catalog, prefixId, values);
+  return result.ok ? result.value : null;
+}
+
+/**
+ * serialized 주소 → 차원 값. 실패 시 원인 코드를 돌려준다.
+ */
+export function decodeDetailed(
   catalog: BrowserCatalog,
   serialized: string,
-): { prefix: string; version: string; values: Record<string, string | number> } | null {
+): BrowserCodecResult<DecodeValue> {
   // canonical: @qa-sdk/core/lib/address-parser.ts (브라우저 번들 격리 위해 인라인)
   const parts = serialized.split(':');
   // 3파트: prefix:ver:addr / 4파트: catalogId:prefix:ver:addr
-  if (parts.length !== 3 && parts.length !== 4) return null;
+  if (parts.length !== 3 && parts.length !== 4) {
+    return fail('MalformedAddress', `주소 형식이 아닙니다: "${serialized}"`);
+  }
   const [prefixId, version, addrStr] =
     parts.length === 4 ? [parts[1], parts[2], parts[3]] : [parts[0], parts[1], parts[2]];
-  const def = catalog[prefixId];
-  if (!def) return null;
-  if (version !== def.version) return null;
-
-  if (!/^\d+$/.test(addrStr)) return null;
+  if (!prefixId || !version)
+    return fail('MalformedAddress', `빈 prefix 또는 version: "${serialized}"`);
+  if (!CANONICAL_ADDRESS_RE.test(addrStr)) {
+    return fail('MalformedAddress', `주소 숫자 형식이 아닙니다: "${addrStr}"`);
+  }
   let addr = Number(addrStr);
-  if (!Number.isInteger(addr) || addr < 0) return null;
+  if (!Number.isSafeInteger(addr))
+    return fail('MalformedAddress', `안전한 정수 범위를 넘습니다: "${addrStr}"`);
+
+  const def = catalog[prefixId];
+  if (!def) return fail('UnknownPrefix', `Unknown prefix: ${prefixId}`);
+  // browser catalog은 prefix마다 최신 version 하나만 담는다 — 다른 version은 해석할 layout이 없다
+  if (version !== def.version) {
+    return fail(
+      'UnknownPrefix',
+      `${prefixId}@${version} layout 없음 (browser catalog은 ${def.version}만 보유)`,
+    );
+  }
 
   const shape: number[] = [];
   const labels: { label: string; dim: BrowserDimDef }[] = [];
@@ -141,7 +203,12 @@ export function decode(
     labels.push({ label, dim });
   }
   const capacity = shape.reduce((acc, cur) => acc * cur, 1);
-  if (capacity <= 0 || addr >= capacity) return null;
+  if (capacity <= 0 || addr >= capacity) {
+    return fail(
+      'AddressOutOfRange',
+      `${prefixId}@${version} 주소는 [0, ${capacity}) 범위여야 합니다: ${addr}`,
+    );
+  }
 
   // canonical: weighted-index/calc.ts → calcWeights (브라우저 번들 격리 위해 인라인)
   const strides = new Array(shape.length);
@@ -160,7 +227,15 @@ export function decode(
         : ((dim.values ?? [])[pos] ?? pos);
   }
 
-  return { prefix: prefixId, version, values };
+  return { ok: true, value: { prefix: prefixId, version, values } };
+}
+
+/**
+ * serialized 주소 → 차원 값. 실패하면 null — 원인이 필요하면 decodeDetailed.
+ */
+export function decode(catalog: BrowserCatalog, serialized: string): DecodeValue | null {
+  const result = decodeDetailed(catalog, serialized);
+  return result.ok ? result.value : null;
 }
 
 /**

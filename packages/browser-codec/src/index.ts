@@ -1,7 +1,9 @@
 /** @def.boundary browser-runtime-system */
 export {
   encode,
+  encodeDetailed,
   decode,
+  decodeDetailed,
   track,
   trackWithSignal,
   decodeContext,
@@ -13,6 +15,9 @@ export type {
   BrowserDimDef,
   BrowserServiceDims,
   EncodeResult,
+  DecodeValue,
+  BrowserCodecErrorCode,
+  BrowserCodecResult,
   SignalRole,
 } from './browser-codec.js';
 export { BROWSER_CATALOG, BROWSER_CATALOG_SNAPSHOT } from './demo-catalog-browser.js';
