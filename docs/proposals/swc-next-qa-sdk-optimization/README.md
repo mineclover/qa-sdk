@@ -101,7 +101,7 @@ Wave 2 트랙은 [plans/gated-phases.md](./plans/gated-phases.md)에 진입 조�
 | ID | 결정 | 권장 | 근거 | 차단 대상 |
 |---|---|---|---|---|
 | D-1 | 주소 shape의 정본: `capacity` vs `entries.length` | ✅ **확정 (2026-10-28): capacity** | CLAUDE.md는 `core/catalog/runtime.ts`를 canonical runtime으로 지정한다. SDK가 이미 capacity로 주소를 생성·저장하고 있어 entries 기준으로 바꾸면 저장된 주소가 전부 깨진다. DecodeMap 쪽이 headroom 슬롯을 `(reserved:N)`으로 채워야 한다 | A, B |
-| D-2 | `entry_snapshot` 필드 처리 | 신규 `catalog_snapshot` 객체 필드 추가, `entry_snapshot`은 deprecated 표기 후 유지 | 의미가 다른 필드를 재사용하면 구버전 SDK 해석이 모호해진다 | B |
+| D-2 | `entry_snapshot` 필드 처리 | ✅ **확정 (2026-10-29)**: 신규 `catalog_snapshot` 객체 필드 추가, `entry_snapshot`은 deprecated 표기 후 유지 | 의미가 다른 필드를 재사용하면 구버전 SDK 해석이 모호해진다 | B |
 | D-3 | 쓰이지 않는 `stores/store-factory.ts` | 삭제 (CF Worker 경로가 쓰는 D1 store는 유지) | 런타임 import 0건, `createRuntimeStores`와 중복 | E |
 | D-4 | convergence interval timer 2개 | runner 내부 timer 제거, `convergence-scheduler`만 유지 | flush 책임 단일화 | E |
 | D-5 | queue 경로가 transition·convergence를 실행하지 않음 | queue 경로에도 같은 Phase 2.5/3 단계 연결 | inline/queue 결과가 달라지면 G3 differential test가 성립하지 않는다 | E, G3 |

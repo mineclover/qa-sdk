@@ -49,9 +49,21 @@ interface TransmissionEnvelope {
   source: { service_name: string; sdk_name: string; sdk_version: string };
   runtime: { platform: string; device_ref?: string; os_version?: string; app_version?: string };
   build: { env: "local" | "dev" | "staging" | "production"; build_ref?: string; release_version?: string };
+  infra_context?: Record<string, string>;
+  /** @deprecated catalog_snapshot 사용 (D-2) */
+  entry_snapshot?: string;
+  /** 좌표 주소를 만든 CatalogSnapshot 문맥 (ADR-010). 구버전 SDK는 보내지 않는다 */
+  catalog_snapshot?: {
+    catalog_id: string;
+    snapshot_version?: number;  // registry 발급 순번 — 표시용
+    digest: string;             // sha256:<64 hex> — 식별자
+    codec_version: string;      // 지원 여부는 ingest snapshot gate가 판정
+  };
   records: EventRecord[];
 }
 ```
+
+`catalog_snapshot`은 transmission 저장 컬럼에 기록하지 않는다. 판정 결과는 `snapshot_gate_total` counter와 경고 로그로만 남는다. batch별 문맥의 조회는 evidence pinning(GitHub #15)의 조회 API 설계와 함께 다룬다.
 
 ## TransmissionStore 포트
 

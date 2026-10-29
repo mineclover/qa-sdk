@@ -57,7 +57,7 @@ TransmissionEnvelope 형태의 body. `transmissionEnvelopeSchema` (zod)로 검�
 |:---|:---|
 | `application/json` (기본) | JSON.parse |
 | `application/x-protobuf` + QAPB magic (0x51415042) | `fromProtoEnvelope` (레거시 QAPB) |
-| `application/x-protobuf` (magic 없음) | `@qa-sdk/codec-proto` decodeEnvelope |
+| `application/x-protobuf` (magic 없음) | `@qa-sdk/codec-proto` decodeEnvelope → zod 검증. 손상된 바이트는 `CorruptEnvelope`(400), JSON 재해석은 codec-proto 모듈 로드 실패일 때만 |
 | `application/msgpack` | @msgpack/msgpack decode |
 
 **응답 (성공):**
@@ -75,7 +75,8 @@ HTTP 202 Accepted. Phase 1 저장이 완료되었고, Phase 2는 설정에 따�
 
 | HTTP | 조건 |
 |------|------|
-| 400 | envelope schema 검증 실패, registry strict 모드 위반, 지원 포맷 decode 실패 |
+| 400 | envelope schema 검증 실패(`INVALID_INPUT`), registry strict 모드 위반, 손상된 proto(`CorruptEnvelope`) |
+| 422 | `SNAPSHOT_GATE_MODE=enforce`에서 snapshot gate 계약 위반 — `error.code`: `CatalogMismatch`·`UnknownCatalogSnapshot`·`UnsupportedCodecVersion`·`UnknownPrefix`·`MigrationRequired` |
 | 429 | rate-limit 초과 |
 | 503 | shutdown 중 (middleware가 차단) |
 
@@ -85,6 +86,7 @@ HTTP 202 Accepted. Phase 1 저장이 완료되었고, Phase 2는 설정에 따�
 SDK → POST /v1/ingest (Envelope)
   → deserializeEnvelope (Content-Type 감지)
   → transmissionEnvelopeSchema.parse (zod 검증)
+  → snapshot gate (catalog_snapshot 판정 — off | warn | enforce, 기본 warn)
   → enrichAddressContext (infra_context ← record.address_context 머지)
   → checkAddressHealth (orphan prefix / stale version 경고)
   → validateWithCatalog (catalog 검증 — fail-open warning)
@@ -103,6 +105,21 @@ SDK → POST /v1/ingest (Envelope)
 | `runtime` | { platform } |
 | `build` | { env } |
 | `records` | RecordInsert 배열 |
+| `catalog_snapshot` | (선택) 좌표 주소를 만든 CatalogSnapshot 문맥 — `catalog_id`, `snapshot_version?`, `digest`, `codec_version` |
+| `entry_snapshot` | (deprecated) `catalog_snapshot`으로 대체 |
+
+## Snapshot gate (ADR-010)
+
+| 판정 | 조건 | warn | enforce |
+|---|---|---|---|
+| `ok` | 사용된 prefix@version이 모두 decode 가능 | 수락 | 수락 |
+| `missing` | `catalog_snapshot` 없음 (구버전 SDK) | 수락 + 경고 1회 | 수락 + 경고 1회 |
+| `degraded` | registry 조회 실패·target snapshot 없음 | 수락 + 경고 1회 (fail-open) | 수락 + 경고 1회 (fail-open) |
+| `violation` | `resolveDecodeLayout`이 `CodecContractError`로 거부 | 수락 + 경고 1회 | **422** |
+
+- target snapshot: registry `GET /catalogs/:id/snapshots/latest` (60s 캐시), 생성 snapshot: `GET /catalogs/:id/snapshots/:digest` (불변이라 영구 캐시). 둘 다 `AbortSignal.timeout(5_000)`
+- 설정: `SNAPSHOT_GATE_MODE`, `SNAPSHOT_REGISTRY_URL`(미설정 시 `REGISTRY_URL`)
+- 관측: `snapshot_gate_total{result, code}`, `/health/ready`의 `snapshot_registry: ok|degraded`(장애여도 readiness는 유지)
 
 ## Registry 검증 모드
 

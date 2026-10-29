@@ -33,7 +33,7 @@ role: status
 | `CatalogSnapshot` contract 초안 및 ADR 검토 | ✅ | T0 + ADR-010 |
 | SemanticAddress compatibility matrix 작성 | 🟡 | core ↔ DecodeMap ↔ browser-codec parity는 있음. **WASM은 미포함**, matrix 문서 없음 |
 | legacy-v1 golden corpus 생성 | ✅ | Track A — 619 case |
-| codec mismatch/error contract 구현 | 🟡 | 계약 타입·판정 함수(T0)는 있음. **`core/catalog/runtime.ts`는 여전히 일반 `Error` 32곳**, browser-codec은 `null` 반환 |
+| codec mismatch/error contract 구현 | 🟡 | 계약 타입·판정 함수(T0), ingest gate·proto `CorruptEnvelope`·HTTP 매핑(B)까지 완료. **`core/catalog/runtime.ts`는 여전히 일반 `Error` 32곳**, browser-codec은 `null` 반환 |
 | browser/Node codec differential test 추가 | ✅ | 3-way parity 83 layout |
 | hot/cold EventRecord prototype 및 allocation profile | ⬜ | G2 |
 | batch ingest와 backpressure prototype | ⬜ | G2 |
@@ -56,9 +56,9 @@ role: status
 
 | 순위 | 작업 | 이유 | 선행 조건 |
 |---|---|---|---|
-| **P0** | 테스트 CI job 추가 — 최소 `@qa-sdk/core`, `@qa-sdk/demo-tests`(codec-compat), `@qa-sdk/ingest-server`, `@qa-sdk/registry-service`, `@qa-sdk/decode-service` | 지금 CI는 def·visbug·bench·codegen만 돌린다. R-1을 막는 parity·corpus·PG parity 테스트가 CI에서 실행되지 않아 회귀를 막지 못한다 | 없음 |
+| **P0** | ✅ 로컬 CI — `pnpm ci:local` (`scripts/ci-local.mjs`): workflow 검사(def·codegen·format·arch)와 핵심 18개 패키지 테스트·bench smoke. 결정: CI는 로컬에서 확인한다 (2026-10-29) | — |
 | **P0** | 49 커밋 push 여부 결정 | 원격에 반영되지 않았고, `8a624692`에 다른 주제의 삭제분이 섞여 있다 | 사람 결정 |
-| **P1** | Track B (envelope snapshot binding, registry 불변 snapshot, readiness) | registry `catalogHash`가 여전히 다른 알고리즘이라 SDK GENERATION 비교가 항상 어긋난다. #15의 catalog pin 재료 | **D-2 결정** |
+| **P1** | ✅ Track B — registry generation이 digest 기준이 되어 SDK GENERATION 비교가 일치. 남은 #15 재료: batch 문맥 조회 API, VerdictReport artifact digest | — |
 | **P1** | core runtime 오류를 `CodecContractError`로 전환, browser-codec `null` 반환의 원인 코드 노출 | 원본 계획 "codec mismatch/error contract"의 미완 부분 | 없음 (Track A 소유 파일) |
 | **P2** | 2순위 정리: 의존 0 라이브러리 8개, consumer 그룹(시각화 7·시뮬 6·데모 8), `stores/pg/*`(Plan 07d), 구조 중복 | 관리 비용 축소 | 그룹별 사람 결정 |
 | **P2** | demo-tests 기존 타입 오류 21건 정리 후 전체 `tsc` 검사 | 지금은 `codec-compat`만 타입 검사 | 없음 |
@@ -69,7 +69,7 @@ role: status
 
 | ID | 내용 | 상태 |
 |---|---|---|
-| D-2 | `entry_snapshot` 처리 (B 착수 조건) | 대기 |
+| D-2 | `entry_snapshot` 처리 | ✅ 확정 (catalog_snapshot 추가, entry_snapshot deprecated 유지) |
 | D-9 | convergence scheduler 제거, worker 모드 convergence 부재 | G3에서 결정 |
 | X-16 후속 | 없음 (삭제 완료) | — |
 | 2순위 그룹 | 패키지 그룹별 유지·삭제 | 대기 |

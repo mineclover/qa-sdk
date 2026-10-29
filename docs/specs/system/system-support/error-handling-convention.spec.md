@@ -71,6 +71,23 @@ AppError와의 차이: AppError는 **내부에서 발생**, ServiceClientError�
 | weighted-index | WeightedIndexError | ShapeError, CoordError, IndexRangeError 등 8종 |
 | index-meta | IndexMetaError | IndexNotFoundError, EntryNotFoundError 등 9종 |
 | spec-core | SpecError | DuplicateRegistrationError, NotFoundError, ValidationError |
+| @qa-sdk/core (catalog/snapshot) | CodecContractError | `code` 9종 (아래 표) — 클래스 1개, `isCodecContractError(err, code?)`로 판별 (번들이 나뉘어도 name·code로 판별) |
+
+**CodecContractError (ADR-010) — 좌표 주소 호환성 계약:**
+
+| code | 의미 | ingest HTTP |
+|---|---|---|
+| `CorruptEnvelope` | 잘리거나 손상된 envelope 바이트 | 400 |
+| `UnknownCatalogSnapshot` | 생성 snapshot digest가 발행 기록에 없음 | 422 (enforce) |
+| `CatalogMismatch` | catalog가 다름 | 422 (enforce) |
+| `UnsupportedCodecVersion` | 지원하지 않는 codec | 422 (enforce) |
+| `UnknownPrefix` | snapshot에 prefix@version layout 없음 | 422 (enforce) |
+| `MigrationRequired` | 생성·대상 layout이 breaking 관계 | 422 (enforce) |
+| `AddressOutOfRange` | 주소가 [0, totalSpace) 밖 | — (라이브러리) |
+| `StrideOverflow` | 2^53 초과 layout을 number로 다룸 | — (라이브러리) |
+| `InvalidDimensionValue` | dim 값이 layout에 없음 | — (라이브러리) |
+
+registry는 같은 prefix version의 breaking 변경 발행을 `AppError('UNVERSIONED_BREAKING_CHANGE', …, 422, { code: 'MigrationRequired' })`로 거부한다.
 
 서비스에서 라이브러리 에러를 catch하면 AppError로 변환:
 
@@ -87,7 +104,8 @@ if (err instanceof EntryNotFoundError) {
 |------|------|------|
 | `INVALID_INPUT` | 400 | 요청 파라미터/body 유효하지 않음 |
 | `NOT_FOUND` | 404 | 리소스 미존재 |
-| `CONFLICT` | 409 | 이미 존재, revision 충돌 |
+| `CONFLICT` | 409 | 이미 존재, revision 충돌, 불변 snapshot 재정의 |
+| `UNVERSIONED_BREAKING_CHANGE` | 422 | 같은 prefix version 안의 주소 layout breaking 변경 (registry 발행 거부) |
 | `RANGE_EXCEEDED` | 400 | 좌표 범위 초과 |
 | `PARSE_ERROR` | 400 | 파싱 실패 |
 | `INTERNAL_ERROR` | 500 | 내부 오류 |
