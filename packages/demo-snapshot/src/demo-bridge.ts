@@ -70,10 +70,14 @@ export function catalogToRegistryInput(catalog: DemoCatalog = DEMO_CATALOG) {
   const dims: Record<
     string,
     {
-      kind: { type: string; indexId?: string };
+      /** index-meta `DimKind`와 구조 호환 — demo-snapshot은 index-meta에 의존하지 않는다 */
+      kind:
+        | { type: 'string_enum' }
+        | { type: 'number_enum' }
+        | { type: 'index_ref'; indexId: string };
       snapshots: Record<
         string,
-        { entries: readonly (string | number)[]; entryRefs?: ReturnType<typeof buildEntryRefs> }
+        { entries: (string | number)[]; entryRefs?: ReturnType<typeof buildEntryRefs> }
       >;
     }
   > = {};

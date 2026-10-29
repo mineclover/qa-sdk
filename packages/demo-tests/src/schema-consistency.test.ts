@@ -82,7 +82,7 @@ describe('Feature 정의 일관성', () => {
   });
 
   it('v1 feature의 grantedRoles가 모두 v1 역할에 존재', () => {
-    const v1Set = new Set(DEMO_ROLES_V1);
+    const v1Set = new Set<string>(DEMO_ROLES_V1);
     for (const f of DEMO_FEATURES_V1) {
       for (const r of f.grantedRoles) {
         expect(v1Set.has(r), `${f.id}: role "${r}" not in v1 roles`).toBe(true);
@@ -91,7 +91,7 @@ describe('Feature 정의 일관성', () => {
   });
 
   it('v2 feature의 grantedRoles가 모두 v2 역할에 존재', () => {
-    const v2Set = new Set(DEMO_ROLES_V2);
+    const v2Set = new Set<string>(DEMO_ROLES_V2);
     for (const f of DEMO_FEATURES_V2) {
       for (const r of f.grantedRoles) {
         expect(v2Set.has(r), `${f.id}: role "${r}" not in v2 roles`).toBe(true);

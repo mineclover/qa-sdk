@@ -48,6 +48,7 @@ import {
   type GateResult,
   type EntryRecord,
 } from 'index-meta';
+import type { EntityId } from 'index-meta';
 
 // ── 픽스처 설명 ────────────────────────────────────────────
 //
@@ -82,7 +83,8 @@ const toPosition = (address: number): number => address + 1;
 // 실제 서비스라면 Redis / in-process LRU 등을 사용한다.
 // 여기서는 Map으로 캐시 레이어를 시뮬레이션한다.
 
-type CacheEntry = { value: string; cachedAt: string };
+/** entry store 값(EntityId)을 그대로 캐시한다 */
+type CacheEntry = { value: EntityId; cachedAt: string };
 
 function makeInfoCache() {
   const _map = new Map<number, CacheEntry>();
@@ -94,7 +96,7 @@ function makeInfoCache() {
       if (hit) _hitCount++;
       return hit;
     },
-    set(address: number, value: string, cachedAt: string): void {
+    set(address: number, value: EntityId, cachedAt: string): void {
       _map.set(address, { value, cachedAt });
     },
     delete(address: number): void {

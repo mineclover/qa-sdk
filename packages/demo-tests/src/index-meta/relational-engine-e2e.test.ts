@@ -257,26 +257,26 @@ describe('Relational Engine E2E — RBAC', () => {
     // 규칙 정의
     const rules: PatternRule<string>[] = [
       // 기본: 모든 접근 거부
-      { pattern: [null, null, null], value: 'deny' },
+      { id: 'default-deny', pattern: [null, null, null], value: 'deny' },
       // admin은 모든 것에 접근 가능
-      { pattern: ['1', null, null], value: 'allow' },
+      { id: 'admin-all', pattern: ['1', null, null], value: 'allow' },
       // editor는 read/write만 가능
-      { pattern: ['2', '1', null], value: 'allow' }, // editor+read
-      { pattern: ['2', '2', null], value: 'allow' }, // editor+write
+      { id: 'editor-read', pattern: ['2', '1', null], value: 'allow' }, // editor+read
+      { id: 'editor-write', pattern: ['2', '2', null], value: 'allow' }, // editor+write
       // editor+settings는 개별 action별로 차단 (specificity 3 > 2)
-      { pattern: ['2', '1', '3'], value: 'deny' }, // editor+read+settings → deny
-      { pattern: ['2', '2', '3'], value: 'deny' }, // editor+write+settings → deny
+      { id: 'editor-read-settings', pattern: ['2', '1', '3'], value: 'deny' }, // editor+read+settings → deny
+      { id: 'editor-write-settings', pattern: ['2', '2', '3'], value: 'deny' }, // editor+write+settings → deny
     ];
 
     // admin + delete + users → allow (admin은 모든 접근 가능)
     const adminCoords = [1, 3, 4]; // admin=1, delete=3, users=4
     const adminResult = resolvePatternPolicy(adminCoords, rules, shape, 'most-specific');
-    expect(adminResult.value).toBe('allow');
+    expect(adminResult?.value).toBe('allow');
 
     // editor + read + dashboard → allow
     const editorReadCoords = [2, 1, 1]; // editor=2, read=1, dashboard=1
     const editorReadResult = resolvePatternPolicy(editorReadCoords, rules, shape, 'most-specific');
-    expect(editorReadResult.value).toBe('allow');
+    expect(editorReadResult?.value).toBe('allow');
 
     // editor + read + settings → deny (settings 접근 차단이 더 specific)
     const editorSettings = [2, 1, 3]; // editor=2, read=1, settings=3
@@ -286,12 +286,12 @@ describe('Relational Engine E2E — RBAC', () => {
       shape,
       'most-specific',
     );
-    expect(editorSettingsResult.value).toBe('deny');
+    expect(editorSettingsResult?.value).toBe('deny');
 
     // viewer + read + dashboard → deny (기본 거부)
     const viewerCoords = [3, 1, 1]; // viewer=3, read=1, dashboard=1
     const viewerResult = resolvePatternPolicy(viewerCoords, rules, shape, 'most-specific');
-    expect(viewerResult.value).toBe('deny');
+    expect(viewerResult?.value).toBe('deny');
   });
 
   // ── 6. 전체 흐름: DB + cache + binary search 통합 ──
