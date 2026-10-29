@@ -14,9 +14,16 @@
  *   index.ts           — barrel export
  */
 
-import { createHash } from 'node:crypto';
 import type { Catalog, DkgConfig } from '@qa-sdk/core';
-import { latestPrefixVersion, encodePrefix, decodePrefix } from '@qa-sdk/core';
+import {
+  LEGACY_V1_CODEC,
+  computeCatalogDigest,
+  decodePrefix,
+  digestCanonical,
+  encodePrefix,
+  latestPrefixVersion,
+  shortDigest,
+} from '@qa-sdk/core';
 import { GENERATOR_NAME, GENERATOR_VERSION } from './generator-info.js';
 import { toPascal, toTsConstKey } from './naming.js';
 
@@ -29,8 +36,12 @@ export interface CatalogCodegenFile {
 
 export interface CatalogCodegenResult {
   readonly files: readonly CatalogCodegenFile[];
-  /** Catalog content hash (SHA-256 hex prefix 12자) */
+  /** 표시용 catalog 식별자 = shortDigest(catalogDigest). registry catalogHash와 같은 알고리즘 */
   readonly contentHash: string;
+  /** Catalog 전체 digest (`sha256:<64 hex>`) — computeCatalogDigest */
+  readonly catalogDigest: string;
+  /** 생성 입력 전체 digest — catalog + dkgConfig + generator + options. drift 판정용 */
+  readonly sourceDigest: string;
 }
 
 export interface CatalogCodegenOptions {
@@ -45,25 +56,6 @@ function byKey(a: readonly [string, unknown], b: readonly [string, unknown]): nu
   return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0;
 }
 
-/** Catalog의 구조적 content hash (SHA-256 hex prefix 12자) */
-function computeCatalogHash(catalog: Catalog): string {
-  // axes entries + capacity, prefix labels + dims 구조를 해시
-  const parts: string[] = [catalog.id];
-  for (const [id, axis] of Object.entries(catalog.axes).toSorted(byKey)) {
-    const vkeys = Object.keys(axis.versions).toSorted();
-    for (const vk of vkeys) {
-      const snap = axis.versions[vk];
-      parts.push(`${id}:${vk}:[${snap.entries.join(',')}]:${snap.capacity ?? snap.entries.length}`);
-    }
-  }
-  for (const [id, prefix] of Object.entries(catalog.prefixes).toSorted(byKey)) {
-    parts.push(
-      `${id}:${prefix.labels.join(',')}:${prefix.versions.map((v) => v.version).join(',')}`,
-    );
-  }
-  return createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 12);
-}
-
 /** prefix별 version 맵 구성 */
 function buildPrefixVersionMap(catalog: Catalog, lockVersion?: string): Record<string, string> {
   const map: Record<string, string> = {};
@@ -75,10 +67,13 @@ function buildPrefixVersionMap(catalog: Catalog, lockVersion?: string): Record<s
 
 // ── Header ─────────────────────────────────────────────
 
+type CodegenDigests = Pick<CatalogCodegenResult, 'contentHash' | 'catalogDigest' | 'sourceDigest'>;
+
 /** 생성물 공통 헤더 — 실행 시각·환경 값은 넣지 않는다 (같은 입력 → 같은 바이트) */
-function header(catalogId: string, contentHash: string): string {
+function header(catalogId: string, digests: CodegenDigests): string {
   return [
-    `// Generated from Catalog "${catalogId}" (hash: ${contentHash}) by ${GENERATOR_NAME}@${GENERATOR_VERSION}`,
+    `// Generated from Catalog "${catalogId}" (hash: ${digests.contentHash}) by ${GENERATOR_NAME}@${GENERATOR_VERSION}`,
+    `// catalogDigest: ${digests.catalogDigest} · sourceDigest: ${digests.sourceDigest}`,
     `// !! 자동 생성 파일 — 직접 수정 금지 !!`,
     ``,
   ].join('\n');
@@ -86,45 +81,56 @@ function header(catalogId: string, contentHash: string): string {
 
 // ── Main ───────────────────────────────────────────────
 
-export function generateCatalogTypes(
+export async function generateCatalogTypes(
   catalog: Catalog,
   dkgConfig?: DkgConfig,
   options?: CatalogCodegenOptions,
-): CatalogCodegenResult {
-  const contentHash = computeCatalogHash(catalog);
+): Promise<CatalogCodegenResult> {
+  const catalogDigest = await computeCatalogDigest(catalog);
+  const sourceDigest = await digestCanonical({
+    catalog,
+    dkgConfig: dkgConfig ?? null,
+    generator: { name: GENERATOR_NAME, version: GENERATOR_VERSION },
+    options: options ?? {},
+  });
+  const digests: CodegenDigests = {
+    contentHash: shortDigest(catalogDigest),
+    catalogDigest,
+    sourceDigest,
+  };
   const prefixVersions = buildPrefixVersionMap(catalog, options?.lockVersion);
   const files: CatalogCodegenFile[] = [];
 
   files.push({
     path: 'prefix-ids.ts',
-    content: genPrefixIds(catalog, contentHash, prefixVersions),
+    content: genPrefixIds(catalog, digests, prefixVersions),
   });
-  files.push({ path: 'axes.ts', content: genAxes(catalog, contentHash) });
-  files.push({ path: 'dims.ts', content: genDims(catalog, contentHash) });
-  files.push({ path: 'sdk-factory.ts', content: genSdkFactory(catalog, contentHash) });
-  files.push({ path: 'context-types.ts', content: genContextTypes(catalog, contentHash) });
+  files.push({ path: 'axes.ts', content: genAxes(catalog, digests) });
+  files.push({ path: 'dims.ts', content: genDims(catalog, digests) });
+  files.push({ path: 'sdk-factory.ts', content: genSdkFactory(catalog, digests) });
+  files.push({ path: 'context-types.ts', content: genContextTypes(catalog, digests) });
 
   if (dkgConfig) {
-    files.push({ path: 'dsl.ts', content: genDsl(catalog, dkgConfig, contentHash) });
+    files.push({ path: 'dsl.ts', content: genDsl(catalog, dkgConfig, digests) });
   }
 
-  files.push({ path: 'index.ts', content: genBarrel(catalog, !!dkgConfig, contentHash) });
+  files.push({ path: 'index.ts', content: genBarrel(catalog, !!dkgConfig, digests) });
 
-  return { files, contentHash };
+  return { files, ...digests };
 }
 
 // ── prefix-ids.ts ──────────────────────────────────────
 
 function genPrefixIds(
   catalog: Catalog,
-  contentHash: string,
+  digests: CodegenDigests,
   prefixVersions: Record<string, string>,
 ): string {
   const prefixIds = Object.keys(catalog.prefixes).toSorted();
   const axisIds = Object.keys(catalog.axes).toSorted();
   const tableIds = Object.keys(catalog.tables ?? {}).toSorted();
 
-  const lines = [header(catalog.id, contentHash)];
+  const lines = [header(catalog.id, digests)];
 
   // PrefixId
   lines.push(`/** Catalog prefix 이름 리터럴 유니온 (${prefixIds.length}개) */`);
@@ -170,8 +176,12 @@ function genPrefixIds(
   lines.push(`export const VERSION_META = {`);
   lines.push(`  /** Catalog ID */`);
   lines.push(`  catalogId: "${catalog.id}" as const,`);
-  lines.push(`  /** Catalog 구조 content hash (SHA-256 prefix 12자) */`);
-  lines.push(`  contentHash: "${contentHash}" as const,`);
+  lines.push(`  /** 표시용 catalog 식별자 (shortDigest(catalogDigest), 12 hex) */`);
+  lines.push(`  contentHash: "${digests.contentHash}" as const,`);
+  lines.push(`  /** Catalog 전체 digest (sha256:<64 hex>) */`);
+  lines.push(`  catalogDigest: "${digests.catalogDigest}" as const,`);
+  lines.push(`  /** 좌표 codec 버전 */`);
+  lines.push(`  codecVersion: "${LEGACY_V1_CODEC}" as const,`);
   lines.push(`  /** 생성기 식별자 (name@version) */`);
   lines.push(`  generator: "${GENERATOR_NAME}@${GENERATOR_VERSION}" as const,`);
   lines.push(`  /** prefix별 version (생성 시점 기준) */`);
@@ -183,7 +193,7 @@ function genPrefixIds(
   lines.push(`} as const;`);
   lines.push(``);
   lines.push(`/** GENERATION — 빌드 시점 version 식별자. SDK 부트 시 전달. */`);
-  lines.push(`export const GENERATION = "${catalog.id}:${contentHash}" as const;`);
+  lines.push(`export const GENERATION = "${catalog.id}:${digests.contentHash}" as const;`);
 
   lines.push(``);
   return lines.join('\n');
@@ -191,8 +201,8 @@ function genPrefixIds(
 
 // ── axes.ts ────────────────────────────────────────────
 
-function genAxes(catalog: Catalog, contentHash: string): string {
-  const lines = [header(catalog.id, contentHash)];
+function genAxes(catalog: Catalog, digests: CodegenDigests): string {
+  const lines = [header(catalog.id, digests)];
 
   for (const [axisId, axis] of Object.entries(catalog.axes).toSorted(byKey)) {
     const versionKeys = Object.keys(axis.versions);
@@ -227,8 +237,8 @@ function genAxes(catalog: Catalog, contentHash: string): string {
 
 // ── dims.ts ────────────────────────────────────────────
 
-function genDims(catalog: Catalog, contentHash: string): string {
-  const lines = [header(catalog.id, contentHash)];
+function genDims(catalog: Catalog, digests: CodegenDigests): string {
+  const lines = [header(catalog.id, digests)];
 
   lines.push(`import type * as Axes from "./axes.js";`);
   lines.push(``);
@@ -288,8 +298,8 @@ function genDims(catalog: Catalog, contentHash: string): string {
 
 // ── dsl.ts ─────────────────────────────────────────────
 
-function genDsl(_catalog: Catalog, dkgConfig: DkgConfig, contentHash: string): string {
-  const lines = [header(_catalog.id, contentHash)];
+function genDsl(_catalog: Catalog, dkgConfig: DkgConfig, digests: CodegenDigests): string {
+  const lines = [header(_catalog.id, digests)];
 
   // DSL bundles
   for (const dsl of dkgConfig.dslBundles) {
@@ -355,8 +365,8 @@ function genDsl(_catalog: Catalog, dkgConfig: DkgConfig, contentHash: string): s
 
 // ── sdk-factory.ts ─────────────────────────────────────
 
-function genSdkFactory(catalog: Catalog, contentHash: string): string {
-  const lines = [header(catalog.id, contentHash)];
+function genSdkFactory(catalog: Catalog, digests: CodegenDigests): string {
+  const lines = [header(catalog.id, digests)];
 
   lines.push(`import { createIndexSDK } from "@qa-sdk/codec";`);
   lines.push(``);
@@ -426,8 +436,8 @@ function genSdkFactory(catalog: Catalog, contentHash: string): string {
 
 // ── context-types.ts ───────────────────────────────────
 
-function genContextTypes(catalog: Catalog, contentHash: string): string {
-  const lines = [header(catalog.id, contentHash)];
+function genContextTypes(catalog: Catalog, digests: CodegenDigests): string {
+  const lines = [header(catalog.id, digests)];
 
   lines.push(`import type { QaContext } from "@qa-sdk/context";`);
   lines.push(`import type { ServiceBootConfig } from "@qa-sdk/core";`);
@@ -593,8 +603,8 @@ export function testMigration(
 
 // ── index.ts (barrel) ──────────────────────────────────
 
-function genBarrel(_catalog: Catalog, hasDkg: boolean, contentHash: string): string {
-  const lines = [header(_catalog.id, contentHash)];
+function genBarrel(_catalog: Catalog, hasDkg: boolean, digests: CodegenDigests): string {
+  const lines = [header(_catalog.id, digests)];
 
   lines.push(`export * from "./prefix-ids.js";`);
   lines.push(`export * from "./axes.js";`);

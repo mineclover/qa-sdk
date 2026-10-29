@@ -121,7 +121,7 @@ async function codegenFromRegistry(opts: CodegenRegistryOptions): Promise<void> 
     }
   }
 
-  const result = generateCatalogTypes(catalog, dkgConfig ?? undefined, {
+  const result = await generateCatalogTypes(catalog, dkgConfig ?? undefined, {
     lockVersion: opts.lockVersion,
   });
 
@@ -149,6 +149,8 @@ async function codegenFromRegistry(opts: CodegenRegistryOptions): Promise<void> 
     metadata: {
       catalogId: catalog.id,
       contentHash: result.contentHash,
+      catalogDigest: result.catalogDigest,
+      sourceDigest: result.sourceDigest,
       source: fromRegistry ? 'registry' : 'local-fallback',
     },
   });
@@ -164,7 +166,7 @@ async function codegenFromCatalog(opts: CodegenCatalogOptions): Promise<void> {
   const catalog = (opts.loadedCatalog ?? (await loadCatalog(opts.catalog))) as Catalog;
   const dkgConfig = opts.dkgConfig ? await loadDkgConfig(opts.dkgConfig) : await loadDkgConfig();
 
-  const result = generateCatalogTypes(catalog, dkgConfig ?? undefined, {
+  const result = await generateCatalogTypes(catalog, dkgConfig ?? undefined, {
     lockVersion: opts.lockVersion,
   });
 
@@ -193,6 +195,8 @@ async function codegenFromCatalog(opts: CodegenCatalogOptions): Promise<void> {
     metadata: {
       catalogId: catalog.id,
       contentHash: result.contentHash,
+      catalogDigest: result.catalogDigest,
+      sourceDigest: result.sourceDigest,
       source: opts.catalog ? 'catalog-file' : 'loaded-catalog',
     },
   });
