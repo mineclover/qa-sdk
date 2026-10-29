@@ -15,6 +15,12 @@ export type AddressContextJson = AddressContextV1;
 /** eventRecords.payload — 이벤트 페이로드 */
 export type EventPayloadJson = Record<string, unknown>;
 
+/** eventRecords.metricLabels — metric label 맵 */
+export type MetricLabelsJson = Record<string, string>;
+
+/** eventRecords.metricBuckets / metricQuantiles — histogram bucket 경계, summary quantile */
+export type MetricNumbersJson = number[];
+
 /** traces.userAttributes — 사용자 속성 */
 export type UserAttributesJson = Record<string, string>;
 

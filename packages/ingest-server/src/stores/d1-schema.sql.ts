@@ -11,6 +11,11 @@
  * Workers 환경에서는 파일시스템 접근이 불가하여 drizzle migrate() 사용 불가.
  * Node.js 테스트에서는 drizzle migrate 사용을 권장합니다.
  *
+ * 컬럼 추가는 additive migration으로만 한다: 기존 CREATE TABLE은 그대로 두고
+ * 뒤에 `ALTER TABLE ... ADD COLUMN`을 붙인다. 이미 존재하는 D1 DB에도 컬럼이 생기고,
+ * 재실행 시 duplicate column 오류는 worker.ts가 문장 단위로 무시한다.
+ * 정합 검사: src/db/schema-parity.test.ts
+ *
  * 차이점 (PG vs SQLite):
  * - jsonb → TEXT (JSON string)
  * - timestamp with timezone → TEXT (ISO-8601)
@@ -77,6 +82,15 @@ CREATE INDEX IF NOT EXISTS idx_event_records_trace_id ON event_records(trace_id)
 CREATE INDEX IF NOT EXISTS idx_event_records_trace_timestamp ON event_records(trace_id, timestamp);
 CREATE INDEX IF NOT EXISTS idx_event_records_event_key ON event_records(event_key);
 CREATE INDEX IF NOT EXISTS idx_event_records_session_id ON event_records(qa_session_id);
+
+-- additive: metric 필드 (drizzle 20261029002425_metric_columns_and_missing_tables)
+ALTER TABLE event_records ADD COLUMN metric_type TEXT;
+ALTER TABLE event_records ADD COLUMN metric_name TEXT;
+ALTER TABLE event_records ADD COLUMN metric_value REAL;
+ALTER TABLE event_records ADD COLUMN metric_unit TEXT;
+ALTER TABLE event_records ADD COLUMN metric_labels TEXT;
+ALTER TABLE event_records ADD COLUMN metric_buckets TEXT;
+ALTER TABLE event_records ADD COLUMN metric_quantiles TEXT;
 
 CREATE TABLE IF NOT EXISTS verdict_reports (
   id               TEXT PRIMARY KEY,

@@ -20,6 +20,8 @@ import {
   parseJsonColumn,
   type AddressContextJson,
   type EventPayloadJson,
+  type MetricLabelsJson,
+  type MetricNumbersJson,
   type UserAttributesJson,
 } from '../db/json-types.js';
 import type { D1Db } from './d1-db-type.js';
@@ -56,6 +58,13 @@ export class D1RecordStore implements RecordStore {
           actorId: r.actorId ?? null,
           userId: r.userId ?? null,
           userAttributes: r.userAttributes ? JSON.stringify(r.userAttributes) : null,
+          metricType: r.metricType ?? null,
+          metricName: r.metricName ?? null,
+          metricValue: r.metricValue ?? null,
+          metricUnit: r.metricUnit ?? null,
+          metricLabels: r.metricLabels ? JSON.stringify(r.metricLabels) : null,
+          metricBuckets: r.metricBuckets ? JSON.stringify(r.metricBuckets) : null,
+          metricQuantiles: r.metricQuantiles ? JSON.stringify(r.metricQuantiles) : null,
           createdAt: new Date().toISOString(),
         })
         .onConflictDoNothing({ target: eventRecords.logId });
@@ -187,6 +196,13 @@ function toStoredRecord(row: typeof eventRecords.$inferSelect): StoredRecord {
     actorId: row.actorId ?? undefined,
     userId: row.userId ?? undefined,
     userAttributes: parseJsonColumn<UserAttributesJson | undefined>(row.userAttributes, undefined),
+    metricType: row.metricType ?? undefined,
+    metricName: row.metricName ?? undefined,
+    metricValue: row.metricValue ?? undefined,
+    metricUnit: row.metricUnit ?? undefined,
+    metricLabels: parseJsonColumn<MetricLabelsJson | undefined>(row.metricLabels, undefined),
+    metricBuckets: parseJsonColumn<MetricNumbersJson | undefined>(row.metricBuckets, undefined),
+    metricQuantiles: parseJsonColumn<MetricNumbersJson | undefined>(row.metricQuantiles, undefined),
     createdAt: new Date(row.createdAt),
   };
 }

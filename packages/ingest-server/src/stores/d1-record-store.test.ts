@@ -27,6 +27,64 @@ describe('D1RecordStore', () => {
     store = new D1RecordStore(db);
   });
 
+  it('metric 레코드의 metric_* 필드가 저장 후 조회에서 보존된다', async () => {
+    const metric = {
+      logId: 'm1',
+      traceId: 't_metric',
+      spanId: 's_metric',
+      timestamp: new Date('2026-01-01T00:00:00Z'),
+      recordKind: 'metric',
+      eventKey: 'checkout.latency',
+      eventVersion: '001',
+      payloadFormat: 'json',
+      payloadEncoding: 'raw',
+      payloadMaskingApplied: false,
+      payloadMaskedFields: [],
+      metricType: 'histogram',
+      metricName: 'checkout_latency_ms',
+      metricValue: 12.5,
+      metricUnit: 'ms',
+      metricLabels: { region: 'kr', step: 'pay' },
+      metricBuckets: [5, 10, 25, 50],
+      metricQuantiles: [0.5, 0.95],
+    };
+    await store.insertBatch([metric]);
+
+    const [stored] = await store.findByTraceId('t_metric');
+    expect(stored).toMatchObject({
+      recordKind: 'metric',
+      metricType: 'histogram',
+      metricName: 'checkout_latency_ms',
+      metricValue: 12.5,
+      metricUnit: 'ms',
+      metricLabels: { region: 'kr', step: 'pay' },
+      metricBuckets: [5, 10, 25, 50],
+      metricQuantiles: [0.5, 0.95],
+    });
+  });
+
+  it('metric 필드가 없는 레코드는 조회 결과에 metric 키를 만들지 않는다', async () => {
+    await store.insertBatch([
+      {
+        logId: 'l1',
+        traceId: 't_log',
+        spanId: 's_log',
+        timestamp: new Date('2026-01-01T00:00:00Z'),
+        recordKind: 'log',
+        eventKey: 'page.view',
+        eventVersion: '001',
+        payloadFormat: 'json',
+        payloadEncoding: 'raw',
+        payloadMaskingApplied: false,
+        payloadMaskedFields: [],
+      },
+    ]);
+    const [stored] = await store.findByTraceId('t_log');
+    expect(stored.metricName).toBeUndefined();
+    expect(stored.metricValue).toBeUndefined();
+    expect(stored.metricLabels).toBeUndefined();
+  });
+
   it('insertBatch + findByTraceId', async () => {
     await store.insertBatch([
       {
