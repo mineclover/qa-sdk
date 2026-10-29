@@ -106,7 +106,7 @@ SIGTERM/SIGINT 수신
 
 **fallback 모드:** 동일 인터페이스의 `InMemory*Store` 사용 (DB 없이 동작).
 
-**런타임 미배선 어댑터 (후속 판정):** `ClickhouseRecordStore`, `stores/pg/factory.ts` `createPgIngestStores`(PgRecordStore·PgKeyObservationStore),
+**런타임 미배선 어댑터 (후속 판정):** `stores/pg/factory.ts` `createPgIngestStores`(PgRecordStore·PgKeyObservationStore),
 D1 support store 5종(`D1GraphStore`, `D1DlqStore`, `D1TransmissionStore`, `D1ScenarioSpecStore`, `D1KeyObservationStore`)은 테스트에서만 생성된다.
 
 ### 트랜잭션 경계

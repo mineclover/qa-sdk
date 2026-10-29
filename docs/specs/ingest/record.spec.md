@@ -22,8 +22,6 @@ sources:
   - packages/ingest-server/src/stores/d1-record-store.test.ts
   - packages/ingest-server/src/stores/pg/event-record.adapter.ts
   - packages/ingest-server/src/stores/pg/event-record.adapter.test.ts
-  - packages/ingest-server/src/stores/clickhouse-record-store.ts
-  - packages/ingest-server/src/stores/clickhouse-record-store.test.ts
   - packages/ingest-server/src/__tests__/cross-adapter/shared/record-store.shared.ts
 ---
 # EventRecord + RecordStore

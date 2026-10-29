@@ -19,8 +19,6 @@ sources:
   - packages/core/src/schema/record.schema.ts
   - packages/ingest-server/src/stores/d1-record-store.ts
   - packages/ingest-server/src/stores/d1-record-store.test.ts
-  - packages/ingest-server/src/stores/clickhouse-record-store.ts
-  - packages/ingest-server/src/stores/clickhouse-record-store.test.ts
   - packages/ingest-server/src/stores/pg/event-record.adapter.ts
   - packages/ingest-server/src/stores/pg/event-record.adapter.test.ts
 ---
@@ -59,9 +57,9 @@ interface EventRecord {
 |----------|-----------|------|-----------|
 | memory (기본)·sqlite·d1 | TEXT (JSON) | JSON_EXTRACT | d1-record-store.ts (node-sqlite, 초기화 실패 시 @qa-sdk/store InMemory) |
 | pg | JSONB | GIN 인덱스 가능 | drizzle + TRACE_DATABASE_URL |
-| clickhouse | Map(String, String) | mapContains | clickhouse-record-store.ts — 런타임 미배선, server 모드는 경고 후 SQLite |
+| clickhouse | — | — | 어댑터 삭제됨 (2026-10-29). server 모드는 경고 후 SQLite |
 
-D1 store는 4개 core store(Record, Trace, Session, Verdict)를 구현하고, 나머지는 InMemory이다. ClickHouse runtime store는 RecordStore만 구현하고, OLAP 조회는 별도 `ClickHouseAnalyticsStore`가 담당한다.
+D1 store는 4개 core store(Record, Trace, Session, Verdict)를 구현하고, 나머지는 InMemory이다. ClickHouse 어댑터는 2026-10-29 삭제했다.
 
 TransmissionEnvelope에서 받은 infra_context는 `enrichAddressContext()`에서 머지된 후 record에 반영되므로, 저장 시점에는 이미 최종 머지된 상태이다.
 
@@ -98,5 +96,4 @@ ingest-server에서 수집 시 address_context 검증은 두 단계:
 ```bash
 corepack pnpm --filter @qa-sdk/core test schema
 corepack pnpm --filter @qa-sdk/ingest-server test d1-record-store
-corepack pnpm --filter @qa-sdk/ingest-server test clickhouse-record-store
 ```

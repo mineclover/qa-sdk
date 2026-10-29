@@ -14,8 +14,6 @@ def:
 sources:
   - packages/ingest-server/src/stores/runtime-stores.ts
   - packages/ingest-server/src/config/env.ts
-  - packages/ingest-server/src/stores/clickhouse-record-store.ts
-  - packages/ingest-server/src/stores/clickhouse-record-store.test.ts
   - packages/cli/src/lib/service-profile.ts
 ---
 # Store / Insights 드라이버 선택
@@ -32,7 +30,7 @@ sources:
 | `sqlite` | `SQLITE_PATH` (선택) | node-sqlite 위의 D1 core store. 미설정 시 `:memory:` |
 | `pg` | `TRACE_DATABASE_URL` 필수 | Drizzle + PostgreSQL (운영, `packages/store`) |
 | `d1` | `SQLITE_PATH` | `sqlite`의 deprecation alias — 경고 1회 후 sqlite로 처리 |
-| `clickhouse` | - | server 모드 미지원 — 경고 1회 후 SQLite로 처리. `ClickhouseRecordStore`·`ClickHouseAnalyticsStore`는 런타임 미배선 |
+| `clickhouse` | - | server 모드 미지원 — 경고 1회 후 SQLite로 처리. ClickHouse 어댑터는 2026-10-29 삭제 |
 
 - D1 store: 4개 core (Record, Trace, Session, Verdict) + 나머지 InMemory
 - CF Worker(`src/worker.ts`)는 D1 바인딩으로 store를 직접 만든다 (이 선택 경로 미사용)

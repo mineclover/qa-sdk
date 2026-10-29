@@ -64,7 +64,7 @@ sources:
 - gRPC debug: O (GRPC_PORT 설정 시)
 
 ### 미도입
-- ClickHouse: runtime StoreSet은 RecordStore만 구현, TraceStore/SessionStore 미구현. 분석 조회는 `ClickHouseAnalyticsStore`로 분리
+- ClickHouse: 미배선 어댑터를 2026-10-29 삭제. OLAP 저장소가 필요해지면 새로 설계한다
 - BullMQ 분산: 단일 프로세스만 검증, multi-worker 미검증
 
 ## 도입 순서 규칙

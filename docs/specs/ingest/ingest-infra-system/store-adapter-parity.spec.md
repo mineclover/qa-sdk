@@ -27,7 +27,6 @@ sources:
   - packages/ingest-server/src/stores/d1-key-observation-store.ts
   - packages/ingest-server/src/stores/pg/event-record.adapter.ts
   - packages/ingest-server/src/stores/pg/key-observation.adapter.ts
-  - packages/ingest-server/src/stores/clickhouse-record-store.ts
   - packages/ingest-server/src/__tests__/cross-adapter/cross-adapter.d1.test.ts
   - packages/ingest-server/src/__tests__/cross-adapter/cross-adapter.pg.test.ts
   - packages/ingest-server/src/__tests__/cross-adapter/factories/pg.factory.ts
@@ -47,7 +46,7 @@ D1(SQLite)과 PostgreSQL 두 드라이버에서 동일한 Store 포트 인터페
 - **D1 어댑터 9종** — ingest-server/stores/d1-*.ts. SQLite + Drizzle ORM.
 - **PG 어댑터 9종** — Record/KeyObservation은 ingest-server/stores/pg, 나머지 7종은 @qa-sdk/store Drizzle adapter. PostgreSQL + Drizzle ORM.
 - **교차 테스트 46 shared 케이스** — 동일 테스트를 D1/PG 양쪽에서 실행.
-- **ClickHouse** — DDL 11 테이블 + RecordStore + OLAP 전용 `ClickHouseAnalyticsStore`. CRUD 포트와 분석 포트를 분리.
+- **ClickHouse** — 삭제됨 (2026-10-29). 런타임 미배선 상태로 남아 있던 RecordStore·AnalyticsStore·DDL을 제거했다.
 
 ## Store 포트 × 드라이버 매트릭스 ^defines
 
@@ -168,11 +167,11 @@ prefixSummary(prefixId?: string): Promise<PrefixObservationSummary[]>
 
 ### 타입 매핑
 
-| 개념 | D1/SQLite | PostgreSQL | ClickHouse |
-|------|-----------|------------|------------|
-| JSON | TEXT + stringify | JSONB | String |
-| 타임스탬프 | TEXT (ISO-8601) | timestamptz | DateTime64(3) |
-| 불리언 | INTEGER (0/1) | boolean | UInt8 |
+| 개념 | D1/SQLite | PostgreSQL |
+|------|-----------|------------|
+| JSON | TEXT + stringify | JSONB |
+| 타임스탬프 | TEXT (ISO-8601) | timestamptz |
+| 불리언 | INTEGER (0/1) | boolean |
 
 어댑터가 타입 차이를 흡수. 포트 인터페이스는 JS 네이티브 타입(string, number, boolean, Date, object)으로 통일.
 
@@ -216,10 +215,7 @@ DATABASE_URL=postgres://... pnpm --filter ingest-server test -- --run cross-adap
 
 ## ClickHouse 분리 ^consumes
 
-ClickHouse는 OLAP 분석 전용이다. CRUD 포트와 분리된 `AnalyticsStore` 인터페이스를 `ClickHouseAnalyticsStore`로 구현한다.
-- DDL 11 테이블 완료
-- Store 어댑터: RecordStore 1종만 기존 구현 (ClickhouseRecordStore)
-- 분석 어댑터: `bulkInsert`, time series, top keys, distribution, key observation, trace stats 집계 구현
+2026-10-29 삭제 — 런타임 미배선·server 모드 미지원 상태로 남아 있던 ClickHouse 어댑터를 핵심 기능 정리에서 제거. 구현은 git 이력 참고. OLAP 분석 저장소는 CRUD 포트와 분리한다는 원칙만 남긴다.
 
 ## 런타임 드라이버 선택 ^delegates
 
@@ -231,7 +227,7 @@ ClickHouse는 OLAP 분석 전용이다. CRUD 포트와 분리된 `AnalyticsStore
 | memory·sqlite | D1 core 4종(Record·Trace·Session·Verdict) + 나머지 InMemory | node-sqlite. 초기화 실패 시 전체 InMemory |
 | d1 | sqlite와 동일 | deprecation 경고 1회 |
 | pg | `@qa-sdk/store` Drizzle 8종 | `TRACE_DATABASE_URL` 필수. ingest-server PG adapter(`stores/pg/factory.ts`)는 미배선 (Plan 07d) |
-| clickhouse | sqlite와 동일 | 미지원 경고 1회. `ClickhouseRecordStore`는 미배선 |
+| clickhouse | sqlite와 동일 | 미지원 경고 1회. ClickHouse 어댑터는 2026-10-29 삭제 |
 
 D1 support store(`D1GraphStore`, `D1DlqStore`, `D1TransmissionStore`, `D1ScenarioSpecStore`, `D1KeyObservationStore`)는
 cross-adapter contract test에서만 생성된다. 런타임 배선 여부는 후속 판정 대상이다.

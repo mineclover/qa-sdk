@@ -160,7 +160,7 @@ RecordInsert[]
 |---------|:---:|------|
 | D1/SQLite | 완료 | `packages/ingest-server/src/stores/d1-key-observation-store.ts` |
 | PostgreSQL | 완료 | `packages/ingest-server/src/stores/pg/key-observation.adapter.ts` |
-| ClickHouse | DDL + 분석 조회 | `packages/ingest-server/src/stores/clickhouse-schema.sql.ts`, `ClickHouseAnalyticsStore.queryKeyObservations()` |
+| ClickHouse | (삭제됨 2026-10-29) | — |
 
 ## 테스트
 
