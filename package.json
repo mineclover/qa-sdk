@@ -24,6 +24,7 @@
     "arch:surfaces": "node scripts/report-package-surfaces.mjs",
     "arch:feedback": "tsx scripts/ai-feedback-loop.ts",
     "arch:verify": "tsx scripts/verify-analysis-os.ts",
+    "ci:local": "node scripts/ci-local.mjs",
     "arch:manifest": "tsx scripts/generate-api-reference.ts",
     "clean": "corepack pnpm -r run clean",
     "sync:skills": "bash scripts/sync-skills.sh",
