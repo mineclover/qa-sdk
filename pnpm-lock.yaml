@@ -700,25 +700,6 @@ importers:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@22.20.5)(happy-dom@20.8.4)(jsdom@29.1.1)(lightningcss@1.32.0)(stylus@0.64.0(supports-color@10.2.2))(supports-color@10.2.2)(terser@5.48.0)
 
-  packages/data-object-codegen:
-    dependencies:
-      '@qa-sdk/core':
-        specifier: workspace:*
-        version: link:../core
-    devDependencies:
-      '@types/node':
-        specifier: ^22.20.5
-        version: 22.20.5
-      tsup:
-        specifier: ^8.5.1
-        version: 8.5.1(@swc/core@1.15.46)(jiti@2.6.1)(postcss@8.5.15)(supports-color@10.2.2)(tsx@4.23.15)(typescript@5.9.3)(yaml@2.8.3)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-      vitest:
-        specifier: ^1.6.1
-        version: 1.6.1(@types/node@22.20.5)(happy-dom@20.8.4)(jsdom@29.1.1)(lightningcss@1.32.0)(stylus@0.64.0(supports-color@10.2.2))(supports-color@10.2.2)(terser@5.48.0)
-
   packages/data-structure-profile:
     dependencies:
       taxonomy-engine:
@@ -2387,18 +2368,6 @@ importers:
         specifier: ^6.3.5
         version: 6.4.1(@types/node@25.9.5)(jiti@2.6.1)(lightningcss@1.32.0)(stylus@0.64.0(supports-color@10.2.2))(terser@5.48.0)(tsx@4.23.15)(yaml@2.8.3)
 
-  packages/request-contract:
-    devDependencies:
-      tsup:
-        specifier: ^8.5.1
-        version: 8.5.1(@swc/core@1.15.46)(jiti@2.6.1)(postcss@8.5.15)(supports-color@10.2.2)(tsx@4.23.15)(typescript@5.9.3)(yaml@2.8.3)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-      vitest:
-        specifier: ^1.6.1
-        version: 1.6.1(@types/node@25.9.5)(happy-dom@20.8.4)(jsdom@29.1.1)(lightningcss@1.32.0)(stylus@0.64.0(supports-color@10.2.2))(supports-color@10.2.2)(terser@5.48.0)
-
   packages/resource-policy-store:
     dependencies:
       db-bootstrap:
@@ -3128,15 +3097,6 @@ importers:
       vitest:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@25.9.5)(happy-dom@20.8.4)(jsdom@29.1.1)(lightningcss@1.32.0)(stylus@0.64.0(supports-color@10.2.2))(supports-color@10.2.2)(terser@5.48.0)
-
-  packages/weighted-gpu:
-    devDependencies:
-      '@webgpu/types':
-        specifier: ^0.1.54
-        version: 0.1.69
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
 
   packages/weighted-index:
     devDependencies:
@@ -7872,9 +7832,6 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [win32]
-
-  '@webgpu/types@0.1.69':
-    resolution: {integrity: sha512-RPmm6kgRbI8e98zSD3RVACvnuktIja5+yLgDAkTmxLr90BEwdTXRQWNLF3ETTTyH/8mKhznZuN5AveXYFEsMGQ==}
 
   '@whatwg-node/promise-helpers@1.3.2':
     resolution: {integrity: sha512-Nst5JdK47VIl9UcGwtv2Rcgyn5lWtZ0/mhRQ4G8NN2isxpq2TO30iqHzmwoJycjWuyUfg3GFXqP/gFHXeV57IA==}
@@ -16391,8 +16348,6 @@ snapshots:
 
   '@voidzero-dev/vite-plus-win32-x64-msvc@0.1.14':
     optional: true
-
-  '@webgpu/types@0.1.69': {}
 
   '@whatwg-node/promise-helpers@1.3.2':
     dependencies:

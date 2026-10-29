@@ -56,8 +56,8 @@ package 감사는 `pnpm-workspace.yaml`의 workspace roots를 읽지만 기능 s
 
 | 표면 | 이유 | 확인 명령 |
 |---|---|---|
-| `packages/request-contract` | request/observation normalize/validate/evaluate package-local 증거는 있지만 surface manifest는 `no-promotion`으로 격리한다 | `corepack pnpm --filter request-contract test`; `corepack pnpm --silent arch:usage -- --json` |
-| `packages/weighted-gpu` | WebGPU 구현과 package-local test는 있지만 실제 consumer/performance promotion 근거가 생길 때까지 제품 축으로 승격하지 않는다 | `corepack pnpm --filter weighted-gpu test`; `corepack pnpm --silent arch:usage -- --json` |
+| `packages/request-contract` (2026-10-29 삭제) | request/observation normalize/validate/evaluate package-local 증거는 있지만 surface manifest는 `no-promotion`으로 격리한다 | `corepack pnpm --filter request-contract test`; `corepack pnpm --silent arch:usage -- --json` |
+| `packages/weighted-gpu` (2026-10-29 삭제) | WebGPU 구현과 package-local test는 있지만 실제 consumer/performance promotion 근거가 생길 때까지 제품 축으로 승격하지 않는다 | `corepack pnpm --filter weighted-gpu test`; `corepack pnpm --silent arch:usage -- --json` |
 
 ## 먼저 증명할 후보군
 

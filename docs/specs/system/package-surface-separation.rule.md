@@ -88,7 +88,7 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 | Visual analysis tools | visual analysis capability | consumer tooling | canvas/viz/visbug/layout analysis packages | visual consumer tests/builds |
 | Verification suites | verification suite capability | test only | test types, demo/e2e/facet/scenario test packages | test harness execution |
 | Product demo surfaces | demo consumer surfaces | consumer only | demo/web/smoke UI and API consumers | 소비자 앱 build/test, 상위 surface 소유권 침범 금지 |
-| Quarantine candidates | quarantine | no promotion | `request-contract`, `weighted-gpu` | 실제 consumer 또는 bridge smoke가 생길 때까지 제품 축으로 언급하지 않음 |
+| Quarantine candidates | quarantine | no promotion | (없음 — 2026-10-29 `request-contract`, `weighted-gpu` 삭제) | 실제 consumer 또는 bridge smoke가 생길 때까지 제품 축으로 언급하지 않음 |
 
 ## 경계 규칙
 

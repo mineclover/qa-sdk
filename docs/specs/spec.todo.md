@@ -21,7 +21,6 @@ sources:
   - docs/specs/weighted-index-system/wi-hardware-acceleration.spec.md
   - docs/specs/pipeline-system/pipeline.md
   - packages/weighted-wasm/js/index.ts
-  - packages/weighted-gpu/src/index.ts
   - packages/index-meta/src/index.ts
 ---
 

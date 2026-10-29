@@ -7,7 +7,7 @@ def:
   scope: flow
   aspect: process_flow
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   layer: operation
   svc: weighted-gpu
   tags: [testing, performance, task-record]
@@ -15,18 +15,18 @@ def:
     - target: wi-hardware-acceleration
       type: traces_to
 sources:
-  - packages/weighted-gpu/src/index.ts
-  - packages/weighted-gpu/src/index.test.ts
   - docs/specs/weighted-index-system/weighted-gpu.spec.md
 ---
 
-# weighted-gpu fallback 테스트
+# weighted-gpu fallback 테스트 (deprecated)
+
+> 대상 패키지 `weighted-gpu` 2026-10-29 삭제 (소비처 0, 제품 surface 미승격 — 핵심 기능 정리 1순위). 구현은 git 이력에서 확인한다.
 
 > GPUEncoder의 device unavailable 경로가 테스트 미검증.
 
 ## 목적 ^purpose
 
-weighted-gpu fallback test 보강 task의 완료 위치를 추적한다. 현재 검증 SSOT는 `packages/weighted-gpu/src/index.test.ts`다.
+weighted-gpu fallback test 보강 task의 완료 위치를 추적한다. 대상 패키지가 삭제되어 이 task 기록은 역사 기록으로만 남는다.
 
 ## 우선순위: 🟡 6순위
 

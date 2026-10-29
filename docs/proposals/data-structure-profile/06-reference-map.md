@@ -46,7 +46,7 @@ measurement, and privacy-readiness semantics into packages that do not own them 
 | `@qa-sdk/bench` | benchmark harness and markdown report renderer | adapter bridge | convert measurement dry-run output into benchmark-style evidence | bench should not own source-path parsing or transform semantics |
 | `packages/viz-core`, `packages/viz-web`, `packages/registry-ui` | graph rendering and registry browsing surfaces | adapter bridge | consume deterministic lineage JSON for read-only inspection | editing/write-back stays out of MVP |
 | `packages/definition-catalog` | definition metadata and coordinate-oriented catalog | reference only | preserve proposal/spec/decision evidence style | profile fixtures are not definition-catalog records yet |
-| `packages/request-contract` | normalize input into contract, observe output, evaluate result | reference only | borrow the contract -> observation -> result mental model | no runtime dependency; data profiles are structural, not task requests |
+| `packages/request-contract` (2026-10-29 삭제, git 이력 참고) | normalize input into contract, observe output, evaluate result | reference only | borrow the contract -> observation -> result mental model | no runtime dependency; data profiles are structural, not task requests |
 | oa-sdk DPM docs/package | privacy manifest, pseudonymization policy, token/vault semantics | reference only, defer execution | store optional `dpm_policy_ref` and emit readiness diagnostics | no qa-sdk runtime dependency on oa-sdk in MVP |
 
 ## 3. Dependency Shape ^constraint

@@ -131,7 +131,7 @@ corepack pnpm arch:feedback
 | `tag-search` | 태그 기반 역색인 검색 | 구현 | README |
 | `test-scenario-store` | 테스트 시나리오 저장소와 Drizzle 영속 | 구현 | README |
 | `test-types` | TestPhase/Kind/Scope/Lifecycle SSOT | 기반 | README+테스트 |
-| `weighted-gpu` | weighted-index 가속용 GPU 실험 surface | 구현 | README+실행예 |
+| `weighted-gpu` (2026-10-29 삭제) | weighted-index 가속용 GPU 실험 surface | 구현 | README+실행예 |
 | `weighted-index-explorer` | weighted-index 디버그/탐색 UI | 기반 | README+smoke |
 | `weighted-ui` | weighted-index 계열 앱용 공통 UI/token | 기반 | README+테스트 |
 | `weighted-wasm` | weighted-index WASM 빌드/브리지 surface | 쉘 | README+소스경계 |

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-02T14:38:27.411Z",
+  "generatedAt": "2026-10-29T01:09:32.870Z",
   "layers": {
     "consumer": [
       {
@@ -64,9 +64,11 @@
         "boundary": "unknown",
         "docRef": "none",
         "internalDeps": [
+          "browser-codec",
           "context",
           "core",
           "event-catalog",
+          "logger",
           "sdk",
           "demo-snapshot"
         ]
@@ -174,17 +176,6 @@
         "boundary": "context-runtime",
         "docRef": "context-runtime",
         "internalDeps": []
-      },
-      {
-        "id": "data-object-codegen",
-        "name": "data-object-codegen",
-        "version": "0.1.0",
-        "tier": "consumer",
-        "boundary": "meta-semantic-system",
-        "docRef": "none",
-        "internalDeps": [
-          "core"
-        ]
       },
       {
         "id": "data-structure-profile",
@@ -612,15 +603,6 @@
         ]
       },
       {
-        "id": "request-contract",
-        "name": "request-contract",
-        "version": "0.1.0",
-        "tier": "consumer",
-        "boundary": "unknown",
-        "docRef": "none",
-        "internalDeps": []
-      },
-      {
         "id": "resource-policy-store",
         "name": "resource-policy-store",
         "version": "0.1.0",
@@ -761,15 +743,6 @@
           "data-structure-profile",
           "viz-core"
         ]
-      },
-      {
-        "id": "weighted-gpu",
-        "name": "weighted-gpu",
-        "version": "0.1.0",
-        "tier": "consumer",
-        "boundary": "weighted-index-system",
-        "docRef": "weighted-index-system",
-        "internalDeps": []
       },
       {
         "id": "weighted-index-explorer",

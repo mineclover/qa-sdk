@@ -40,9 +40,6 @@ sources:
   - packages/weighted-wasm/package.json
   - packages/weighted-wasm/js/index.ts
   - packages/weighted-wasm/js/index.test.ts
-  - packages/weighted-gpu/package.json
-  - packages/weighted-gpu/src/index.ts
-  - packages/weighted-gpu/src/index.test.ts
   - packages/weighted-index-explorer/package.json
   - packages/weighted-index-explorer/scripts/static-smoke.test.mjs
 ---
@@ -57,7 +54,7 @@ WeightedIndex 기반 좌표 압축의 코어 수학, public API, 하드웨어 �
 - `wi-system`: mixed-radix encode/decode, vocab, protocol, partial binder, range query를 묶는 코어 레이아웃.
 - `wi-hardware-acceleration`: WASM/GPU 가속 구현 현황과 적용 기준.
 - `weighted-wasm-spec`: Rust/WASM batch encode/decode 및 bitmask 가속 패키지 계약.
-- `weighted-gpu-spec`: WebGPU batch encode/decode/reduce 실험 패키지 계약. `system-packages`에서는 quarantine/no-promotion surface로 유지한다.
+- `weighted-gpu-spec`: (deprecated) WebGPU 실험 패키지 — 2026-10-29 삭제.
 - `weighted-index-explorer-spec`: weighted-index 개념을 시각화하는 브라우저 데모 consumer.
 
 ## 검증 ^validation
@@ -65,7 +62,6 @@ WeightedIndex 기반 좌표 압축의 코어 수학, public API, 하드웨어 �
 ```bash
 corepack pnpm --filter weighted-index test
 corepack pnpm --filter weighted-index build
-corepack pnpm --filter weighted-gpu test
 corepack pnpm --filter weighted-wasm test:js
 corepack pnpm --filter weighted-index-explorer test
 corepack pnpm def:check

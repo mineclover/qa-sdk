@@ -19,9 +19,6 @@ sources:
   - packages/weighted-wasm/src/lib.rs
   - packages/weighted-wasm/js/index.ts
   - packages/weighted-wasm/js/index.test.ts
-  - packages/weighted-gpu/src/index.ts
-  - packages/weighted-gpu/src/index.test.ts
-  - packages/weighted-gpu/src/bench.ts
   - scripts/package-surfaces.mjs
 ---
 
@@ -40,7 +37,9 @@ WeightedIndex 연산(encode/decode/bitmask)에 대한 하드웨어 가속 구현
 - 7 Rust tests, JS fallback 래퍼 포함
 - 벤치마크 (G-5): `weighted-wasm/js/bench.ts` — batch 1K/10K/100K encode/decode/popcount/maskAnd
 
-### weighted-gpu (WebGPU WGSL)
+### weighted-gpu (WebGPU WGSL) — 삭제됨
+
+> 2026-10-29 삭제 (소비처 0, 제품 surface 미승격 — 핵심 기능 정리 1순위). 구현은 git 이력에서 확인한다. 아래는 삭제 전 구현 기록이다.
 
 - `encode.wgsl`, `decode.wgsl`, `reduce.wgsl` — 3 compute shaders — G-2
 - `GPUEncoder` 클래스, GPU 미지원 시 null 반환

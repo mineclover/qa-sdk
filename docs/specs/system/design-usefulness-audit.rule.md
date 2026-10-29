@@ -111,8 +111,8 @@ source-backed 정리는 위 역할을 섞지 않는 것이 핵심이다. `source
 ## 보존 우선순위 ^constraint
 
 - `data-structure-profile`처럼 fixture-first contract와 consumer bridge smoke가 있는 표면은 우선 보존한다.
-- `request-contract`처럼 package-local test가 있는 표면은 삭제 대상으로 보지 않는다. 다만 `package-surface-separation-rule`에서 `no-promotion`으로 분리된 동안 제품 core나 roadmap의 keep 표면으로 승격하지 않고 quarantine decision queue에 둔다.
-- `weighted-gpu`처럼 구현과 package-local test가 있어도 실제 consumer/performance promotion 근거가 약한 표면은 `no-promotion` queue에서 보존한다.
+- package-local test만 있는 표면은 그것만으로 삭제 대상이 아니다. `package-surface-separation-rule`에서 `no-promotion`으로 분리된 동안 제품 core나 roadmap의 keep 표면으로 승격하지 않고 quarantine decision queue에 둔다.
+- quarantine queue의 표면은 소비처와 승격 근거가 끝내 생기지 않으면 사람이 삭제를 결정한다. 사례: `request-contract`, `weighted-gpu`는 2026-10-29 삭제했다 (`docs/proposals/swc-next-qa-sdk-optimization/` 핵심 기능 정리).
 - `definition-catalog`와 `packages/cli`의 def validation surface는 감사 자체를 가능하게 하므로, 대체 도구 없이 제거하지 않는다.
 - 순수 ontology/taxonomy 문서는 runtime/tooling 소비자가 없으면 `prove` 후보로 되돌린다.
 

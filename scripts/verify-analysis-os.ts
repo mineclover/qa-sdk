@@ -2,6 +2,7 @@ import { execSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import chalk from 'chalk';
+import { SURFACES } from './package-surfaces.mjs';
 
 /**
  * Analysis OS Verification Suite
@@ -93,13 +94,17 @@ async function main() {
     const archiveCandidates = Object.fromEntries(
       usage.archiveCandidates.map((item: { id: string }) => [item.id, item]),
     ) as Record<string, { disposition: string }>;
+    // no-promotion surface 패키지 = archive 결정 대기열. 2026-10-29 기존 후보 2개는 삭제되어 대기열이 비어 있을 수 있다
+    const noPromotionPackages = SURFACES.filter((surface) => surface.verdict === 'no-promotion')
+      .flatMap((surface) => surface.packages)
+      .map((name) => name.replace(/^@[^/]+\//, ''));
     assert(
-      Array.isArray(usage.archiveCandidates) && usage.archiveCandidates.length === 2,
+      Array.isArray(usage.archiveCandidates) &&
+        usage.archiveCandidates.length === noPromotionPackages.length,
       'Usage Analysis: archive candidates are tracked separately from dead weight',
     );
     assert(
-      archiveCandidates['request-contract']?.disposition === 'archive-candidate' &&
-        archiveCandidates['weighted-gpu']?.disposition === 'archive-candidate',
+      noPromotionPackages.every((id) => archiveCandidates[id]?.disposition === 'archive-candidate'),
       'Usage Analysis: no-promotion packages remain in the archive decision queue',
     );
 
@@ -129,14 +134,15 @@ async function main() {
         isTemplateDoc?: boolean;
       }
     >;
+    const noPromotionNames = SURFACES.filter(
+      (surface) => surface.verdict === 'no-promotion',
+    ).flatMap((surface) => surface.packages);
     assert(
-      usefulnessPackages['request-contract']?.verdict === 'quarantine' &&
-        usefulnessPackages['weighted-gpu']?.verdict === 'quarantine',
+      noPromotionNames.every((name) => usefulnessPackages[name]?.verdict === 'quarantine'),
       'Usefulness Audit: no-promotion packages stay quarantine candidates',
     );
     assert(
-      usefulnessPackages['request-contract']?.surfaceVerdict === 'no-promotion' &&
-        usefulnessPackages['weighted-gpu']?.surfaceVerdict === 'no-promotion',
+      noPromotionNames.every((name) => usefulnessPackages[name]?.surfaceVerdict === 'no-promotion'),
       'Usefulness Audit: quarantine candidates are derived from package surface manifest',
     );
     const unassignedSurfaceManagedPackages = usefulness.packages.filter(
@@ -176,8 +182,7 @@ async function main() {
           'simulation-contract-capability' &&
         usefulnessPackages['viz-core']?.surfaceGroup === 'visual-analysis-capability' &&
         usefulnessPackages['test-types']?.surfaceGroup === 'verification-suite-capability' &&
-        usefulnessPackages['@qa-sdk/platform-demo']?.surfaceGroup === 'demo-consumer-surfaces' &&
-        usefulnessPackages['request-contract']?.surfaceGroup === 'quarantine',
+        usefulnessPackages['@qa-sdk/platform-demo']?.surfaceGroup === 'demo-consumer-surfaces',
       'Usefulness Audit: packages expose separated feature groups',
     );
     assert(
@@ -582,41 +587,27 @@ async function main() {
         surfaceGroups['quarantine-candidates'] === 'quarantine',
       'Surface Report: capability, consumer, governance, and quarantine feature groups stay separated',
     );
+    // 그룹별 기대값은 manifest(SURFACES)에서 파생한다 — 패키지 정리 때마다 숫자를 손으로 고치지 않는다
+    const expectedGroupSummaries = new Map<
+      string,
+      { surfaceCount: number; packageCount: number }
+    >();
+    for (const surface of SURFACES) {
+      const entry = expectedGroupSummaries.get(surface.group) ?? {
+        surfaceCount: 0,
+        packageCount: 0,
+      };
+      entry.surfaceCount += 1;
+      entry.packageCount += surface.packages.length;
+      expectedGroupSummaries.set(surface.group, entry);
+    }
     assert(
-        groupSummaries['coordinate-kernel-capability']?.surfaceCount === 1 &&
-        groupSummaries['coordinate-kernel-capability']?.packageCount === 9 &&
-        groupSummaries['observability-runtime-capability']?.surfaceCount === 1 &&
-        groupSummaries['observability-runtime-capability']?.packageCount === 23 &&
-        groupSummaries['taxonomy-capability']?.surfaceCount === 3 &&
-        groupSummaries['taxonomy-capability']?.packageCount === 3 &&
-        groupSummaries['connection-capability']?.surfaceCount === 2 &&
-        groupSummaries['connection-capability']?.packageCount === 2 &&
-        groupSummaries['profile-capability']?.surfaceCount === 4 &&
-        groupSummaries['profile-capability']?.packageCount === 5 &&
-        groupSummaries['operational-ontology-capability']?.surfaceCount === 2 &&
-        groupSummaries['operational-ontology-capability']?.packageCount === 2 &&
-        groupSummaries['definition-catalog-capability']?.surfaceCount === 1 &&
-        groupSummaries['definition-catalog-capability']?.packageCount === 9 &&
-        groupSummaries['decision-evidence-capability']?.surfaceCount === 1 &&
-        groupSummaries['decision-evidence-capability']?.packageCount === 8 &&
-        groupSummaries['spec-analysis-capability']?.surfaceCount === 1 &&
-        groupSummaries['spec-analysis-capability']?.packageCount === 11 &&
-        groupSummaries['governance-tooling']?.surfaceCount === 1 &&
-        groupSummaries['governance-tooling']?.packageCount === 13 &&
-        groupSummaries['authorization-support-capability']?.surfaceCount === 1 &&
-        groupSummaries['authorization-support-capability']?.packageCount === 2 &&
-        groupSummaries['motion-authoring-capability']?.surfaceCount === 1 &&
-        groupSummaries['motion-authoring-capability']?.packageCount === 4 &&
-        groupSummaries['simulation-contract-capability']?.surfaceCount === 1 &&
-        groupSummaries['simulation-contract-capability']?.packageCount === 6 &&
-        groupSummaries['visual-analysis-capability']?.surfaceCount === 1 &&
-        groupSummaries['visual-analysis-capability']?.packageCount === 7 &&
-        groupSummaries['verification-suite-capability']?.surfaceCount === 1 &&
-        groupSummaries['verification-suite-capability']?.packageCount === 5 &&
-        groupSummaries['demo-consumer-surfaces']?.surfaceCount === 1 &&
-        groupSummaries['demo-consumer-surfaces']?.packageCount === 8 &&
-        groupSummaries['quarantine']?.surfaceCount === 1 &&
-        groupSummaries['quarantine']?.packageCount === 2,
+      expectedGroupSummaries.size > 0 &&
+        [...expectedGroupSummaries].every(
+          ([group, expected]) =>
+            groupSummaries[group]?.surfaceCount === expected.surfaceCount &&
+            groupSummaries[group]?.packageCount === expected.packageCount,
+        ),
       'Surface Report: separated feature group summary stays stable',
     );
 

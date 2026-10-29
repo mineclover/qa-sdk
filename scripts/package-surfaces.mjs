@@ -234,7 +234,6 @@ export const SURFACES = [
       'spec-analyzer',
       'snapshot-io',
       'codegen-core',
-      'data-object-codegen',
       'demo-snapshot',
       'demo-types',
     ],
@@ -293,7 +292,15 @@ export const SURFACES = [
     id: 'visual-analysis-tools',
     group: 'visual-analysis-capability',
     verdict: 'consumer-tooling',
-    packages: ['canvas-viewport', '@qa-sdk/viz-3d', 'viz-core', 'visbug-bridge', 'rlsc-analysis', 'browser-layout-inspector', 'browser-layout-inspector-extension'],
+    packages: [
+      'canvas-viewport',
+      '@qa-sdk/viz-3d',
+      'viz-core',
+      'visbug-bridge',
+      'rlsc-analysis',
+      'browser-layout-inspector',
+      'browser-layout-inspector-extension',
+    ],
   },
   {
     id: 'verification-suites',
@@ -326,7 +333,8 @@ export const SURFACES = [
     id: 'quarantine-candidates',
     group: 'quarantine',
     verdict: 'no-promotion',
-    packages: ['request-contract', 'weighted-gpu'],
+    // 2026-10-29: request-contract, weighted-gpu 삭제 (소비처 0, 제품 surface 미승격). 새 후보를 담는 대기열로 유지
+    packages: [],
   },
 ];
 

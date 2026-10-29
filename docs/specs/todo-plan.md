@@ -11,7 +11,7 @@ packages/
   # ── Layer 0: 수학 엔진 ──────────────────────────────────
   weighted-index/              순수 수학 (encode/decode/bitmask)
   weighted-wasm/        [구현됨] Rust→WASM (batch encode/decode, bitmask u64 popcount) — 20KB, 7 Rust tests
-  weighted-gpu/         [구현됨] WebGPU compute shader (encode/decode/reduce) — WGSL 3개 + GPUEncoder 클래스
+  weighted-gpu/         [삭제됨 2026-10-29] WebGPU compute shader (encode/decode/reduce) — WGSL 3개 + GPUEncoder 클래스
 
   # ── Layer 1: 스키마 + 메타 ──────────────────────────────
   index-meta/                  스키마 레지스트리, 코덱, 게이트, 관계 엔진
@@ -268,7 +268,7 @@ import { initWasm, encodeBatch, popcountWasm } from "weighted-wasm/js";
 await initWasm();  // WASM 로드 (실패 시 JS fallback 자동)
 ```
 
-### weighted-gpu (G-2) — ✅ 구현 완료
+### weighted-gpu (G-2) — ✅ 구현 완료 → 2026-10-29 삭제
 
 ```
 packages/weighted-gpu/            [구현 완료]

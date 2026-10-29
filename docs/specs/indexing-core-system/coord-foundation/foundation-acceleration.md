@@ -18,9 +18,6 @@ sources:
   - packages/weighted-wasm/js/index.ts
   - packages/weighted-wasm/js/index.test.ts
   - packages/weighted-wasm/js/bench.ts
-  - packages/weighted-gpu/src/index.ts
-  - packages/weighted-gpu/src/index.test.ts
-  - packages/weighted-gpu/src/bench.ts
   - scripts/package-surfaces.mjs
   - packages/weighted-index/src/index.ts
   - packages/weighted-index/src/math/weighted-index.ts
