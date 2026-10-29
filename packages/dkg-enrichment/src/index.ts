@@ -7,13 +7,7 @@ export { convergeChain } from './skills/converge-chain.js';
 export type { ConvergeAction, ConvergeChainResult } from './skills/converge-chain.js';
 export { auditCoverage } from './skills/coverage-audit.js';
 export type { CoverageAuditResult } from './skills/coverage-audit.js';
-export { traceFlows, validateDslInvariants } from './skills/flow-trace.js';
-export type {
-  FlowViolation,
-  FlowTraceResult,
-  DslInvariantViolation,
-  DslInvariantResult,
-} from './skills/flow-trace.js';
+// traceFlows·validateDslInvariants는 dkg가 정본 — `import { traceFlows } from 'dkg'`
 
 /** Base + enrichment + finalize — 기존 bootstrapDkg 동작과 동일 */
 export function bootstrapDkg(options: BootstrapDkgOptions): GraphRegistry {

@@ -82,26 +82,24 @@ export function convergeChain(
 
   // ── 1. 수렴 (merge) ────────────────────────────────
 
-  if (options?.entriesMap) {
-    const overlaps = scanAxisOverlaps(graph, options.entriesMap);
-    for (const o of overlaps) {
-      if (o.recommendation === 'merge') {
-        // 기존 DEC-SEP 분리 결정이 있으면 이미 검토된 건으로 건너뜀
-        if (hasActiveSeparationDecision(graph, o.a, o.b)) continue;
+  const overlaps = scanAxisOverlaps(graph, options?.entriesMap ?? axisEntriesMap(catalog));
+  for (const o of overlaps) {
+    if (o.recommendation === 'merge') {
+      // 기존 DEC-SEP 분리 결정이 있으면 이미 검토된 건으로 건너뜀
+      if (hasActiveSeparationDecision(graph, o.a, o.b)) continue;
 
-        actions.push({ kind: 'merge', targets: [o.a, o.b], overlap: o });
+      actions.push({ kind: 'merge', targets: [o.a, o.b], overlap: o });
 
-        decisions.push(
-          scaffoldDecision({
-            type: 'merge',
-            id: `DEC-MERGE-${o.a}-${o.b}`,
-            date,
-            title: `${o.a}와 ${o.b} 병합 검토`,
-            params: { targets: [o.a, o.b], into: o.a, overlapEntries: [...o.sharedEntries] },
-            rationale: `Jaccard 유사도 ${(o.overlapRatio * 100).toFixed(0)}%. 공유 entries: ${o.sharedEntries.join(', ')}`,
-          }),
-        );
-      }
+      decisions.push(
+        scaffoldDecision({
+          type: 'merge',
+          id: `DEC-MERGE-${o.a}-${o.b}`,
+          date,
+          title: `${o.a}와 ${o.b} 병합 검토`,
+          params: { targets: [o.a, o.b], into: o.a, overlapEntries: [...o.sharedEntries] },
+          rationale: `Jaccard 유사도 ${(o.overlapRatio * 100).toFixed(0)}%. 공유 entries: ${o.sharedEntries.join(', ')}`,
+        }),
+      );
     }
   }
 
@@ -218,4 +216,15 @@ export function convergeChain(
       observations: actions.filter((a) => a.kind === 'observe').length,
     },
   };
+}
+
+/** 축별 최신 버전(마지막으로 선언된 버전) entries — entriesMap을 주지 않았을 때의 기본값 */
+function axisEntriesMap(catalog: Catalog): ReadonlyMap<string, readonly string[]> {
+  const map = new Map<string, readonly string[]>();
+  for (const [axisId, axis] of Object.entries(catalog.axes)) {
+    const versionKeys = Object.keys(axis.versions);
+    const latest = axis.versions[versionKeys[versionKeys.length - 1] ?? ''];
+    if (latest?.entries) map.set(axisId, latest.entries);
+  }
+  return map;
 }

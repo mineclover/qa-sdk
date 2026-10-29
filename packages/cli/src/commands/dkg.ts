@@ -63,13 +63,11 @@ import {
   checkAllDomainsHealth,
   entryAddChain,
   systemHealthChain,
-  convergeChain,
   traceFlows,
   resolveRecoveredFlowObservations,
   validateDslInvariants,
   scaffoldDecision,
   inferMigrator,
-  auditCoverage,
   transitionPrefix,
   transitionDecision,
   serviceHealthCheck,
@@ -86,12 +84,12 @@ import {
   type ConstraintNode,
   type DkgEdgeType,
   type SpecNode,
-  type ConvergeAction,
   type ObservationSuggestion,
   type TransitionSpecNode,
   type RecordDslOwnershipDecisionInput,
 } from 'dkg';
-import { bootstrapDkg } from 'dkg-enrichment';
+// convergeChain·auditCoverage는 @qa-sdk/convergence 분석기를 쓰는 dkg-enrichment 구현이 정본 (06 M-1)
+import { auditCoverage, bootstrapDkg, convergeChain, type ConvergeAction } from 'dkg-enrichment';
 import {
   scanAxisOverlaps,
   scanDecisionConflicts,
@@ -4001,8 +3999,8 @@ export function dkgRun(skillId: string, args: string[]): void {
     }
 
     case 'skill-observation-coverage': {
-      const entryUsages: DkgUsageData['entryUsages'] = [];
-      const addressUsages: DkgUsageData['addressUsages'] = [];
+      const entryUsages: UsageData['entryUsages'] = [];
+      const addressUsages: UsageData['addressUsages'] = [];
       const catalog = registry.has(activeCatalogId)
         ? registry.getCatalog(activeCatalogId)
         : DEMO_CATALOG;
@@ -4670,8 +4668,7 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
 
   // 4. Converge Chain
   const entriesMap = buildEntriesMap(catalog);
-  const dkgUsage = usage ? toDkgUsageData(catalog, usage) : null;
-  const convergeResult = convergeChain(catalog, graph, dkgUsage, { entriesMap });
+  const convergeResult = convergeChain(catalog, graph, usage, { entriesMap });
   console.log(`\n  converge chain:`);
   console.log(`    actions: ${convergeResult.actions.length}건`);
   console.log(
@@ -4729,7 +4726,10 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
 
     // Usage snapshot + auto observations
     if (usage) {
-      const snapResult = store.saveUsageSnapshotWithObservations(dkgUsage!, autoObs);
+      const snapResult = store.saveUsageSnapshotWithObservations(
+        toDkgUsageData(catalog, usage),
+        autoObs,
+      );
       console.log(
         `    usage snapshot #${snapResult.snapshotId} 저장 (observations: ${snapResult.observationsWritten})`,
       );

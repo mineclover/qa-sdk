@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { Catalog } from '@qa-sdk/core';
-import { GraphRegistry } from '../graph-registry.js';
+import { GraphRegistry } from 'dkg';
 import { auditCoverage } from './coverage-audit.js';
 
 const CATALOG: Catalog = {
@@ -35,7 +35,7 @@ describe('auditCoverage', () => {
     const result = auditCoverage(
       CATALOG,
       graph,
-      [{ prefixId: 'page_event', entryId: 'view', count: 3 }],
+      [{ axisId: 'action', entry: 'view', count: 3, lastSeen: '2026-06-18T00:00:00.000Z' }],
       [],
       { date: '2026-06-18', lowCoverageThreshold: 0.5 },
     );
@@ -53,7 +53,7 @@ describe('auditCoverage', () => {
     const result = auditCoverage(
       CATALOG,
       graph,
-      [{ prefixId: 'page_event', entryId: 'hover', count: 1 }],
+      [{ axisId: 'action', entry: 'hover', count: 1, lastSeen: '2026-06-18T00:00:00.000Z' }],
       [],
       { date: '2026-06-18' },
     );
@@ -62,7 +62,7 @@ describe('auditCoverage', () => {
     expect(result.report.phantomCount).toBe(1);
     expect(result.report.allEntries).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ prefixId: 'page_event', entry: 'hover', status: 'phantom' }),
+        expect.objectContaining({ axisId: 'action', entry: 'hover', status: 'phantom' }),
       ]),
     );
     expect(result.observations.map((obs) => obs.id)).toContain('OBS-COV-PHANTOM');

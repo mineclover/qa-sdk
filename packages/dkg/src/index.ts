@@ -184,12 +184,8 @@ export { safeEntryAdd } from './skills/safe-entry-add.js';
 export type { SafeEntryAddInput, SafeEntryAddResult } from './skills/safe-entry-add.js';
 export { checkDomainHealth, checkAllDomainsHealth } from './skills/domain-health.js';
 export type { DomainHealthResult, PrefixHealthSummary } from './skills/domain-health.js';
-export { auditCoverage } from './skills/coverage-audit.js';
-export type { CoverageAuditResult, CoverageReport } from './skills/coverage-audit.js';
 export { entryAddChain, systemHealthChain } from './skills/skill-chain.js';
 export type { ChainStepResult, SkillChainResult } from './skills/skill-chain.js';
-export { convergeChain } from './skills/converge-chain.js';
-export type { ConvergeAction, ConvergeChainResult } from './skills/converge-chain.js';
 export {
   traceFlows,
   validateDslInvariants,

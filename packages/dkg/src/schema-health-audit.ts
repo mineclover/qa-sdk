@@ -4,7 +4,7 @@
 /**
  * schema-health-audit — 전체 prefix의 스키마 건전성 감사.
  *
- * coverage-audit.ts와 동일 패턴:
+ * dkg-enrichment coverage-audit.ts와 동일 패턴:
  * 1. 전체 prefix에 대해 category-rules 검증 실행
  * 2. 위반 건 → ObservationNode 생성
  * 3. 심각한 위반 → DecisionNode scaffold

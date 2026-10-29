@@ -4,7 +4,7 @@
 /**
  * schema-observation-bridge — 검증 결과를 DKG ObservationNode로 변환.
  *
- * coverage-audit.ts의 패턴: 분석 결과 → Observation 생성.
+ * dkg-enrichment coverage-audit.ts의 패턴: 분석 결과 → Observation 생성.
  * 순수 함수 — GraphRegistry에 직접 추가하지 않고 노드/엣지를 반환.
  *
  * @layer 기록 (Recording)
