@@ -449,3 +449,4 @@ SDK(capacity 기준 stride)와 DecodeMap(entries 기준 stride)이 같은 주소
 - `documentVersion`(문서), `snapshotVersion`(catalog), `codecVersion`(wire ABI), `analyzerVersion`은 서로 다른 축이다
 - 같은 prefix version 안의 breaking layout 변경은 금지 — `findUnversionedBreakingChanges`가 비어 있어야 snapshot을 발행한다
 - 실패는 `CodecContractError.code` 9종으로만 표현한다. `null` 반환·조용한 skip은 신규 코드에서 금지
+- 적용 범위 (2026-10-29): core catalog runtime의 주소 해석 오류, ingest snapshot gate, codec-proto `CorruptEnvelope`. browser-codec은 의존성 없는 번들이라 `encodeDetailed`/`decodeDetailed`가 같은 이름의 code를 돌려준다. catalog 정의 결함은 계약 오류가 아니다

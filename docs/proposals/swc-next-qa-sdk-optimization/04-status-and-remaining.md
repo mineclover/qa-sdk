@@ -33,7 +33,7 @@ role: status
 | `CatalogSnapshot` contract 초안 및 ADR 검토 | ✅ | T0 + ADR-010 |
 | SemanticAddress compatibility matrix 작성 | 🟡 | core ↔ DecodeMap ↔ browser-codec parity는 있음. **WASM은 미포함**, matrix 문서 없음 |
 | legacy-v1 golden corpus 생성 | ✅ | Track A — 619 case |
-| codec mismatch/error contract 구현 | 🟡 | 계약 타입·판정 함수(T0), ingest gate·proto `CorruptEnvelope`·HTTP 매핑(B)까지 완료. **`core/catalog/runtime.ts`는 여전히 일반 `Error` 32곳**, browser-codec은 `null` 반환 |
+| codec mismatch/error contract 구현 | ✅ | T0 계약, B의 gate·`CorruptEnvelope`·HTTP 매핑, core runtime 주소 해석 오류 28곳 `CodecContractError` 전환(+`StrideOverflow` guard 신설), browser-codec `encodeDetailed`/`decodeDetailed`. catalog 정의 결함 4곳은 의도적으로 일반 `Error` |
 | browser/Node codec differential test 추가 | ✅ | 3-way parity 83 layout |
 | hot/cold EventRecord prototype 및 allocation profile | ⬜ | G2 |
 | batch ingest와 backpressure prototype | ⬜ | G2 |
@@ -59,7 +59,7 @@ role: status
 | **P0** | ✅ 로컬 CI — `pnpm ci:local` (`scripts/ci-local.mjs`): workflow 검사(def·codegen·format·arch)와 핵심 18개 패키지 테스트·bench smoke. 결정: CI는 로컬에서 확인한다 (2026-10-29) | — |
 | **P0** | 49 커밋 push 여부 결정 | 원격에 반영되지 않았고, `8a624692`에 다른 주제의 삭제분이 섞여 있다 | 사람 결정 |
 | **P1** | ✅ Track B — registry generation이 digest 기준이 되어 SDK GENERATION 비교가 일치. 남은 #15 재료: batch 문맥 조회 API, VerdictReport artifact digest | — |
-| **P1** | core runtime 오류를 `CodecContractError`로 전환, browser-codec `null` 반환의 원인 코드 노출 | 원본 계획 "codec mismatch/error contract"의 미완 부분 | 없음 (Track A 소유 파일) |
+| **P1** | ✅ core runtime 오류 전환, browser-codec 원인 코드 노출 | — | — |
 | **P2** | 2순위 정리: 의존 0 라이브러리 8개, consumer 그룹(시각화 7·시뮬 6·데모 8), `stores/pg/*`(Plan 07d), 구조 중복 | 관리 비용 축소 | 그룹별 사람 결정 |
 | **P2** | demo-tests 기존 타입 오류 21건 정리 후 전체 `tsc` 검사 | 지금은 `codec-compat`만 타입 검사 | 없음 |
 | **P3** | Wave 2 (G2·G3·G5·G6) | 측정 게이트 이후 | C baseline 분산 기록, B, E·F 완료 |

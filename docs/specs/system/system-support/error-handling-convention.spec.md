@@ -87,6 +87,12 @@ AppError와의 차이: AppError는 **내부에서 발생**, ServiceClientError�
 | `StrideOverflow` | 2^53 초과 layout을 number로 다룸 | — (라이브러리) |
 | `InvalidDimensionValue` | dim 값이 layout에 없음 | — (라이브러리) |
 
+**발생 위치:**
+
+- `@qa-sdk/core` catalog runtime(`encodePrefix`·`decodePrefix`·`encodePrefixByValue`·`resolveAddress` 등): `UnknownPrefix`(prefix·version 없음), `AddressOutOfRange`, `InvalidDimensionValue`(position·entry·ref 값·누락), `StrideOverflow`(2^53 초과 주소 공간을 number로 encode·decode). 메시지는 기존 문구를 유지한다
+- catalog **정의 결함**(알 수 없는 axis·axis version, dims에 없는 label, refEntries 누락)은 계약 오류가 아니라 일반 `Error`다. snapshot 빌더가 `issues`로 보고하는 대상이다
+- `@qa-sdk/browser-codec`(의존성 없는 번들): `encode`/`decode`는 `null`을 유지하고, 원인이 필요하면 `encodeDetailed`/`decodeDetailed`가 `{ ok: false, code }`를 돌려준다. code는 위 표의 부분집합(`UnknownPrefix`·`AddressOutOfRange`·`InvalidDimensionValue`)과 주소 문자열 형식 오류 `MalformedAddress`
+
 registry는 같은 prefix version의 breaking 변경 발행을 `AppError('UNVERSIONED_BREAKING_CHANGE', …, 422, { code: 'MigrationRequired' })`로 거부한다.
 
 서비스에서 라이브러리 에러를 catch하면 AppError로 변환:
