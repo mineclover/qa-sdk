@@ -11,6 +11,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsup",
     "build:tsc": "tsc",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "start": "node dist/server.js",
     "clean": "rm -rf dist",
