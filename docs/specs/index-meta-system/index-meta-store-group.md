@@ -23,8 +23,8 @@ sources:
   - docs/specs/index-meta-system/index-meta-store-group.cases.md
   - packages/index-meta/src/index-meta-store.ts
   - packages/index-meta/src/adapters/memory-store.ts
-  - packages/index-meta/src/adapters/sql-store.ts
-  - packages/index-meta/src/adapters/d1-store.ts
+  - packages/index-meta-store/src/adapters/sql-store.ts
+  - packages/index-meta-store/src/adapters/d1-store.ts
   - packages/index-meta/src/version-lifecycle.ts
   - packages/index-meta/src/prefix-router.ts
   - packages/index-meta/src/cross-version-entry-sync.ts

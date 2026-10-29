@@ -69,6 +69,6 @@ sources:
 
 ## 3. 이 표에 넣지 않은 것
 
-- worker 모드 convergence 부재와 scheduler 제거 여부: [02-convergence-flush-review.md](./02-convergence-flush-review.md) D-9
+- worker 모드 convergence 부재와 scheduler 전환은 운영 계층에서 동결하고, pure convergence 결정론·dirty-set 검증만 후속으로 둔다: [02-convergence-flush-review.md](./02-convergence-flush-review.md)
 - `TransmissionEnvelope.entry_snapshot`: Track B D-2
 - `DrizzleInsightsStore.collect()` no-op, `CON-005` 하드코딩 edge: 별도 정리 대상 (spec 미배선이 아니라 구현 품질 문제)

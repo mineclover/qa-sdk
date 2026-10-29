@@ -16,7 +16,8 @@ def:
     - target: system-overview
       type: refs
 status: draft
-date: 2026-10-29
+date: 2026-10-30
+updated: 2026-10-30
 part_of: swc-next-qa-sdk-optimization
 role: plan
 sources:
@@ -24,7 +25,7 @@ sources:
   - packages/cli/src/command-groups
 ---
 
-# 목적 기반 기능 정렬과 가지치기 계획 (2026-10-29)
+# 목적 기반 기능 정렬과 가지치기 계획 (2026-10-30)
 
 ## 목적 ^purpose
 
@@ -35,6 +36,8 @@ sources:
 **판정 규칙:** 기능이 아래 5개 목적 중 어디에 기여하는지 먼저 확인한다. 어디에도 기여하지 않으면 시스템 밖의 것이다.
 
 ## 1. 목적 계층 ^defines
+
+현재 범위 결정은 순수 좌표·데이터 계약·분석 로직을 `focus`로, scheduler/worker/flush·DB runtime adapter·외부 provider·web/motion surface를 `freeze`로 둔다. 아래 표의 서비스 진입점은 현 상태와 유지보수 책임을 설명하는 inventory이며, 신규 서비스 구현 우선순위를 의미하지 않는다.
 
 ```
 F  좌표계 (기반) ─ Catalog 하나에서 주소·코덱·snapshot·생성물을 파생
@@ -105,7 +108,7 @@ F  좌표계 (기반) ─ Catalog 하나에서 주소·코덱·snapshot·생성�
 |---|---|---|---|
 | SDK 관측 → 수집 | logger·sdk·apm·browser-sdk → ingest `/v1/ingest` | logger, sdk, apm, browser, codec-proto, ingest-server | ✅ |
 | trace·session 재구성 | ingest `/v1/traces`, `qa-sdk ingest trace·recent` | ingest-server, store | ✅ (S-6 영속 수정) |
-| 관측 → DKG observation (convergence) | ingest convergence pipeline, `dkg metrics·observations·observe` | convergence, dkg-enrichment | 🟡 출력 미검증 (§3), scheduler 결정 D-9 |
+| 관측 → DKG observation (convergence) | ingest convergence pipeline, `dkg metrics·observations·observe` | convergence, dkg-enrichment | 🟡 pure 출력은 proof suite로 검증, scheduler/worker 배선은 동결 |
 | 흐름 스키마 실행·분석 | `qa-sdk flow` 16개 | spec-transition, cli | 🟡 미검증 |
 | 시점 상태 재생 | query `/state/:c/:r/at` | query-service | 🟡 replay만 동작, 현재 상태 store 없음 (S-5) |
 | 인사이트 조회 | `/v1/insights/*`, `qa-sdk ingest insights` | ingest-server | 🟡 9개 라우트 클라이언트 0 |

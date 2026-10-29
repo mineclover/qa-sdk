@@ -26,7 +26,7 @@ sources:
   - packages/index-meta/src/meta-resolver.ts
   - packages/index-meta/src/codegen.ts
   - packages/index-meta/src/index.ts
-  - packages/index-meta/src/workers.ts
+  - packages/index-meta-workers/src/index.ts
   - packages/index-meta/src/meta-resolver.test.ts
   - packages/index-meta/src/meta-codec.test.ts
 ---

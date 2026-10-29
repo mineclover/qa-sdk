@@ -14,16 +14,27 @@ def:
     - target: swc-next-qa-sdk-optimization-readme
       type: depends_on
 status: draft
-date: 2026-10-29
+date: 2026-10-30
+updated: 2026-10-30
 part_of: swc-next-qa-sdk-optimization
 role: status
 ---
 
-# 진행 현황과 남은 작업 (2026-10-29)
+# 진행 현황과 남은 작업 (2026-10-30)
 
 ## 목적 ^purpose
 
-원본 이슈(Notion `ISSUE-TEMP-SWC-NEXT-QA-SDK-OPTIMIZATION`)의 체크리스트와 관련 GitHub 이슈(#15, #16)를 기준으로 지금까지 반영한 것과 남은 것을 한 곳에 정리한다. 로컬 `main`은 `origin/main`보다 80 커밋 이상 앞서 있고 push하지 않았다.
+원본 이슈(Notion `ISSUE-TEMP-SWC-NEXT-QA-SDK-OPTIMIZATION`)의 체크리스트와 관련 GitHub 이슈(#15, #16)를 기준으로 지금까지 반영한 것과 남은 것을 한 곳에 정리한다. 현재 최신 상태는 `main`의 `e2bc71aa` 기준이며 `origin/main`보다 95 커밋 앞서 있고 push하지 않았다.
+
+## 0. 최신 구현 요약
+
+- pure proof: core catalog 4건, demo-snapshot 3건, convergence·DKG deterministic proof를 추가했다.
+- persistence 경계: `dkg-store`와 `index-meta-store`로 concrete SQLite/Drizzle·SQL/native/D1 adapter를 분리했고, `dkg`·`index-meta`·`spec-core` pure entrypoint에서 runtime DB dependency를 제거했다.
+- 논리 저장 계약: `CatalogSnapshotStore`, TestScenario port, Decision/Observation·UsageSnapshot validator를 backend-agnostic하게 유지한다.
+- dashboard timeout: 고정 `/tmp` SQLite 경로 contention과 Nest cold bootstrap 비용이 원인이었고, 테스트별 `mkdtemp` 경로·30초 timeout·teardown cleanup으로 해결했다. dashboard 28/28, registry-service 52 files/507 tests가 통과했다.
+- 검증: `def validate` warning 0, `arch:verify` 73/73, `arch:check`, `arch:feedback`, format/diff check 통과.
+
+이하 체크리스트는 원본 계획과 과거 트랙 상태를 보존한 historical view다. 신규 우선순위는 [08-handoff.md](./08-handoff.md)의 순수 로직·데이터 설계 범위가 우선한다.
 
 ## 1. 원본 이슈 체크리스트 대조 ^defines
 
@@ -56,14 +67,14 @@ role: status
 
 | 순위 | 작업 | 이유 | 선행 조건 |
 |---|---|---|---|
-| **P0** | ✅ 로컬 CI — `pnpm ci:local` (`scripts/ci-local.mjs`): workflow 검사(def·codegen·format·arch)와 핵심 18개 패키지 테스트·bench smoke. 결정: CI는 로컬에서 확인한다 (2026-10-29). `arch:verify`가 `.antigravitycli/` 깨진 symlink로 중단되던 문제는 git 기준 파일 목록으로 격리 — 28/28 | — |
+| **P0** | ✅ 로컬 CI 게이트 — `node scripts/ci-local.mjs --only=gates`: workflow 검사(def·codegen·format·arch)를 통과했다. `arch:verify`는 git 기준 파일 목록으로 격리되어 8/8 gates가 통과했다. | — |
 | **P0** | 미push 커밋(80+) push 여부 결정 | 원격에 반영되지 않았고, `8a624692`에 다른 주제의 삭제분이 섞여 있다 | 사람 결정 |
 | **P1** | ✅ Track B — registry generation이 digest 기준이 되어 SDK GENERATION 비교가 일치. 남은 #15 재료: batch 문맥 조회 API, VerdictReport artifact digest | — |
 | **P1** | ✅ core runtime 오류 전환, browser-codec 원인 코드 노출 | — | — |
 | **P1** | 🟡 기능 정리·안정화 — [06](./06-feature-cleanup-candidates.md). 완료: 결함 S-1·S-2·S-5~S-9(S-4 부분), 테스트 공백 T-1·T-2·T-4~T-6(registry e2e 45건 NestJS 이식 + SQL capacity 정밀도 결함 수정), 중복 M-1·M-4·M-5, stub N-2·N-3·N-7. 남음: S-3(gateway 인증 기본값)·S-4 엔진 데이터 공급·M-3(Plan 07d)·N-1(App Hub stub)·§3 미사용 라우트·§5 패키지 그룹·V-1 배포 규칙 | 남은 항목은 대부분 사람 결정 | — |
 | **P1** | 목적 기반 정렬·가지치기 — [07](./07-purpose-alignment.md) §5 단계 1(목적별 핵심 흐름 smoke)·단계 2(분석 출력 골든 검증)부터 | 동작하지만 출력이 목적에 비춰 틀린 기능을 거르려면 위에서 아래로 봐야 한다 | §4 surface 질문·§6 결정 |
 | **P2** | 2순위 정리: 의존 0 라이브러리 8개, consumer 그룹(시각화 7·시뮬 6·데모 8), `stores/pg/*`(Plan 07d), 구조 중복 | 관리 비용 축소 | 그룹별 사람 결정 |
-| **P2** | ✅ I-1 삭제. 남은 인터페이스 정리 후보 I-2(`entrySnapshot` 옵션 제거 시점) — [05-interface-map.md](./05-interface-map.md) §4 | 실제 envelope 계약과 다른 두 번째 정의 | 사람 결정 |
+| **P2** | ✅ I-1 삭제. I-2(`entrySnapshot` 옵션 제거 시점)는 deprecated 수용 계약으로 유지하고, I-5는 pure 저장 port를 정의한 뒤 adapter 적용을 후순위로 둔다 — [05-interface-map.md](./05-interface-map.md) §4 | 실제 envelope 계약과 다른 두 번째 정의 | 사람 결정 |
 | **P2** | ✅ demo-tests 전체 `tsc` 검사 (`tsconfig.typecheck.json`) — 16건 수정, 죽은 registry skip 테스트 5개만 제외(06 T-6) | — | — |
 | **P3** | Wave 2 (G2·G3·G5·G6) | 측정 게이트 이후 | C baseline 분산 기록, B, E·F 완료 |
 | — | Notion 이슈 공식 번호 발급, Drive 계획 rev 0.2(R-1~R-11 반영) | 원본 이슈·계획과 저장소 상태 동기화 | Notion 연결 인증 |
@@ -73,6 +84,6 @@ role: status
 | ID | 내용 | 상태 |
 |---|---|---|
 | D-2 | `entry_snapshot` 처리 | ✅ 확정 (catalog_snapshot 추가, entry_snapshot deprecated 유지) |
-| D-9 | convergence scheduler 제거, worker 모드 convergence 부재 | G3에서 결정 |
+| D-9 | convergence scheduler 제거, worker 모드 convergence 부재 | 사용자 결정으로 운영 전환 동결. G3는 pure dirty-set/결정론 검증만 수행 |
 | X-16 후속 | 없음 (삭제 완료) | — |
 | 2순위 그룹 | 패키지 그룹별 유지·삭제 | 대기 |

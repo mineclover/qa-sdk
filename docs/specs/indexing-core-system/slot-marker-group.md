@@ -30,7 +30,7 @@ sources:
   - packages/index-meta/src/gate-engine.ts
   - packages/index-meta/src/gate-engine.test.ts
   - packages/index-meta/src/version-lifecycle.ts
-  - packages/index-meta/src/version-lifecycle.test.ts
+  - packages/index-meta-store/src/version-lifecycle.test.ts
   - packages/index-meta/src/migrate-address.ts
   - packages/index-meta/src/migrate-address.test.ts
 

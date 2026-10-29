@@ -18,7 +18,7 @@ sources:
   - packages/convergence/src/usage-aggregator.ts
   - packages/convergence/src/metric-registry.ts
   - packages/dkg/src/skills/flow-trace.ts
-  - packages/dkg/src/store/dkg-sqlite-store.ts
+  - packages/dkg-store/src/dkg-sqlite-store.ts
   - packages/ingest-server/src/lib/convergence-pipeline.ts
   - packages/ingest-server/src/lib/convergence-pipeline.test.ts
 ---

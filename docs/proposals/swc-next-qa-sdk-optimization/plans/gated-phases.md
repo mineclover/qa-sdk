@@ -36,7 +36,7 @@
 - U-7: `runConvergenceAnalysis`를 full rebuild 진입점으로 흡수 (incremental 결과와의 differential test 기준). G3를 하지 않기로 하면 삭제
 - full rebuild maintenance command와 full ↔ incremental differential test
 - X-15·X-17 중복 구현 정리
-- D-9: convergence 트리거 재설계 — scheduler 제거(runner 내부 max-wait로 대체) 여부와 worker 모드 convergence 배선 ([02-convergence-flush-review.md](../02-convergence-flush-review.md))
+- D-9: **운영 계층 동결** — scheduler 제거(runner 내부 max-wait로 대체)와 worker 모드 convergence 배선은 후순위로 보류한다. G3에서는 pure dirty-set 계산·결정론 proof만 다룬다 ([02-convergence-flush-review.md](../02-convergence-flush-review.md))
 
 ## G5 — Analyzer/plugin 계약 (원본 Phase 5, 범위 조정)
 

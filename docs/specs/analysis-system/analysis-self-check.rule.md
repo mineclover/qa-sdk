@@ -17,7 +17,7 @@ sources:
   - packages/cli/src/commands/dkg.ts
   - packages/convergence/src/metric-registry.ts
   - packages/convergence/src/self-check-analyzer.ts
-  - packages/dkg/src/store/dkg-sqlite-store.ts
+  - packages/dkg-store/src/dkg-sqlite-store.ts
 ---
 # Self-Check — 소비 규칙
 

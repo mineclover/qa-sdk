@@ -34,7 +34,7 @@ sources:
   - packages/dkg/src/graph-registry.ts
   - packages/dkg/src/dkg.types.ts
   - packages/dkg/src/service-topology.ts
-  - packages/dkg/src/store/dkg-sqlite-store.ts
+  - packages/dkg-store/src/dkg-sqlite-store.ts
   - packages/dkg/src/doc-sync.test.ts
 ---
 

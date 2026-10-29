@@ -21,7 +21,7 @@ sources:
   - packages/index-meta/src/index-sdk.ts
   - packages/index-meta/src/codegen.ts
   - packages/index-meta/src/index.ts
-  - packages/index-meta/src/workers.ts
+  - packages/index-meta-workers/src/index.ts
   - packages/index-meta/src/meta-resolver.test.ts
   - packages/index-meta/src/meta-codec.test.ts
 ---
@@ -53,4 +53,4 @@ implemented
 - resolver bundle과 runtime decode는 같은 `MetaRegistryInput` snapshot에서 나와야 한다.
 - `MetaResolver.getDecodeMap()`과 `MetaCodec.toDecodeMap()`은 같은 코어 데이터를 반환해야 하며, 이 일관성은 `meta-resolver.test.ts`가 검증한다.
 - `generateTypes()`는 runtime bundle을 대신하지 않는다. 타입 문자열을 생성하지만 decode/encode truth는 `MetaCodec`과 `MetaResolver`의 DecodeMap 계약이다.
-- package-local CLI 명령을 전제하지 않는다. tool entry는 `index-meta`/`index-meta/workers` exports와 `index-meta/client` 경량 entrypoint다.
+- package-local CLI 명령을 전제하지 않는다. tool entry는 `index-meta`/`index-meta-workers` exports와 `index-meta/client` 경량 entrypoint다.

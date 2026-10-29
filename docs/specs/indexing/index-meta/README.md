@@ -107,4 +107,4 @@ src/
 - `index-meta`: registry/store/schema/gate/query/migration까지 포함한 전체 API.
 - `index-meta/client`: SQL 어댑터 없이 `createIndexSDK`, `MetaRegistry`, `MetaCodec`, `MetaResolver`, `PrefixDecoder`를 쓰는 브라우저·Edge 안전 진입점.
 - `index-meta/decode`: `DecodeMap` 번들 기반 decode/codec/address protocol 전용 진입점.
-- `index-meta/workers`: Workers/D1 배포용 진입점.
+- `index-meta-workers`: Workers/D1 배포용 진입점.

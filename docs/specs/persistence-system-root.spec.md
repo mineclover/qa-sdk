@@ -30,9 +30,9 @@ def:
     - packages/store/src/index.ts
     - packages/store/src/adapters/memory/record.adapter.test.ts
     - packages/index-meta/src/index-meta-store.ts
-    - packages/index-meta/src/adapters/sql-store.test.ts
+    - packages/index-meta-store/src/adapters/sql-store.test.ts
     - packages/definition-data-source/src/factory.test.ts
-    - packages/dkg/src/store/dkg-sqlite-store.test.ts
+    - packages/dkg-store/src/dkg-sqlite-store.test.ts
     - packages/ingest-server/src/stores/runtime-stores.ts
 ---
 # Persistence System Root

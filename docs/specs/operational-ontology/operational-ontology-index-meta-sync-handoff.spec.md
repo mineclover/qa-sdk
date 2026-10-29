@@ -28,7 +28,7 @@ sources:
   - packages/index-meta/src/prefix-registry.ts
   - packages/index-meta/src/schema-sync.ts
   - packages/index-meta/src/version-lifecycle.ts
-  - packages/index-meta/src/db/schema.ts
+  - packages/index-meta-store/src/db/schema.ts
   - packages/registry-service/src/modules/ontology/index-meta-sync.adapter.ts
   - packages/registry-service/src/modules/ontology/index-meta-sync.adapter.test.ts
   - packages/registry-service/src/modules/ontology/ontology-registry.service.ts

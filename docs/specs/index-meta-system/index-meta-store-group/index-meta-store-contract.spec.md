@@ -20,15 +20,15 @@ sources:
   - packages/index-meta/src/adapters/validate-entry.ts
   - packages/index-meta/src/adapters/memory-store.ts
   - packages/index-meta/src/adapters/memory-store.test.ts
-  - packages/index-meta/src/adapters/sql-store.ts
-  - packages/index-meta/src/adapters/sql-store.test.ts
-  - packages/index-meta/src/adapters/d1-store.ts
-  - packages/index-meta/src/adapters/d1-driver.ts
-  - packages/index-meta/src/adapters/better-sqlite-driver.ts
-  - packages/index-meta/src/adapters/node-sqlite-driver.ts
-  - packages/index-meta/src/adapters/node-sqlite-driver.test.ts
-  - packages/index-meta/src/adapters/sqlite-shared.ts
-  - packages/index-meta/src/db/schema.ts
+  - packages/index-meta-store/src/adapters/sql-store.ts
+  - packages/index-meta-store/src/adapters/sql-store.test.ts
+  - packages/index-meta-store/src/adapters/d1-store.ts
+  - packages/index-meta-store/src/adapters/d1-driver.ts
+  - packages/index-meta-store/src/adapters/better-sqlite-driver.ts
+  - packages/index-meta-store/src/adapters/node-sqlite-driver.ts
+  - packages/index-meta-store/src/adapters/node-sqlite-driver.test.ts
+  - packages/index-meta-store/src/adapters/sqlite-shared.ts
+  - packages/index-meta-store/src/db/schema.ts
 ---
 
 # Index Meta Store - 저장 계약

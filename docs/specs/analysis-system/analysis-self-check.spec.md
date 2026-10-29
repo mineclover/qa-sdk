@@ -22,7 +22,7 @@ sources:
   - packages/cli/src/commands/dkg.ts
   - packages/cli/src/commands/dkg.e2e.test.ts
   - packages/spec-core/src/convergence/convergence.test.ts
-  - packages/dkg/src/store/dkg-sqlite-store.ts
+  - packages/dkg-store/src/dkg-sqlite-store.ts
 ---
 # Self-Check — 시스템 건강 상태
 
@@ -166,5 +166,5 @@ build/test coverage는 각각 `86%`/`82%`이며, dormant/error-path entry는 실
 - `packages/convergence/src/self-check-analyzer.test.ts` — pure analysis 검증
 - `packages/spec-core/src/convergence/index.ts` — re-export
 - `packages/cli/src/commands/dkg.ts` — CLI `dkg self-check` 명령, 패키지 컨텍스트 병합, metrics issue 출력
-- `packages/dkg/src/store/dkg-sqlite-store.ts` — runtime flow evidence 저장·조회
+- `packages/dkg-store/src/dkg-sqlite-store.ts` — runtime flow evidence 저장·조회
 - `packages/cli/src/commands/dkg.e2e.test.ts` — full self-check heavy smoke lane

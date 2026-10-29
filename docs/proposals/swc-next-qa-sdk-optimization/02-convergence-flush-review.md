@@ -14,7 +14,8 @@ def:
     - target: swc-next-qa-sdk-optimization-readme
       type: depends_on
 status: draft
-date: 2026-10-29
+date: 2026-10-30
+updated: 2026-10-30
 part_of: swc-next-qa-sdk-optimization
 role: audit
 sources:
@@ -27,7 +28,7 @@ sources:
 
 ## 목적 ^purpose
 
-Track E(D-4)에서 runner 자체 timer를 지우고 `convergence-scheduler`만 남긴 뒤, 기본 주기 flush 간격이 60초에서 5분으로 바뀌었다. 현재는 5분을 유지한다(2026-10-29 결정). 이 문서는 scheduler가 왜 생겼는지, 제거할 경우 무엇이 빠지는지, 제거한다면 무엇으로 대체해야 하는지를 정리한다. 제거 여부는 결정 D-9로 남긴다.
+Track E(D-4)에서 runner 자체 timer를 지우고 `convergence-scheduler`만 남긴 뒤, 기본 주기 flush 간격이 60초에서 5분으로 바뀌었다. 현재는 5분을 유지한다. 사용자는 scheduler·worker·flush 전환을 서비스 운영 범위에서 동결하고, pure convergence 로직·데이터 계약만 계속 구현하기로 결정했다. 이 문서는 운영 계층의 현 상태와 재개 조건을 기록한다.
 
 ## 1. 등장 배경 ^defines
 
@@ -64,11 +65,11 @@ scheduler는 flush 정책을 runner 밖에서 시간으로 보완한다. 트리�
 
 ## 5. 시점
 
-G3(incremental convergence)은 trace 버퍼 대신 dirty set으로 재계산 범위를 정한다. 트리거 정책도 그때 다시 설계되므로, scheduler 제거는 **G3 착수 때 함께 결정**하는 것이 중복 작업이 적다. 그 전까지는 A(5분)를 유지한다.
+G3(incremental convergence)은 trace 버퍼 대신 dirty set으로 재계산 범위를 정한다. 현재 범위에서는 scheduler 제거·worker 전환을 구현하지 않고, pure dirty-set 계산과 결정론 proof만 진행한다. 서비스 운영 계층을 다시 열기로 결정할 때에만 A(5분)와 B(one-shot timer)를 재평가한다.
 
 ## 6. 함께 발견한 문제 — worker 모드에는 convergence가 없다
 
 - `startWorker()`(`server.ts:418~`)는 transition engine만 만들고 convergence pipeline·scheduler를 만들지 않는다.
 - Track E 이후 queue 경로(`processPhaseTwoTask`)도 `runPostVerdictStages`를 호출하지만, worker 프로세스에는 `convergencePipeline`이 없으므로 convergence 알림이 일어나지 않는다.
 - 따라서 `TASK_QUEUE_ENABLED=true`로 server와 worker를 나눠 배포하면 convergence가 실행되지 않는다. server 프로세스의 runner는 queue 경로에서 trace 완료를 통지받을 방법이 없다.
-- 이 문제는 scheduler 유무와 무관하게 존재한다. G3에서 convergence를 worker 쪽으로 옮기거나(dirty set 기반 재계산과 함께), 완료 trace를 queue 이벤트로 server에 돌려주는 방식 중 하나를 택해야 한다. README 결정 D-9의 범위에 포함한다.
+- 이 문제는 scheduler 유무와 무관하게 존재하지만, 현재는 worker 배선이나 queue 이벤트 전환을 구현하지 않는다. 서비스 범위를 다시 열 때 별도 결정으로 다루며, 그 전까지는 유지보수·회귀 수정만 허용한다.

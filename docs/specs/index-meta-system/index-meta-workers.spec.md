@@ -15,21 +15,22 @@ def:
 sources:
   - packages/index-meta-workers/src/index.ts
   - packages/index-meta-workers/package.json
-  - packages/index-meta/src/workers.ts
   - packages/index-meta/package.json
+  - packages/index-meta-store/package.json
+  - packages/index-meta-store/src/index.ts
 ---
 
 # index-meta-workers 스펙
 
 ## 목적 ^purpose
 
-Cloudflare Workers / Edge 런타임 전용 index-meta 서브셋 패키지.
-Node.js 전용 네이티브 바인딩을 제거하여 Workers 환경에서 안전하게 import 가능한 진입점을 제공한다.
+Cloudflare Workers / Edge 런타임 전용 index-meta 조합 패키지.
+순수 `index-meta` API와 Workers-safe D1/SQL adapter를 함께 노출하고, Node.js 전용 네이티브 바인딩은 번들에서 제외한다.
 
 ## 구성 ^overview
 
-- **아키텍처**: `index-meta/workers` 진입점을 단일 re-export (`export * from "index-meta/workers"`)
-- **포함**: D1SqlDriver, 모든 순수 로직(GateEngine, MetaCodec, PrefixDecoder 등), SQL 스토어, 정책 리졸버
+- **아키텍처**: `packages/index-meta-workers/src/index.ts`가 `index-meta`와 `index-meta-store`의 허용 export를 명시적으로 re-export
+- **포함**: D1SqlDriver, 모든 순수 로직(GateEngine, MetaCodec, PrefixDecoder 등), Workers-safe SQL 스토어, 정책 리졸버
 - **제외**: Node.js 전용 드라이버 5종(NodeSqliteDriver, BetterSqliteDriver, BunSqliteDriver, createSqliteDriver, getDatabaseSync)
 - **소비자**: gate-service, query-service, decode-service (각 `worker.ts` 진입점)
 - **빌드**: tsup dual format (ESM + CJS), unscoped name
@@ -48,8 +49,7 @@ Cloudflare Workers 런타임은 Node.js 전용 모듈을 로드할 수 없다.
 | `createSqliteDriver` | 위 드라이버 오케스트레이션 |
 | `getDatabaseSync` | `node:module` (`createRequire`) |
 
-`index-meta` 패키지의 메인 진입점(`.`)은 위 드라이버를 모두 포함하므로, Workers에서 import하면 번들 시점에 해석 실패가 발생한다.
-`index-meta/workers` 진입점은 이 5종을 명시적으로 제외하고, `index-meta-workers` 패키지는 이를 re-export하여 깔끔한 import 경로를 제공한다.
+순수 `index-meta` 메인 진입점은 codec·client·memory contract만 소유하고 Node/native adapter를 포함하지 않는다. SQL/native/D1 구현은 `index-meta-store`로 분리했으며, `index-meta-workers`는 그중 Workers-safe export만 명시적으로 재노출한다.
 
 ### 포함 모듈 분류
 
@@ -125,13 +125,12 @@ Cloudflare Workers 런타임은 Node.js 전용 모듈을 로드할 수 없다.
 
 ```
 index-meta-workers
-  └── index-meta/workers (re-export)
-        └── index-meta 내부 순수 모듈들
-              └── weighted-index
+  ├── index-meta (순수 codec/client/memory contract)
+  └── index-meta-store (D1·SQL adapter 중 Workers-safe export)
+        └── weighted-index
 ```
 
-`index-meta-workers`는 `index-meta`에 대한 workspace 의존(`workspace:*`)만 가진다.
-런타임에 추가 네이티브 의존성이 없으므로 Edge 환경에서 안전하다.
+`index-meta-workers`는 `index-meta`와 `index-meta-store`에 대한 workspace 의존을 갖는다. `index-meta-store`의 Node/native driver는 export하지 않으며, 빌드 산출물에 Node.js leak가 없는지를 package test가 확인한다.
 
 ### import 경로
 
@@ -139,8 +138,9 @@ index-meta-workers
 // Workers 환경 — index-meta-workers 사용
 import { D1SqlDriver, GateEngine, PrefixDecoder } from "index-meta-workers";
 
-// Node.js 환경 — index-meta 메인 진입점 사용
-import { NodeSqliteDriver, GateEngine, PrefixDecoder } from "index-meta";
+// Node.js 환경 — 순수 API와 Node adapter를 분리해 사용
+import { GateEngine, PrefixDecoder } from "index-meta";
+import { NodeSqliteDriver } from "index-meta-store";
 ```
 
 ## 상태

@@ -76,8 +76,8 @@ operational ontology, registry-service, index-meta가 같은 좌표/주소 문�
 1. `docs/specs/index-meta-system/index-meta-system.md`
 2. `packages/index-meta/src/prefix-registry.ts`
 3. `packages/index-meta/src/schema-sync.ts`
-4. `packages/index-meta/src/db/schema.ts`
-5. `packages/index-meta/src/adapters/sql-store.ts`
+4. `packages/index-meta-store/src/db/schema.ts`
+5. `packages/index-meta-store/src/adapters/sql-store.ts`
 
 판단 기준:
 

@@ -1,12 +1,15 @@
 ---
 lifecycle: draft
 status: draft
+updated: 2026-10-30
 sources:
   - docs/proposals/swc-next-qa-sdk-optimization/README.md
   - docs/proposals/swc-next-qa-sdk-optimization/01-tracks.md
 ---
 
 # SWC Next 최적화·호환성 — 트랙별 구현 계획
+
+이 계획 목록은 원본 트랙의 historical execution plan이다. 현재 범위·구현 완료·남은 결정은 상위 [08 핸드오프](../08-handoff.md)가 우선한다.
 
 [상위 README](../README.md)의 트랙을 실행 단위로 분해한 계획이다. 트랙 경계·파일 소유권·머지 규칙은 [01-tracks.md](../01-tracks.md)가 정본이다.
 
@@ -37,11 +40,11 @@ T0 머지 후 A·B·D(Task 2~)가 열린다.
 
 ## 검증 상태
 
-- **T0 구현 완료 (2026-10-28, 미커밋)**: `packages/core/src/catalog/snapshot/` 13개 파일, core barrel export, ADR-010. core vitest 89 files / 1238 tests PASS(신규 36), `tsc --noEmit` 오류 0, `@qa-sdk/browser`·`@qa-sdk/sdk`·`@qa-sdk/context` 빌드 성공, snapshot 모듈 `node:` import 0건.
+- **T0 구현 완료 (2026-10-28, 현재 커밋 `e2bc71aa`에 포함)**: `packages/core/src/catalog/snapshot/` 계약과 ADR-010. 후속 proof·adapter 분리·dashboard 안정화도 같은 작업 묶음에 반영됐다.
 - **Track A 구현 완료 (2026-10-29)**: Task 1~6. R-1(DecodeMap shape)·R-11(버전별 dim) 해소, 3-way parity 83 + registry parity 83, legacy-v1 corpus 619 case, strict 주소 파서.
 - **Track C·D·E·F 구현 완료 (2026-10-29)**: 각 세션 브랜치에서 구현 후 main에 merge. E 후속으로 runtime PG 마이그레이션 drift(X-18) 수정.
 - **Track B 구현 완료 (2026-10-29)**: envelope `catalog_snapshot`, SDK 전달, proto 필드·CorruptEnvelope, registry 불변 snapshot·발행 게이트·digest generation, ingest snapshot gate·readiness. 계획과 다른 점: transmission 저장 컬럼은 읽는 API가 없어 추가하지 않음(#15로 이관), layout issues는 발행 거부 대신 응답 보고.
-- 남은 트랙: Wave 2 G2·G3·G5·G6 (측정 게이트). D-9는 G3에서 결정.
+- 남은 트랙: Wave 2 G2·G3·G5·G6 (측정 게이트). D-9는 scheduler/worker 전환을 동결하고 현재 주기 회귀만 유지하는 방향으로 사용자 결정됐으며, 세부 package disposition은 별도 결정이다.
 - B 계획의 테스트 코드는 실행 검증 전이다. Task 0이 전제(시그니처·참조 위치)를 다시 확인한다.
 
 ## 환경 메모

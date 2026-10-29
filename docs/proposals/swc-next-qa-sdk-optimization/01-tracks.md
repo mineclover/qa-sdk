@@ -58,7 +58,7 @@ role: tracks
 | C | `packages/bench/**`, `benchmarks/**`, `.github/workflows/bench.yml` (신규) |
 | D | `packages/codegen-core/**`, `packages/cli/src/commands/codegen.ts`, `packages/core/src/catalog/browser-flatten.ts`, `packages/viz-3d/scripts/generate-browser-catalog.ts`, `packages/viz-3d/package.json`, `packages/browser-codec/src/demo-catalog-browser.ts` (생성물), `packages/demo-types/src/**` (생성물), `scripts/catalog-codegen-drift.mjs` (신규), `.github/workflows/codegen-drift.yml` (신규) |
 | E | `packages/ingest-server/src/server.ts`, `packages/ingest-server/src/stores/store-factory.ts`, `packages/ingest-server/src/lib/phase-two-worker.ts`, `packages/ingest-server/src/lib/convergence-pipeline.ts`, `packages/ingest-server/src/lib/convergence-scheduler.ts`, `packages/ingest-server/src/lib/metrics-collector.ts`, `packages/ingest-server/src/routes/metrics.ts`, `packages/ingest-server/src/config/env.ts`, `packages/ingest-server/src/db/**`, `packages/ingest-server/src/stores/*-schema.sql.ts`, `packages/ingest-server/drizzle/**` |
-| F | `packages/convergence/**`, `packages/dkg/src/dkg.types.ts`, `packages/dkg/src/store/**`, `packages/dkg/src/db/**`, `packages/dkg/src/skills/**`, `packages/dkg-enrichment/**` |
+| F | `packages/convergence/**`, `packages/dkg/src/dkg.types.ts`, `packages/dkg-store/src/**`, `packages/dkg-store/src/db/**`, `packages/dkg/src/skills/**`, `packages/dkg-enrichment/**` |
 
 ### 3.1 경계에서 조율이 필요한 지점
 

@@ -14,8 +14,8 @@ def:
 sources:
   - packages/cli/drizzle.config.ts
   - packages/cli/src/db/schema.ts
-  - packages/index-meta/drizzle.config.ts
-  - packages/index-meta/src/db/schema.ts
+  - packages/index-meta-store/drizzle.config.ts
+  - packages/index-meta-store/src/db/schema.ts
   - packages/registry-service/drizzle.config.ts
   - packages/registry-service/src/db/schema.ts
   - packages/db-traffic-control/src/drizzle-middleware.ts

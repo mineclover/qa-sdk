@@ -39,7 +39,7 @@
 | `packages/dkg/src/dkg.types.ts` | `ObservationProvenance`, `ObservationNode.provenance?` |
 | `packages/convergence/src/dkg-types.ts` | 사본 동기화 (`metadata`, `provenance`) |
 | `packages/convergence/src/producer-info.ts` (신규) | `CONVERGENCE_PRODUCER`, version |
-| `packages/dkg/src/store/dkg-sqlite-store.ts` | provenance 직렬화 round-trip 확인 |
+| `packages/dkg-store/src/dkg-sqlite-store.ts` | provenance 직렬화 round-trip 확인 |
 | `packages/dkg-enrichment/src/type-drift.test.ts` (신규) | 사본 ↔ 정본 타입 동치 |
 
 **Interfaces — Produces (G3·G5 소비):**

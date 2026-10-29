@@ -19,7 +19,7 @@ sources:
   - packages/core/src/catalog/catalog.types.ts
   - packages/registry-service/src/modules/services/service.types.ts
   - packages/dkg/src/dkg.types.ts
-  - packages/dkg/src/store/dkg-sqlite-store.ts
+  - packages/dkg-store/src/dkg-sqlite-store.ts
 ---
 # 태그 관리 설계
 

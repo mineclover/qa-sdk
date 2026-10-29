@@ -22,7 +22,7 @@ sources:
   - packages/index-meta/src/meta-resolver.ts
   - packages/index-meta/src/codegen.ts
   - packages/index-meta/src/index.ts
-  - packages/index-meta/src/workers.ts
+  - packages/index-meta-workers/src/index.ts
   - packages/index-meta/src/meta-resolver.test.ts
   - packages/index-meta/src/meta-codec.test.ts
 ---
@@ -42,7 +42,7 @@ implemented
 - 문제 정의는 "원시 주소 공간을 사람이 다룰 수 있는 형태로 바꾼다"는 요구에서 출발한다.
 - `MetaRegistryInput`이 입력 snapshot이다. 이 snapshot에서 `createIndexSDK`, `MetaResolver`, `generateTypes`가 같은 schema 의미를 읽는다.
 - `index-meta/client`는 브라우저/Edge/Node.js 소비자용 경량 entrypoint다. SDK, core codec/resolver, errors/types를 export하고 SQL adapter는 포함하지 않는다.
-- `index-meta`와 `index-meta/workers`는 store, migration, API payload, codegen까지 포함하는 운영/서버 entrypoint다.
+- `index-meta`는 pure codec·client·contract entrypoint이고, `index-meta-store`는 store/migration과 SQL/native/D1 adapter를 소유한다. `index-meta-workers`는 Edge-safe 조합 entrypoint다.
 - 사용자는 메타데이터를 직접 조합하기보다, 일관된 도구 흐름을 따라 안전한 기본값을 얻어야 한다.
 
 ## 단계

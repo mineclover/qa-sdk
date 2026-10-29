@@ -19,10 +19,9 @@ sources:
   - docs/specs/index-meta-system/index-meta-store-group/index-meta-store-contract.spec.md
   - docs/specs/index-meta-system/index-meta-store-group/index-meta-store-resolution.spec.md
   - packages/index-meta/src/adapters/memory-store.test.ts
-  - packages/index-meta/src/adapters/sql-store.test.ts
-  - packages/index-meta/src/adapters/d1-store.ts
-  - packages/index-meta/src/adapters/d1-driver.ts
-  - packages/index-meta/src/prefix-router.test.ts
+  - packages/index-meta-store/src/adapters/sql-store.test.ts
+  - packages/index-meta-store/src/adapters/d1-store.ts
+  - packages/index-meta-store/src/adapters/d1-driver.ts
   - packages/index-meta/src/cross-version-entry-sync.test.ts
   - packages/index-meta/src/address-resolver.test.ts
 ---

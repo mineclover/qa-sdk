@@ -14,11 +14,13 @@ def:
     - target: swc-next-qa-sdk-optimization-readme
       type: depends_on
 status: draft
-date: 2026-10-29
+date: 2026-10-30
+updated: 2026-10-30
 part_of: swc-next-qa-sdk-optimization
 role: inventory
 sources:
   - packages/core/src/catalog/snapshot/index.ts
+  - packages/core/src/ports/catalog-snapshot-store.port.ts
   - packages/core/src/types/envelope.ts
   - packages/ingest-server/src/lib/snapshot-gate.ts
   - packages/registry-service/src/modules/catalog/catalog.controller.ts
@@ -26,7 +28,7 @@ sources:
   - packages/browser-codec/src/browser-codec.ts
 ---
 
-# 인터페이스·기능 맵 (2026-10-29)
+# 인터페이스·기능 맵 (2026-10-30)
 
 ## 목적 ^purpose
 
@@ -107,6 +109,17 @@ Catalog ──codegen──▶ CATALOG_SNAPSHOT (Node) / BROWSER_CATALOG_SNAPSHO
 | `arch:verify` (`scripts/verify-analysis-os.ts`) | 파일 목록은 `git ls-files`(추적 + 무시 규칙 밖) 기준 — 로컬 도구 상태·깨진 symlink가 결과를 바꾸지 않는다 |
 | codegen 헤더 `catalogDigest`·`sourceDigest` | 생성물이 어느 catalog·소스에서 나왔는지 |
 
+### 2.6 backend-agnostic 논리 저장 계약
+
+| 계약 | 목적 | 현재 구현 경계 |
+|---|---|---|
+| `CatalogSnapshotStore` | snapshot identity·digest·충돌 사유를 보존하고 조회한다 | port: `packages/core/src/ports/catalog-snapshot-store.port.ts`; registry InMemory·SQL 구현은 서비스 유지보수 범위 |
+| `TestScenarioStore` port | declared → assigned → collected 전이와 run history를 정의한다 | `packages/test-scenario-store/src/port.ts`; backend 선택·verified 승격은 후속 결정 |
+| DKG Decision/Observation validator | 필수 필드·provenance·resolution 참조를 검증한다 | `packages/dkg/src/node-contract.ts`; 저장 adapter와 분리 |
+| UsageSnapshot contract | snapshotId·catalogId·digest·idempotency·period·totalRecords 불변식을 검증한다 | `packages/dkg/src/usage-snapshot-contract.ts`; `dkg-store`는 현재 SQLite adapter 테스트만 소유 |
+
+저장소의 필수 계약은 DB 종류가 아니라 필드 의미, 상태 전이, provenance, version/digest, idempotency, 조회·보존 요구를 선언한다. `dkg-store`와 `index-meta-store`는 concrete adapter이며 pure proof profile의 필수 경로가 아니다.
+
 ## 3. 이번 정리에서 맞춘 것
 
 | 항목 | 이전 | 지금 |
@@ -115,6 +128,7 @@ Catalog ──codegen──▶ CATALOG_SNAPSHOT (Node) / BROWSER_CATALOG_SNAPSHO
 | Node SDK 문맥 생산 | 설정 `catalogSnapshot`은 있으나 값을 만들 생성물 없음 → Node envelope은 항상 `missing` | codegen이 `CATALOG_SNAPSHOT` 생성. 브라우저 `BROWSER_CATALOG_SNAPSHOT`과 대칭 |
 | 문맥 타입 | `BrowserCatalogSnapshot`이 `CatalogSnapshotWire`와 같은 필드를 따로 선언 | `Omit<CatalogSnapshotWire, 'snapshot_version'>`에서 파생 |
 | 환경변수 표 | `SNAPSHOT_GATE_*`가 `docs/CONVENTIONS.md`에 없음 | 추가 |
+| persistence 경계 | `dkg`·`index-meta`가 SQLite/Drizzle adapter까지 함께 노출 | pure 계약은 `dkg`·`index-meta`, concrete 구현은 `dkg-store`·`index-meta-store`로 분리 |
 
 ## 3.1 안정성 등급과 회귀 방지 ^validation
 
@@ -134,4 +148,4 @@ stable 인터페이스를 바꿔야 하면 ADR-010을 먼저 고치고, 위 테�
 | I-2 | `entry_snapshot` / `entrySnapshot` | D-2로 deprecated 유지. ingest·store 어디도 읽지 않는다 | 외부 SDK 배포본이 보내는 동안은 schema 수용만 유지하고, SDK 설정 3곳의 옵션은 다음 major에서 제거 |
 | I-3 | `toSnapshotWire` | 테스트만 사용 | 유지 — registry에서 받은 snapshot을 런타임에 SDK로 넘기는 정식 경로. 쓰는 앱이 생기기 전까지 추가 기능 금지 |
 | I-4 | `encodeDetailed`·`decodeDetailed` | 사내 소비자 없음 | 유지 — 실패 원인을 알아야 하는 외부 소비자용 공개 API (오류 전환에서 승인) |
-| I-5 | envelope `catalog_snapshot` 영속 | gate 판정 후 버린다 | 먼저 backend-agnostic 논리 저장 인터페이스·필드 불변식·digest 조회 계약을 정의하고, #15(batch 문맥 조회) adapter는 후속 결정 |
+| I-5 | envelope `catalog_snapshot` 영속 | `CatalogSnapshotStore` 논리 port와 identity/digest 충돌 계약은 구현. gate 이후 batch 문맥 조회·replay adapter는 보류 | backend-agnostic 계약 테스트를 먼저 확정하고, #15(batch 문맥 조회) adapter는 후속 결정 |

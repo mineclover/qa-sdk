@@ -17,9 +17,9 @@ def:
     - target: dkg-edge-types
       type: depends_on
 sources:
-  - packages/dkg/src/store/dkg-sqlite-store.ts
-  - packages/dkg/src/store/dkg-sqlite-store.test.ts
-  - packages/dkg/src/db/schema.ts
+  - packages/dkg-store/src/dkg-sqlite-store.ts
+  - packages/dkg-store/src/dkg-sqlite-store.test.ts
+  - packages/dkg-store/src/db/schema.ts
   - packages/dkg/src/graph-registry.ts
   - packages/dkg/src/dkg.types.ts
 ---
@@ -74,5 +74,5 @@ DKG 노드/엣지와 메타 키를 로컬 SQLite에 저장하는 graph facet을 
 
 ## 관련 소스
 
-- `packages/dkg/src/store/dkg-sqlite-store.ts`
-- `packages/dkg/src/db/schema.ts`
+- `packages/dkg-store/src/dkg-sqlite-store.ts`
+- `packages/dkg-store/src/db/schema.ts`

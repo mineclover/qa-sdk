@@ -19,17 +19,16 @@ sources:
   - packages/index-meta/src/adapters/memory-store.ts
   - packages/index-meta/src/adapters/memory-store.test.ts
   - packages/index-meta/src/version-lifecycle.ts
-  - packages/index-meta/src/version-lifecycle.test.ts
+  - packages/index-meta-store/src/version-lifecycle.test.ts
   - packages/index-meta/src/adapters/memory-version-lifecycle.ts
-  - packages/index-meta/src/adapters/sql-version-lifecycle-store.ts
+  - packages/index-meta-store/src/adapters/sql-version-lifecycle-store.ts
   - packages/index-meta/src/migration-store.ts
-  - packages/index-meta/src/migration-store.test.ts
+  - packages/index-meta-store/src/migration-store.test.ts
   - packages/index-meta/src/adapters/memory-migration-store.ts
-  - packages/index-meta/src/adapters/sql-migration-store.ts
+  - packages/index-meta-store/src/adapters/sql-migration-store.ts
   - packages/index-meta/src/prefix-router.ts
-  - packages/index-meta/src/prefix-router.test.ts
   - packages/index-meta/src/adapters/memory-prefix-router.ts
-  - packages/index-meta/src/adapters/sql-prefix-router.ts
+  - packages/index-meta-store/src/adapters/sql-prefix-router.ts
   - packages/index-meta/src/cross-version-entry-sync.ts
   - packages/index-meta/src/cross-version-entry-sync.test.ts
   - packages/index-meta/src/prefix-registry.ts

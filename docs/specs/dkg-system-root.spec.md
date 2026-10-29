@@ -17,7 +17,7 @@ def:
     - packages/dkg/src/index.ts
     - packages/dkg/src/dkg.types.ts
     - packages/dkg/src/graph-registry.ts
-    - packages/dkg/src/store/dkg-sqlite-store.ts
+    - packages/dkg-store/src/dkg-sqlite-store.ts
     - packages/dkg/src/dkg.test.ts
 ---
 

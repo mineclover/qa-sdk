@@ -36,7 +36,7 @@ def:
 sources:
   - packages/index-meta/src/index.ts
   - packages/index-meta/src/client.ts
-  - packages/index-meta/src/workers.ts
+  - packages/index-meta-workers/src/index.ts
   - packages/index-meta/package.json
   - packages/index-meta/src/meta-registry.ts
   - packages/index-meta/src/meta-codec.ts
@@ -58,6 +58,7 @@ MetaRegistry, PrefixDecoder, 주소 직렬화 등 좌표 시스템의 런타임 
 - `resolver-spec`: MetaRegistry의 데이터를 외부 소비용 번들(DecodeMap, DimRange, IndexRange, MetaDataset)로 변환한다.
 - `index-codec-spec`: DecodeMap 기반 독립 encode/decode 모듈.
 - `index-meta-store-group`: 저장 계약과 주소 해석 흐름을 분리한 index-meta 저장소 그룹.
+- `index-meta-store`: SQL/native/D1 concrete persistence adapter 패키지. 순수 `index-meta` entrypoint와 분리한다.
 - `address-spec`: MetaRegistry의 VersionedValue를 UUID 등 고정 포맷 PK로 직렬화하는 설정과 동작 규칙.
 - `address-separation-group`: address/registry 분리 결정을 근거와 도입 시점으로 나눈 ADR 그룹.
 - `sdk-scenarios`: IndexSDK 기반 클라이언트·서버 운영 시나리오.
@@ -88,3 +89,5 @@ MetaRegistry, PrefixDecoder, 주소 직렬화 등 좌표 시스템의 런타임 
 | PolicyResolver | `packages/index-meta/src/policy-resolver.ts` | 정책 규칙 해석 |
 | IndexMetaStore | `packages/index-meta/src/index-meta-store.ts` | 저장 계약 |
 | VersionLifecycle | `packages/index-meta/src/version-lifecycle.ts` | 버전 상태 전이 |
+
+SQL/native/D1 구현과 schema는 `packages/index-meta-store/src/`가 소유한다. 이 문서에서 `index-meta`는 pure codec·client·contract surface를 의미하며, 저장 backend 선택은 adapter 계층의 책임이다.

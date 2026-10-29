@@ -161,9 +161,9 @@ packages/query-service/           [F-1~F-4 구현 완료, F-5 잔여]
 
 | ID | 파일 위치 | 설명 |
 |---|---|---|
-| H-1 | `index-meta/src/adapters/sql-version-lifecycle-store.ts` | VersionLifecycleStore SQL 구현 |
-| H-2 | `index-meta/src/adapters/sql-migration-store.ts` | MigrationStore SQL 구현 |
-| H-3 | `index-meta/src/adapters/sql-prefix-router.ts` | PrefixRouter SQL 구현 |
+| H-1 | `index-meta-store/src/adapters/sql-version-lifecycle-store.ts` | VersionLifecycleStore SQL 구현 |
+| H-2 | `index-meta-store/src/adapters/sql-migration-store.ts` | MigrationStore SQL 구현 |
+| H-3 | `index-meta-store/src/adapters/sql-prefix-router.ts` | PrefixRouter SQL 구현 |
 
 ### SQLite 드라이버 분리 [구현 완료]
 

@@ -14,12 +14,13 @@ def:
     - target: swc-next-qa-sdk-optimization-readme
       type: depends_on
 status: draft
-date: 2026-10-29
+date: 2026-10-30
+updated: 2026-10-30
 part_of: swc-next-qa-sdk-optimization
 role: handoff
 ---
 
-# 핸드오프 (2026-10-29)
+# 핸드오프 (2026-10-30)
 
 ## 목적 ^purpose
 
@@ -27,7 +28,7 @@ role: handoff
 
 ## 1. 현재 상태 ^defines
 
-- 브랜치 `main`, `origin/main`보다 **약 95 커밋 앞섬, push하지 않음**. push 여부는 사람 결정이다 (04 P0). `8a624692`에 다른 주제의 삭제분이 섞여 있다 (`8a50248d`에 기록).
+- 브랜치 `main`, `origin/main`보다 **95 커밋 앞섬, push하지 않음**. 현재 기준 커밋은 `e2bc71aa`이며, push 여부는 사람 결정이다 (04 P0).
 - 로컬 CI: `node scripts/ci-local.mjs` — 43단계 (tests 대상 36개 패키지 + typecheck + gates + bench smoke + 목적별 흐름 검사). 이번 이어받기에서 `--only=typecheck|gates|tests`를 재실행했다(아래 검증 결과 참조).
 - 문서: `def validate` 경고 0건.
 
@@ -36,8 +37,8 @@ role: handoff
 - 목적 정렬 2단계 골든 테스트 8건, `dkg-enrichment` 전체 38건, `convergence` 전체 64건, CLI DKG 관련 22건, core 1,294건, demo-snapshot 90건, dkg 159건, test-scenario-store 7건, snapshot store 8건, P2 흐름·ingest pipeline 골든 테스트가 통과했다.
 - `dkg-enrichment`, `convergence`, `ingest-server`, `cli`의 변경 범위 타입체크가 통과했다.
 - `corepack pnpm exec qa-sdk def validate`가 경고 0건으로 통과했다. `git diff --check`도 통과했다.
-- `node scripts/ci-local.mjs --only=typecheck` 1/1, `--only=gates` 8/8, `--only=tests` 33/33 단계가 통과했다.
-- `corepack pnpm ci:core` 6/6 통과. `--with-dkg`는 Drizzle·SQLite closure를 포함하는 확장 검증으로 분리한다.
+- `node scripts/ci-local.mjs --only=gates` 8/8, dashboard 2 files/28 tests, registry-service 52 files/507 tests가 통과했다. typecheck와 전체 tests 집계는 패키지별 focused 결과를 기준으로 기록한다.
+- `node scripts/ci-core.mjs --list` 기준 기본 profile은 9단계다. 이전 실행에서는 모두 통과했지만, 2026-10-30 재실행에서 core `pipe-fold` 성능 assertion 2건이 호스트 부하에 따라 초과했다. 순수 proof·adapter 검증 결과와 분리해 추적한다.
 - `corepack pnpm arch:feedback` 6/6 단계와 `arch:usage` 116개 패키지 표면 분석이 통과했다.
 - 골든 판정은 문서와 테스트 모두 `judgment: proposed`를 유지한다. 사람 확정 없이 운영 기준을 `approved`로 승격하지 않는다.
 
@@ -45,10 +46,10 @@ role: handoff
 
 | 문서 | 내용 | 상태 |
 |---|---|---|
-| [README](./README.md) | 계획 리뷰 R-1~R-11, 결정 D-1~D-9 | D-9(scheduler 제거)는 G3에서 결정 |
+| [README](./README.md) | 계획 리뷰 R-1~R-11, 결정 D-1~D-9 | D-9는 scheduler/worker 전환 동결, pure G3만 유지 |
 | [00](./00-code-inventory.md) | 코드 인벤토리, 1·2순위 정리 | 1순위 완료 |
 | [01](./01-tracks.md) | 병렬 트랙 파일 소유 | Track A~F·T0 완료 |
-| [02](./02-convergence-flush-review.md) | scheduler·flush 검토 | D-9 대기 |
+| [02](./02-convergence-flush-review.md) | scheduler·flush 검토 | 5분 주기 유지, 운영 전환 동결 |
 | [03](./03-unwired-spec-review.md) | 미배선 spec 배선·삭제 | 완료 (U-6·U-7은 G3) |
 | [04](./04-status-and-remaining.md) | 원본 이슈 체크리스트 대조, 우선순위 | 갱신됨 |
 | [05](./05-interface-map.md) | ADR-010 인터페이스와 안정성 등급 | I-1 완료, I-2·I-5 대기 |
@@ -56,6 +57,8 @@ role: handoff
 | [07](./07-purpose-alignment.md) | 목적(F·P1~P5) 기반 정렬과 가지치기 5단계 | 단계 1·2 완료, 3~5 대기 |
 
 ## 3. 남은 결정 (사람)
+
+9·11·12번은 이번 사용자 결정으로 방향이 확정됐다. 남은 것은 각 package의 disposition과 adapter 적용 시점이며, 서비스·외부 연동 구현을 자동으로 재개하지 않는다.
 
 | # | 결정 | 출처 |
 |---|---|---|
@@ -79,7 +82,7 @@ role: handoff
 3. **07 단계 3** — CLI 명령 약 260개(dkg 61, ontology 40, docs 22, …)에 목적을 붙이고 목적 없는·중복 명령을 정리한다. 명령 정의(`packages/cli/src/command-groups/*.commands.ts`)에 목적 필드를 둔다.
 4. 07 단계 4·5 — §3 결정 7·9가 나오면 06 §5 방식으로 실행, spec 정렬.
 
-이번 이어받기에서 닫힌 항목은 분석 출력의 검증, P2 실행 결과의 collected 전이, 핸드오프 기록까지이며, 사람 판정이 필요한 골든 확정·verified 승격 정책·CLI 목적 태깅은 아직 실행하지 않았다.
+이번 이어받기에서 닫힌 항목은 분석 출력의 검증, P2 실행 결과의 collected 전이, pure proof suite, persistence adapter 경계, dashboard timeout 원인 분석, 문서 source 경로 정리까지이며, 사람 판정이 필요한 골든 확정·verified 승격 정책·CLI 목적 태깅은 아직 실행하지 않았다.
 
 ## 5. 프로젝트 범위 전환 (사용자 결정, 2026-10-30)
 
@@ -153,7 +156,7 @@ convergence·DKG pure proof는 `packages/dkg-enrichment/src/core-logic-proof.tes
 
 현재 저사양 호스트에서 바로 사용할 수 있는 최소 경로는 `@qa-sdk/core`, `demo-snapshot`, `@qa-sdk/convergence`, `index-meta`, `weighted-index`, `spec-schema`, `spec-transition`, `codegen-core` 중심으로 제한한다.
 
-이 경로는 `corepack pnpm ci:core`로 자동 실행하며, 현재 9/9 단계가 통과한다. `corepack pnpm ci:core -- --with-dkg`는 DKG proof까지 포함하지만 현재 Drizzle·SQLite closure를 함께 설치한다.
+이 경로는 `corepack pnpm ci:core` 또는 `node scripts/ci-core.mjs`로 실행한다. 기본 profile은 core·demo-snapshot·convergence·pure index-meta의 test/typecheck/build 9단계이며, `node scripts/ci-core.mjs --with-dkg`는 DKG proof까지 포함하면서 현재 Drizzle·SQLite closure를 함께 설치한다.
 
 ```bash
 corepack pnpm install --frozen-lockfile \
@@ -170,6 +173,8 @@ corepack pnpm --filter @qa-sdk/core test
 corepack pnpm --filter demo-snapshot test
 corepack pnpm --filter @qa-sdk/convergence test
 ```
+
+2026-10-30 문서 검토 시 `ci:core` 전체 재실행은 호스트 부하에 민감한 `core/src/pipe/pipe-fold.test.ts` 성능 assertion 2건에서 멈췄다. 기능·결정론 proof와 adapter 패키지 검증은 통과했으며, 이 성능 기준은 별도 후속 검토 항목이다.
 
 `dkg`, `dkg-enrichment`, `spec-core`, `index-meta`의 pure entrypoint에서는 production Drizzle/SQLite 의존성을 제거했다. `dkg-store`·`index-meta-store`를 직접 포함하는 adapter/service profile과 `weighted-index`의 dev-only test dependency는 여전히 무거울 수 있으므로, 저사양 기본 profile에는 넣지 않는다.
 

@@ -15,6 +15,7 @@ def:
       type: refs
 status: draft
 date: 2026-10-28
+updated: 2026-10-30
 role: overview
 source_plan: PLAN-20261028-SWC-NEXT-QA-SDK-OPTIMIZATION (rev 0.1)
 source_issue: ISSUE-TEMP-SWC-NEXT-QA-SDK-OPTIMIZATION
@@ -31,7 +32,7 @@ superseded_by: -
 
 ## 목적 ^purpose
 
-Drive 정본 계획(rev 0.1)의 Phase 0~6 로드맵을 **현재 코드 실측 기준으로 검토**하고, 서로 다른 파일 집합을 소유하는 **병렬 작업 트랙**으로 다시 나눈다. 각 트랙은 [`plans/`](./plans/)에 독립 실행 가능한 구현 계획을 가진다.
+Drive 정본 계획(rev 0.1)의 Phase 0~6 로드맵을 **현재 코드 실측 기준으로 검토**하고, 서로 다른 파일 집합을 소유하는 **병렬 작업 트랙**으로 다시 나눈다. 각 트랙은 [`plans/`](./plans/)에 독립 실행 가능한 구현 계획을 가진다. 최신 구현·검증·범위 판정은 [08 핸드오프](./08-handoff.md)를 정본으로 삼는다.
 
 - 원본 계획: Drive `20261028_plan_swc-next_qa-sdk-optimization-v0.1.md`
 - 원본 이슈: Notion `SWC Next 원리 기반 QA-SDK 최적화·호환성 보완 로드맵`
@@ -46,7 +47,7 @@ Drive 정본 계획(rev 0.1)의 Phase 0~6 로드맵을 **현재 코드 실측 �
 - **이어받기**: 현재 상태·남은 결정 12건·다음 작업·작업 규칙과 함정 — [08-handoff.md](./08-handoff.md)
 - 트랙별 구현 계획: [plans/README.md](./plans/README.md)
 
-원본 계획의 목표·비목표·실패 상태 9종·버전 축 분리 원칙은 그대로 유지한다. 이 디렉토리는 원본을 대체하지 않고, **실행 단위로 번역**한다.
+원본 계획의 목표·비목표·실패 상태 9종·버전 축 분리 원칙은 그대로 유지한다. 이 디렉토리는 원본을 대체하지 않고, **실행 단위로 번역**한다. §1의 기준선 표는 2026-10-28 조사 시점의 역사적 스냅샷이며, 현재 상태는 §5와 08 핸드오프에서 갱신한다.
 
 ## 1. 원본 계획 검토 결과 ^defines
 
@@ -112,7 +113,7 @@ Wave 2 트랙은 [plans/gated-phases.md](./plans/gated-phases.md)에 진입 조�
 | D-6 | digest 표기 길이 | 전체 64 hex + `sha256:` 접두사. 표시용 12자는 파생값으로만 사용 | 12자 truncation은 충돌 판정용 식별자로 부족하다 | T0, D |
 | D-7 | benchmark CI 트리거 | `workflow_dispatch` + nightly. PR에서는 smoke 1회만 | 원본 인프라 매트릭스의 "CI 시간 증가" 대응 | C |
 | D-8 | 버전마다 dim 구성이 다른 prefix(R-11)의 모델 | ✅ **확정 (2026-10-29)**: `PrefixVersionDef`에 선택적 `labels`를 두어 버전별 dim 목록을 선언하고, 미선언 시 prefix 공통 `labels`를 쓴다 | v1 주소가 실제로 저장돼 있다면 v1 layout을 복원해야 decode할 수 있다. v1을 폐기하면 그 주소는 `MigrationRequired`가 된다 | A |
-| D-9 | convergence 주기 flush scheduler 제거 여부, worker 모드 convergence 부재 | 현재는 5분 유지(2026-10-29). 제거한다면 runner 내부 max-wait one-shot timer로 대체. 결정은 G3 착수 때 | [02-convergence-flush-review.md](./02-convergence-flush-review.md) | G3 |
+| D-9 | convergence 주기 flush scheduler 제거 여부, worker 모드 convergence 부재 | ✅ **범위 동결 (2026-10-30)**: 현재 5분 주기와 운영 배선을 유지하고 scheduler/worker 전환은 후순위. G3에서는 pure dirty-set 계산·결정론 proof만 다룬다 | [02-convergence-flush-review.md](./02-convergence-flush-review.md) | 서비스 범위 재개 시 별도 결정 |
 
 ## 4. 이번 작업에서 반영한 것
 
@@ -120,11 +121,23 @@ Wave 2 트랙은 [plans/gated-phases.md](./plans/gated-phases.md)에 진입 조�
 - 코드 인벤토리와 정리 대장 ([00-code-inventory.md](./00-code-inventory.md))
 - 무변경 코드 정리 2건 (인벤토리 §6 "정리 완료" 참고)
 - 트랙별 구현 계획 ([plans/](./plans/))
-- D-1 확정(capacity) 후 **T0 구현** — `packages/core/src/catalog/snapshot/`, ADR-010 (미커밋, [plans/README.md](./plans/README.md) 검증 상태 참고)
+- D-1 확정(capacity) 후 **T0 구현** — `packages/core/src/catalog/snapshot/`, ADR-010
+- pure core·demo-snapshot·convergence·DKG 결정론 proof suite 추가
+- `dkg-store`·`index-meta-store`로 SQLite/Drizzle·SQL/native/D1 persistence adapter 분리
+- `core`, `dkg`, `test-scenario-store`에 backend-agnostic data port와 필드 불변식 validator 추가
+- registry dashboard Nest 테스트의 고정 SQLite 경로·cold bootstrap timeout을 테스트별 임시 DB와 30초 timeout으로 안정화
+- 저사양 검증 경로 `node scripts/ci-core.mjs` 추가
 
-T0는 새 export만 추가하고 기존 런타임 동작·CI·스키마는 바꾸지 않았다. R-1 shape 불일치는 D-1(capacity 확정)에 따라 Track A에서 고친다.
+T0와 Track A~F의 구현은 현재 커밋 `e2bc71aa`에 반영되어 있다. 이후 범위는 서비스 scheduler/worker/flush, DB runtime adapter, 외부 provider와 UI surface를 확장하지 않고 pure logic·data contract를 우선한다.
 
-## 5. 미결 사항
+## 5. 최신 범위와 검증 (2026-10-30)
+
+- `dkg`·`index-meta`·`spec-core`의 pure entrypoint는 Drizzle/SQLite runtime dependency를 갖지 않는다. 구체 adapter는 `dkg-store`·`index-meta-store`가 소유한다.
+- `CatalogSnapshotStore`, TestScenario port, DKG Decision/Observation·UsageSnapshot validator는 backend-agnostic 논리 계약으로 유지한다. PostgreSQL·SQLite·NoSQL·인메모리·키-값 선택과 runtime 배선은 후순위다.
+- dashboard focused test 28/28, registry-service 전체 52 files/507 tests, `def validate` warning 0, `arch:verify` 73/73, `arch:check`·`arch:feedback` 통과를 기록했다.
+- `ci:core` 기본 profile은 현재 9단계다. 기능 proof는 통과했지만 호스트 부하에 민감한 `core/src/pipe/pipe-fold.test.ts` 성능 assertion 2건은 별도 후속 검토로 남겼다.
+
+## 6. 미결 사항
 
 - Notion 이슈의 공식 `ISSUE-N` 번호 발급과 이 디렉토리 경로 역링크
 - Drive 정본 계획 rev 0.2에 §1 검토 결과(R-1~R-10) 반영 여부

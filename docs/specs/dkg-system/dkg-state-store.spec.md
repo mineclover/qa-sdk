@@ -21,17 +21,17 @@ def:
     - target: dkg-state-store-observability
       type: contains
 sources:
-  - packages/dkg/src/store/dkg-sqlite-store.ts
-  - packages/dkg/src/store/dkg-sqlite-store.test.ts
-  - packages/dkg/src/store/usage-types.ts
-  - packages/dkg/src/db/schema.ts
+  - packages/dkg-store/src/dkg-sqlite-store.ts
+  - packages/dkg-store/src/dkg-sqlite-store.test.ts
+  - packages/dkg/src/usage-types.ts
+  - packages/dkg-store/src/db/schema.ts
   - packages/dkg/src/graph-registry.ts
 ---
 # DKG State Store
 
 ## 목적 ^purpose
 
-DKG 그래프와 그 관측 부산물을 로컬 SQLite에 영속하는 저장소 경계를 정의한다. `~/.qa-sdk/state.sqlite`에 graph state, usage snapshot, CLI audit event를 함께 보관하되 각 역할은 분리된 facet으로 관리한다.
+DKG 그래프와 그 관측 부산물의 저장 계약과 facet 경계를 정의한다. backend 선택은 이 문서의 핵심 계약이 아니며, 현재 SQLite/Drizzle 구현은 `packages/dkg-store` adapter가 소유한다. graph state, usage snapshot, CLI audit event는 같은 저장소를 사용하더라도 목적별 facet과 불변식을 분리한다.
 
 ## 구성 ^overview
 
@@ -49,5 +49,7 @@ DKG 그래프와 그 관측 부산물을 로컬 SQLite에 영속하는 저장소
 
 ## 관련 소스
 
-- `packages/dkg/src/store/dkg-sqlite-store.ts`
-- `packages/dkg/src/db/schema.ts`
+- `packages/dkg-store/src/dkg-sqlite-store.ts` — 현재 SQLite adapter
+- `packages/dkg-store/src/db/schema.ts` — adapter schema/migration
+- `packages/dkg/src/node-contract.ts` — Decision/Observation pure contract
+- `packages/dkg/src/usage-snapshot-contract.ts` — UsageSnapshot pure contract

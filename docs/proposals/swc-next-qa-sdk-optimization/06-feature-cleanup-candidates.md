@@ -14,7 +14,8 @@ def:
     - target: swc-next-qa-sdk-optimization-readme
       type: depends_on
 status: draft
-date: 2026-10-29
+date: 2026-10-30
+updated: 2026-10-30
 part_of: swc-next-qa-sdk-optimization
 role: audit
 sources:
@@ -27,7 +28,7 @@ sources:
   - packages/ingest-server/src/stores/runtime-stores.ts
 ---
 
-# 기능 정리·안정화 후보군 (2026-10-29)
+# 기능 정리·안정화 후보군 (2026-10-30)
 
 ## 목적 ^purpose
 
@@ -48,6 +49,8 @@ sources:
 따라서 convergence scheduler·worker·flush와 snapshot의 ingest 수집·replay·backend adapter 구현은 서비스 후순위다. CatalogSnapshot shape, digest, codec, compatibility 판정, 목적별 논리 저장 인터페이스와 필드 불변식처럼 실행 환경과 분리된 데이터 설계·로직은 핵심 범위에 남긴다.
 
 이 결정은 패키지 즉시 삭제를 승인하지 않는다. 각 후보는 `focus`(계속 구현), `freeze`(유지보수만), `quarantine`(신규 승격 금지)으로 먼저 표시하고, fan-in과 외부 소비자를 확인한 뒤 삭제·통합·archive를 별도 결정한다. 저장소 backend는 선택적 adapter이며, 필수 계약은 목적·필드 의미·상태·provenance·version/digest·idempotency·조회/보존 요구로 선언한다.
+
+이번 구현에서 pure proof와 persistence 경계를 먼저 닫았다. `dkg-store`·`index-meta-store`는 concrete adapter로 분리했고, `core`·`dkg`·`test-scenario-store`의 논리 계약과 validator는 backend와 독립적으로 유지한다. registry dashboard의 Nest timeout은 테스트별 임시 DB 경로와 bootstrap timeout 조정으로 해결했다. 이 항목들은 기능 정리 후보가 아니라 완료된 기반 작업이다.
 
 ## 1. 결함 — 지금 고칠 가치가 큼 ^defines
 
@@ -185,7 +188,7 @@ enrichment 테스트를 dkg 구현으로 돌리면 `flow-trace`는 모두 통과
 
 ## 8. 이미 다른 곳으로 넘긴 것
 
-- convergence scheduler 제거·worker 모드: D-9 ([02](./02-convergence-flush-review.md))
+- convergence scheduler 제거·worker 모드 배선: 사용자 결정으로 동결. pure convergence 로직은 D-9 운영 범위와 분리한다 ([02](./02-convergence-flush-review.md))
 - transition metric·단발 분석: U-6·U-7 → G3 ([03](./03-unwired-spec-review.md))
 - `entrySnapshot` 제거 시점(I-2), `catalog_snapshot` 영속(I-5 → #15): [05](./05-interface-map.md)
 

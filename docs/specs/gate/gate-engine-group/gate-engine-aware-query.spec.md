@@ -18,7 +18,7 @@ sources:
   - packages/index-meta/src/gate-aware-query.test.ts
   - packages/index-meta/src/invalid-ranges.ts
   - packages/index-meta/src/index.ts
-  - packages/index-meta/src/workers.ts
+  - packages/index-meta-workers/src/index.ts
   - packages/gate-service/src/lib/gate-service.ts
   - packages/gate-service/src/routes/gate.ts
 ---

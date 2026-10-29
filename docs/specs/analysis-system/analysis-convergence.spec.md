@@ -24,7 +24,7 @@ sources:
   - packages/convergence/src/metric-registry.ts
   - packages/convergence/src/convergence-runner.ts
   - packages/dkg/src/skills/flow-trace.ts
-  - packages/dkg/src/store/dkg-sqlite-store.ts
+  - packages/dkg-store/src/dkg-sqlite-store.ts
   - packages/ingest-server/src/lib/convergence-pipeline.ts
   - packages/ingest-server/src/lib/convergence-pipeline.test.ts
   - packages/spec-core/src/convergence/pipeline-e2e.test.ts
@@ -46,7 +46,7 @@ prefix 간 중복이나 낭비를 감지하는 수렴 분석. 유사한 축 조�
 수렴 분석은 window-based 배치 처리로 동작한다.
 
 1. **버퍼 축적** — Phase 2 완료된 traceId를 버퍼에 수집
-2. **flush 트리거** — 건수 임계값(`recordThreshold`, 기본 100)·버퍼 cap 도달 시 즉시, 그 외에는 `convergence-scheduler`가 `CONVERGENCE_SCHEDULE_INTERVAL_MS`(기본 5분)마다 실행 (scheduler 존폐는 결정 D-9)
+2. **flush 트리거** — 건수 임계값(`recordThreshold`, 기본 100)·버퍼 cap 도달 시 즉시, 그 외에는 `convergence-scheduler`가 `CONVERGENCE_SCHEDULE_INTERVAL_MS`(기본 5분)마다 실행한다. scheduler/worker 전환은 운영 계층에서 동결하고, pure convergence 로직은 별도 proof로 검증한다.
 3. **레코드 조회** — `recordStore.findByTraceId()`로 address_context가 있는 레코드만 수집
 4. **집계** — `aggregateUsageData(catalog, records)` → `UsageData` 생성
 5. **flow trace** — raw `addressRecords`로 IntentLink 위반을 검사하고, 현재 배치에서

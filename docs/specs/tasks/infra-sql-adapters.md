@@ -15,12 +15,11 @@ def:
     - target: index-meta-system
       type: traces_to
 sources:
-  - packages/index-meta/src/adapters/sql-version-lifecycle-store.ts
-  - packages/index-meta/src/adapters/sql-migration-store.ts
-  - packages/index-meta/src/adapters/sql-prefix-router.ts
-  - packages/index-meta/src/version-lifecycle.test.ts
-  - packages/index-meta/src/migration-store.test.ts
-  - packages/index-meta/src/prefix-router.test.ts
+  - packages/index-meta-store/src/adapters/sql-version-lifecycle-store.ts
+  - packages/index-meta-store/src/adapters/sql-migration-store.ts
+  - packages/index-meta-store/src/adapters/sql-prefix-router.ts
+  - packages/index-meta-store/src/version-lifecycle.test.ts
+  - packages/index-meta-store/src/migration-store.test.ts
 ---
 
 # SQL 어댑터 보강
@@ -61,9 +60,9 @@ H-1, H-2, H-3
 
 | # | 작업 | 파일 | 우선순위 |
 |---|---|---|---|
-| H-1 | VersionLifecycleStore SQL | `index-meta/src/adapters/sql-version-lifecycle-store.ts` | 높 |
-| H-2 | MigrationStore SQL | `index-meta/src/adapters/sql-migration-store.ts` | 중 |
-| H-3 | PrefixRouter SQL | `index-meta/src/adapters/sql-prefix-router.ts` | 중 |
+| H-1 | VersionLifecycleStore SQL | `index-meta-store/src/adapters/sql-version-lifecycle-store.ts` | 높 |
+| H-2 | MigrationStore SQL | `index-meta-store/src/adapters/sql-migration-store.ts` | 중 |
+| H-3 | PrefixRouter SQL | `index-meta-store/src/adapters/sql-prefix-router.ts` | 중 |
 
 ## 각 어댑터 구현 패턴
 
@@ -72,7 +71,7 @@ SqlDriver 위임 패턴 (Drizzle 아님 — 범용 SQL 인터페이스 직접 �
 1. Store 인터페이스 구현 — SqlDriver의 `query`/`queryOne`/`execute` 메서드에 위임
 2. DB row 타입 정의 + 변환 헬퍼 (`toRecord()`)
 3. 단위 테스트 (`NodeSqliteDriver(":memory:")` 기반)
-4. `index-meta/src/index.ts`에 export 추가
+4. `index-meta-store/src/index.ts`에 adapter export 추가
 
 ## 구현 완료 상세
 
@@ -105,9 +104,8 @@ SqlDriver 위임 패턴 (Drizzle 아님 — 범용 SQL 인터페이스 직접 �
 
 ## 관련 소스
 
-- `packages/index-meta/src/adapters/sql-version-lifecycle-store.ts`
-- `packages/index-meta/src/adapters/sql-migration-store.ts`
-- `packages/index-meta/src/adapters/sql-prefix-router.ts`
-- `packages/index-meta/src/version-lifecycle.test.ts`
-- `packages/index-meta/src/migration-store.test.ts`
-- `packages/index-meta/src/prefix-router.test.ts`
+- `packages/index-meta-store/src/adapters/sql-version-lifecycle-store.ts`
+- `packages/index-meta-store/src/adapters/sql-migration-store.ts`
+- `packages/index-meta-store/src/adapters/sql-prefix-router.ts`
+- `packages/index-meta-store/src/version-lifecycle.test.ts`
+- `packages/index-meta-store/src/migration-store.test.ts`
