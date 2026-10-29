@@ -35,7 +35,6 @@ def:
     - packages/ingest-server/src/routes/ingest.ts
     - packages/ingest-server/src/lib/phase-two-worker.ts
     - packages/ingest-server/src/lib/enrich-address-context.ts
-    - packages/ingest-server/src/lib/metric-aggregator.ts
     - packages/ingest-server/src/lib/metrics-collector.ts
     - packages/ingest-server/src/routes/metrics.ts
     - packages/core/src/ports/aggregator.port.ts
@@ -52,7 +51,7 @@ def:
 
 - `pipeline-phase-flow`: Phase 1(동기 저장: envelope 검증 → record 저장 → trace upsert)과 Phase 2(비동기 재구성: reconstruction → scenario verdict → 알림)의 처리 순서와 전이 조건.
 - `pipeline-enrichment`: 수집된 이벤트의 address_context를 보강하는 Phase 1 미들웨어.
-- `pipeline-metric-agg`: Phase 2 비동기 워커에서 metric RecordKind를 집계하는 기능.
+- `pipeline-metric-agg`: (deprecated 2026-10-29) Phase 2 metric rollup — 구현체·소비자가 없어 삭제.
 - `pipeline-error-handling`: Phase 1/2 파이프라인의 에러 처리 정책.
 - `pipeline-monitoring`: 파이프라인 자체의 관측 메트릭.
 - `task-pipeline-unit`: A1 (이벤트 생성) → A5 (집계) → A6 (메트릭 저장) 경로를 구축하여 인덱싱 시스템의 packed_key 기반 운영 분석을 가능하게 한다.

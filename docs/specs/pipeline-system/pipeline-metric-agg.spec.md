@@ -6,7 +6,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   layer: operation
   svc: ingest-server
   tags: [observability]
@@ -14,13 +14,12 @@ def:
     - target: metrics-spec
       type: depends_on
   sources:
-    - packages/ingest-server/src/lib/metric-aggregator.ts
-    - packages/ingest-server/src/lib/metric-aggregator.test.ts
     - packages/ingest-server/src/lib/phase-two-worker.ts
     - packages/ingest-server/src/lib/phase-two-worker.test.ts
-    - packages/core/src/ports/metric-rollup-store.port.ts
 ---
-# 메트릭 집계 (Phase 2)
+# 메트릭 집계 (Phase 2) — deprecated
+
+> 2026-10-29 삭제 — 구현체 없는 포트였고 rollup을 읽는 소비자도 없었다 (`docs/proposals/swc-next-qa-sdk-optimization/03-unwired-spec-review.md` U-5). raw metric 필드는 event_records의 `metric_*` 컬럼에 저장된다. 집계 소비자가 생기면 raw 레코드 위에서 다시 설계한다.
 
 ## 목적 ^purpose
 

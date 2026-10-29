@@ -68,7 +68,6 @@ POST /v1/ingest
           └─ processPendingPhaseTwo (인라인)
               ├─ reconstructPendingTraces
               ├─ computePendingVerdicts
-              ├─ aggregateMetrics (MetricRollupStore)
               ├─ decodeAddressContext (decode-service 호출)
               ├─ transition processing (선택)
               └─ convergencePipeline.notifyCompletion → 202 응답

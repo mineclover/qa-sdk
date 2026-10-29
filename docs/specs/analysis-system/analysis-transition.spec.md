@@ -146,24 +146,9 @@ collect → match → bind → load state → validate input → apply output �
 | `snapshot(contextId, resourceId)` | 전체 축 스냅샷 반환 |
 | `clear()` | 전체 초기화 |
 
-**구현체 2종:**
+**구현체:** `InMemoryStateStore` (동기 `StateStore`) — 세션별 격리, engine.process() 내부.
 
-| 구현 | 동기/비동기 | 용도 |
-|------|------------|------|
-| `InMemoryStateStore` | 동기 (`StateStore`) | 세션별 격리, engine.process() 내부 |
-| `SqliteStateStore` | 비동기 (`AsyncStateStore`) | 영속 저장. SqlDriver 주입. `transition_state` 테이블 자동 생성 |
-
-SqliteStateStore DDL:
-```sql
-CREATE TABLE IF NOT EXISTS transition_state (
-  context_id  TEXT NOT NULL,
-  resource_id TEXT NOT NULL,
-  axis        TEXT NOT NULL,
-  value       TEXT NOT NULL,
-  updated_at  TEXT NOT NULL,
-  PRIMARY KEY (context_id, resource_id, axis)
-);
-```
+영속 구현 `SqliteStateStore`(`AsyncStateStore`, `transition_state` 테이블)는 2026-10-29 삭제했다. 엔진이 세션마다 fresh store를 만드는 세션 격리가 현재 설계이고, 세션을 넘는 상태를 읽는 소비자가 없었다 (`docs/proposals/swc-next-qa-sdk-optimization/03-unwired-spec-review.md` U-8). 교차 세션 상태가 필요해지면 엔진의 state store 주입 경로와 함께 다시 설계한다.
 
 ### 2단계 검증 체계
 
@@ -314,7 +299,6 @@ interface TransitionFunctions {
 | `packages/spec-transition/src/transition.schema.ts` | Tier 1 구조 검증 (validateTransitionSpec) |
 | `packages/spec-transition/src/catalog-validator.ts` | Tier 2 카탈로그 검증 (validateWithCatalog) |
 | `packages/spec-transition/src/state-store.ts` | StateStore 인터페이스 + InMemoryStateStore |
-| `packages/spec-transition/src/sqlite-state-store.ts` | SqliteStateStore (AsyncStateStore) |
 | `packages/spec-transition/src/bind-extractor.ts` | 이벤트에서 identity 추출 (extractBind) |
 | `packages/spec-transition/src/input-validator.ts` | 축 기준 상태 조건 검증 (validateInput) |
 | `packages/spec-transition/src/output-applier.ts` | 축 entry 변경 적용 (applyOutput) |

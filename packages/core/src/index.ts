@@ -351,13 +351,6 @@ export type {
 export type { SessionStore, SessionUpsert, StoredSession } from './ports/session-store.port.js';
 export type { TransmissionStore, TransmissionInsert } from './ports/transmission-store.port.js';
 export type { ScenarioSpecStore } from './ports/scenario-spec-store.port.js';
-export type {
-  MetricRollupStore,
-  MetricRollupInsert,
-  StoredMetricRollup,
-  MetricRollupQuery,
-  MetricWindowType,
-} from './ports/metric-rollup-store.port.js';
 export type { KeyCache, CacheEntry, CacheStats } from './ports/key-cache.port.js';
 export type {
   Aggregator,

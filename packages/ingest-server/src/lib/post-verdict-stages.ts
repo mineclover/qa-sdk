@@ -38,12 +38,7 @@ export const PHASE_TWO_FAILURES_METRIC = 'phase_two_failures_total';
 /** decode-service 응답이 없어 로컬 decode로 대체한 횟수 */
 export const DECODE_SKIPPED_METRIC = 'decode_skipped_total';
 
-export type PhaseTwoStage =
-  | 'reconstruction'
-  | 'verdict'
-  | 'metric_aggregation'
-  | 'transition'
-  | 'convergence';
+export type PhaseTwoStage = 'reconstruction' | 'verdict' | 'transition' | 'convergence';
 
 export function countPhaseTwoFailure(
   metricsCollector: MetricsCounterPort | undefined,

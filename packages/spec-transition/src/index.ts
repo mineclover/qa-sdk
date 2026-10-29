@@ -47,8 +47,6 @@ export {
 // ── State Store ──────────────────────────────────────────
 export type { StateStore } from './state-store.js';
 export { InMemoryStateStore } from './state-store.js';
-export { SqliteStateStore } from './sqlite-state-store.js';
-export type { AsyncStateStore } from './sqlite-state-store.js';
 
 // ── Bind Extractor ───────────────────────────────────────
 export { extractBind } from './bind-extractor.js';

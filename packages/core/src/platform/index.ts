@@ -117,14 +117,6 @@ export type { TransmissionStore, TransmissionInsert } from '../ports/transmissio
 
 export type { ScenarioSpecStore } from '../ports/scenario-spec-store.port.js';
 
-export type {
-  MetricRollupStore,
-  MetricRollupInsert,
-  StoredMetricRollup,
-  MetricRollupQuery,
-  MetricWindowType,
-} from '../ports/metric-rollup-store.port.js';
-
 // ── Server Utilities ─────────────────────────────────────
 export {
   SERVICE_PORTS,

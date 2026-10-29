@@ -79,9 +79,8 @@ processEnvelope(envelope)
 Phase 2 (각 trace에 대해):
   1. reconstructPendingTraces → trace graph 재구성
   2. computePendingVerdicts  → scenario 기반 verdict 계산
-  3. aggregateMetrics        → metric 롤업 (MetricRollupStore)
-  4. decodeAddressContext    → decode-service 호출로 주소 디코딩
-  5. convergencePipeline.notifyCompletion(traceIds)
+  3. decodeAddressContext    → decode-service 호출로 주소 디코딩
+  4. convergencePipeline.notifyCompletion(traceIds)
 ```
 
 **BullMQ 설정:**

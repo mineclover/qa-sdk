@@ -5,7 +5,6 @@ import {
   now,
   type DlqStore,
   type GraphStore,
-  type MetricRollupStore,
   type RecordStore,
   type ScenarioSpecStore,
   type SessionStore,
@@ -17,7 +16,6 @@ import {
 } from '@qa-sdk/core';
 import { computePendingVerdicts, reconstructPendingTraces } from '@qa-sdk/engine';
 import type { Logger } from 'pino';
-import { aggregateMetrics } from './metric-aggregator.js';
 import type { MetricsCounterPort } from './metrics-collector.js';
 import {
   countPhaseTwoFailure,
@@ -48,7 +46,6 @@ export interface PhaseTwoWorkerDeps {
   verdictStore: VerdictStore;
   scenarioSpecStore: ScenarioSpecStore;
   dlqStore: DlqStore;
-  metricRollupStore?: MetricRollupStore;
   convergencePipeline?: ConvergencePipelinePort;
   transitionEngine?: TransitionEnginePort;
   transitionCatalog?: unknown;
@@ -142,11 +139,6 @@ export async function processPendingPhaseTwo(deps: PhaseTwoWorkerDeps): Promise<
     },
   );
 
-  // metric aggregation (reconstruction과 독립적)
-  if (deps.metricRollupStore) {
-    await aggregateMetricsForPendingTraces(deps);
-  }
-
   if (reconstructResult.reconstructedTraceIds.length === 0) {
     return;
   }
@@ -197,29 +189,6 @@ export async function registerTaskQueueWorker(
   await taskQueue.process(async (task) => {
     await processPhaseTwoTask(task, workerDeps);
   });
-}
-
-async function aggregateMetricsForPendingTraces(deps: PhaseTwoWorkerDeps): Promise<void> {
-  if (!deps.metricRollupStore) return;
-
-  // unreconstructed trace에서 metric 레코드만 조회
-  const pendingTraces = await deps.traceStore.findUnreconstructed();
-  for (const trace of pendingTraces) {
-    const records = await deps.recordStore.findByTraceId(trace.traceId);
-    const metrics = records.filter((r) => r.recordKind === 'metric');
-    if (metrics.length === 0) continue;
-
-    try {
-      const count = await aggregateMetrics(metrics, deps.metricRollupStore);
-      deps.logger?.info(
-        { traceId: trace.traceId, metricsAggregated: count },
-        'metric aggregation completed',
-      );
-    } catch (error) {
-      countFailure(deps, 'metric_aggregation');
-      deps.logger?.error({ err: error, traceId: trace.traceId }, 'metric aggregation failed');
-    }
-  }
 }
 
 async function computeTraceVerdictForTask(

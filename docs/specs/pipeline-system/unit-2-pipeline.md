@@ -21,8 +21,6 @@ def:
     - packages/core/src/ports/aggregator.port.ts
     - packages/store/src/adapters/memory/aggregator.adapter.ts
     - packages/store/src/adapters/redis/key-cache.adapter.ts
-    - packages/core/src/ports/metric-rollup-store.port.ts
-    - packages/ingest-server/src/lib/metric-aggregator.ts
     - packages/ingest-server/src/lib/phase-two-worker.ts
     - packages/index-meta/src/meta-codec.ts
 ---
@@ -55,7 +53,7 @@ A1 (이벤트 생성) → A5 (집계) → A6 (메트릭 저장) 경로를 구축
 | A1 이벤트 생성 | 구현됨 | MetaCodec.encode()와 ingest address_context 경로가 분리 유지 |
 | A2→A4 MQ | Unit 1에서 구축 | 선행 |
 | **A5 집계** | 구현됨 | `Aggregator` 포트 + `InMemoryAggregator.groupByKey/projectAxis` |
-| **A6 Metrics Store** | 구현됨 | `MetricRollupStore` 포트 + Phase 2 `aggregateMetrics` 연동 |
+| **A6 Metrics Store** | 삭제됨 (2026-10-29) | rollup 포트·집계는 구현체·소비자가 없어 제거. raw `metric_*` 컬럼 저장만 유지 |
 | A7 보존 | ✅ | event_records immutable |
 
 ## 선행 조건
@@ -102,7 +100,7 @@ new InMemoryAggregator({ decode }).projectAxis(keys, ["env", "region"]);
 |---|---|---|---|
 | 5 | I-2 | Transition 계산 | `packages/ingest-server/src/lib/phase-two-worker.ts` (`TransitionEnginePort`) |
 | 6 | I-2 | Path/trace 계산 | `packages/engine` reconstruction + `packages/ingest-server/src/lib/phase-two-worker.ts` |
-| 7 | I-3 | Metric rollup 포트 | `packages/core/src/ports/metric-rollup-store.port.ts` |
+| 7 | I-3 | Metric rollup 포트 | (삭제됨 2026-10-29) |
 
 Transition 계산:
 1. 이벤트 순서 정렬
@@ -120,7 +118,7 @@ Path 계산:
 
 | # | spec.todo | 작업 | 위치 |
 |---|---|---|---|
-| 8 | I-3 | Metric rollup 실행 | `packages/ingest-server/src/lib/metric-aggregator.ts` |
+| 8 | I-3 | Metric rollup 실행 | (삭제됨 2026-10-29) |
 | 9 | I-4 | Redis KeyCache 어댑터 | `packages/store/src/adapters/redis/key-cache.adapter.ts` |
 | 10 | I-4 | Cloudflare KV KeyCache 어댑터 | 후속 어댑터 후보 |
 
@@ -145,6 +143,5 @@ Path 계산:
 
 - `packages/core/src/ports/key-cache.port.ts` / `aggregator.port.ts` (포트)
 - `packages/store/src/adapters/memory/*` / `adapters/redis/*` (Memory + Redis 어댑터)
-- `packages/ingest-server/src/lib/metric-aggregator.ts` / `phase-two-worker.ts` (Phase 2 metric rollup consumer)
 - `projectAxis()` 함수
 - A 흐름 커버리지: A1/A5/A6 경로를 source-backed 상태로 유지

@@ -21,7 +21,6 @@ sources:
   - docs/specs/apm-system/metrics.spec.md
   - packages/ingest-server/src/lib/metrics-collector.ts
   - packages/ingest-server/src/routes/metrics.ts
-  - packages/ingest-server/src/lib/metric-aggregator.ts
 ---
 
 # Unit 3 — Monitoring API

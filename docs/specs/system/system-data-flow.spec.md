@@ -88,7 +88,6 @@ POST /v1/ingest
 ```
 TaskQueue.process(reconstructionTask) 또는 inline processPendingPhaseTwo()
   → reconstructPendingTraces() — record/trace/graph 기반 trace 재구성
-  → aggregateMetrics() — metric rollup store가 있으면 metric 레코드 집계
   → computePendingVerdicts() — ScenarioSpec 기반 pass/fail/pending 판정
   → [선택] transition matching — address_context decode 후 전이 위반 탐지
   → [선택] convergence-pipeline notifyCompletion — 후속 관측 파이프라인 알림

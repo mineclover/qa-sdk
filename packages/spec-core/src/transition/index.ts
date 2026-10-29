@@ -47,8 +47,6 @@ export {
 // ── State Store ──────────────────────────────────────────
 export type { StateStore } from 'spec-transition';
 export { InMemoryStateStore } from 'spec-transition';
-export { SqliteStateStore } from 'spec-transition';
-export type { AsyncStateStore } from 'spec-transition';
 
 // ── Bind Extractor ───────────────────────────────────────
 export { extractBind } from 'spec-transition';
