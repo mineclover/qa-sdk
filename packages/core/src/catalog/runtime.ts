@@ -12,6 +12,7 @@
  */
 
 import type { Catalog, DimRef, PrefixDef } from './catalog.types.js';
+import { CodecContractError } from './snapshot/codec-errors.js';
 
 // ── 반환 타입 ────────────────────────────────────────────────────────────────
 
@@ -80,6 +81,18 @@ export interface PrefixDimProfile {
  *
  * W[i] = product of shape[j] for j > i  (= 1 for last dimension)
  */
+/** 알 수 없는 prefix — 주소 해석 계약 오류 (ADR-010). 메시지는 기존 문구 유지 */
+function unknownPrefixError(prefixId: string): CodecContractError {
+  return new CodecContractError('UnknownPrefix', `Unknown prefix: ${prefixId}`, { prefixId });
+}
+
+function unknownPrefixVersionError(prefixId: string, version: string): CodecContractError {
+  return new CodecContractError('UnknownPrefix', `Unknown prefix version: ${prefixId}@${version}`, {
+    prefixId,
+    version,
+  });
+}
+
 function calcWeights(shape: readonly number[]): number[] {
   const d = shape.length;
   if (d === 0) return [];
@@ -123,9 +136,9 @@ function getFixedLabels(
 
 function resolvePrefixCapacity(catalog: Catalog, prefixId: string, version: string): number {
   const prefix = catalog.prefixes[prefixId];
-  if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
+  if (!prefix) throw unknownPrefixError(prefixId);
   const vdef = prefix.versions.find((v) => v.version === version);
-  if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
+  if (!vdef) throw unknownPrefixVersionError(prefixId, version);
 
   let capacity = 1;
   for (const label of getFixedLabels(prefix, vdef)) {
@@ -154,7 +167,7 @@ export function latestPrefixVersion(catalog: Catalog, prefixId: string): string 
 /** 구조만 — labels + dim refs + version 목록 */
 export function getPrefixStructure(catalog: Catalog, prefixId: string): PrefixStructure {
   const prefix = catalog.prefixes[prefixId];
-  if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
+  if (!prefix) throw unknownPrefixError(prefixId);
   return {
     id: prefix.id,
     name: prefix.name,
@@ -168,9 +181,9 @@ export function getPrefixStructure(catalog: Catalog, prefixId: string): PrefixSt
 /** capacity/shape만 — table_ref 차원은 제외. 고정 차원만 shape에 포함. */
 export function getPrefixShape(catalog: Catalog, prefixId: string, version: string): PrefixShape {
   const prefix = catalog.prefixes[prefixId];
-  if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
+  if (!prefix) throw unknownPrefixError(prefixId);
   const vdef = prefix.versions.find((v) => v.version === version);
-  if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
+  if (!vdef) throw unknownPrefixVersionError(prefixId, version);
 
   const shape: number[] = [];
   const dimCapacities: Record<string, number> = {};
@@ -206,9 +219,9 @@ export function getPrefixEntries(
   version: string,
 ): PrefixEntries {
   const prefix = catalog.prefixes[prefixId];
-  if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
+  if (!prefix) throw unknownPrefixError(prefixId);
   const vdef = prefix.versions.find((v) => v.version === version);
-  if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
+  if (!vdef) throw unknownPrefixVersionError(prefixId, version);
 
   const entries: Record<string, readonly (string | number)[]> = {};
   const ko: Record<string, Record<string, string>> = {};
@@ -237,10 +250,10 @@ export function getPrefixProfile(
   version?: string,
 ): PrefixDimProfile {
   const prefix = catalog.prefixes[prefixId];
-  if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
+  if (!prefix) throw unknownPrefixError(prefixId);
   const ver = version ?? latestPrefixVersion(catalog, prefixId);
   const vdef = prefix.versions.find((v) => v.version === ver);
-  if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${ver}`);
+  if (!vdef) throw unknownPrefixVersionError(prefixId, ver);
 
   const fixedLabels = getFixedLabels(prefix, vdef);
   const { shape, dimCapacities } = getPrefixShape(catalog, prefixId, ver);
@@ -308,8 +321,20 @@ export function getPrefixProfile(
 // ── 내부: shape → strides ────────────────────────────────────────────────────
 
 function getShapeAndStrides(catalog: Catalog, prefixId: string, version: string) {
-  const { shape } = getPrefixShape(catalog, prefixId, version);
+  const { shape, capacity } = getPrefixShape(catalog, prefixId, version);
+  assertSafeAddressSpace(prefixId, version, capacity);
   return { shape, strides: calcWeights(shape) };
+}
+
+/** number 주소 연산은 최대 주소가 2^53-1 이하일 때만 정확하다 — 초과 시 정밀도가 조용히 깨지지 않게 막는다 */
+function assertSafeAddressSpace(prefixId: string, version: string, capacity: number): void {
+  if (capacity - 1 > Number.MAX_SAFE_INTEGER) {
+    throw new CodecContractError(
+      'StrideOverflow',
+      `${prefixId}@${version} 주소 공간(${capacity})이 2^53을 넘습니다 — BigInt codec을 사용하세요`,
+      { prefixId, version, capacity },
+    );
+  }
 }
 
 function validateAddress(
@@ -319,9 +344,12 @@ function validateAddress(
   address: number,
 ): void {
   const { capacity } = getPrefixShape(catalog, prefixId, version);
+  assertSafeAddressSpace(prefixId, version, capacity);
   if (!Number.isInteger(address) || address < 0 || address >= capacity) {
-    throw new Error(
+    throw new CodecContractError(
+      'AddressOutOfRange',
       `address for ${prefixId}@${version} must be in [0, ${capacity - 1}], got ${address}`,
+      { prefixId, version, address, capacity },
     );
   }
 }
@@ -339,8 +367,10 @@ function validatePositions(
     const pos = positions[label];
     const max = shape[i] - 1;
     if (!Number.isInteger(pos) || pos < 0 || pos > max) {
-      throw new Error(
+      throw new CodecContractError(
+        'InvalidDimensionValue',
         `position for ${prefixId}@${version}.${label} must be in [0, ${max}], got ${pos}`,
+        { prefixId, version, label, position: pos, max },
       );
     }
   }
@@ -361,9 +391,9 @@ export function encodePrefix(
   positions: Record<string, number>,
 ): number {
   const prefix = catalog.prefixes[prefixId];
-  if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
+  if (!prefix) throw unknownPrefixError(prefixId);
   const vdef = prefix.versions.find((v) => v.version === version);
-  if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
+  if (!vdef) throw unknownPrefixVersionError(prefixId, version);
   const fixedLabels = getFixedLabels(prefix, vdef);
   const { strides } = getShapeAndStrides(catalog, prefixId, version);
   validatePositions(catalog, prefixId, version, fixedLabels, positions);
@@ -398,9 +428,9 @@ export function decodePrefix(
   address: number,
 ): Record<string, DecodedPosition> {
   const prefix = catalog.prefixes[prefixId];
-  if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
+  if (!prefix) throw unknownPrefixError(prefixId);
   const vdef = prefix.versions.find((v) => v.version === version);
-  if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
+  if (!vdef) throw unknownPrefixVersionError(prefixId, version);
   validateAddress(catalog, prefixId, version, address);
   const fixedLabels = getFixedLabels(prefix, vdef);
   const { strides } = getShapeAndStrides(catalog, prefixId, version);
@@ -444,9 +474,9 @@ export function decodePrefixPartial(
   labels: string[],
 ): Record<string, DecodedPosition> {
   const prefix = catalog.prefixes[prefixId];
-  if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
+  if (!prefix) throw unknownPrefixError(prefixId);
   const vdef = prefix.versions.find((v) => v.version === version);
-  if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
+  if (!vdef) throw unknownPrefixVersionError(prefixId, version);
   validateAddress(catalog, prefixId, version, address);
   const fixedLabels = getFixedLabels(prefix, vdef);
   const { shape } = getPrefixShape(catalog, prefixId, version);
@@ -522,9 +552,9 @@ export function resolveAddress(
   address: number,
 ): ResolvedAddress {
   const prefix = catalog.prefixes[prefixId];
-  if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
+  if (!prefix) throw unknownPrefixError(prefixId);
   const vdef = prefix.versions.find((v) => v.version === version);
-  if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
+  if (!vdef) throw unknownPrefixVersionError(prefixId, version);
 
   const decoded = decodePrefix(catalog, prefixId, version, address);
   const dims: Record<string, ResolvedDimValue> = {};
@@ -571,30 +601,50 @@ export function encodePrefixByValue(
   values: Record<string, string | number>,
 ): number {
   const prefix = catalog.prefixes[prefixId];
-  if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
+  if (!prefix) throw unknownPrefixError(prefixId);
   const vdef = prefix.versions.find((v) => v.version === version);
-  if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
+  if (!vdef) throw unknownPrefixVersionError(prefixId, version);
 
   const positions: Record<string, number> = {};
   for (const label of getFixedLabels(prefix, vdef)) {
     const val = values[label];
-    if (val === undefined) throw new Error(`Missing value for dim: ${label}`);
+    if (val === undefined) {
+      throw new CodecContractError('InvalidDimensionValue', `Missing value for dim: ${label}`, {
+        prefixId,
+        version,
+        label,
+      });
+    }
     const dim = prefix.dims[label];
 
     if (dim.kind === 'axis') {
       const axis = catalog.axes[dim.axisId];
       const snap = axis.versions[vdef.axisVersions[label]];
       const idx = snap.entries.indexOf(val as string);
-      if (idx < 0)
-        throw new Error(
+      if (idx < 0) {
+        throw new CodecContractError(
+          'InvalidDimensionValue',
           `Unknown entry "${val}" for axis ${dim.axisId}@${vdef.axisVersions[label]}`,
+          { prefixId, version, label, value: val },
         );
+      }
       positions[label] = idx;
     } else if (dim.kind === 'prefix_ref') {
       const ref = vdef.refEntries?.[label];
       if (!ref) throw new Error(`No refEntries for prefix_ref dim: ${label}`);
       const idx = ref.values.indexOf(val as number);
-      if (idx < 0) throw new Error(`Unknown ref value ${val} for dim ${label}`);
+      if (idx < 0) {
+        throw new CodecContractError(
+          'InvalidDimensionValue',
+          `Unknown ref value ${val} for dim ${label}`,
+          {
+            prefixId,
+            version,
+            label,
+            value: val,
+          },
+        );
+      }
       positions[label] = idx;
     }
   }
@@ -627,9 +677,9 @@ export function decomposeAddress(
   address: number,
 ): Record<string, DecomposedDim> {
   const prefix = catalog.prefixes[prefixId];
-  if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
+  if (!prefix) throw unknownPrefixError(prefixId);
   const vdef = prefix.versions.find((v) => v.version === version);
-  if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
+  if (!vdef) throw unknownPrefixVersionError(prefixId, version);
 
   const decoded = decodePrefix(catalog, prefixId, version, address);
   const result: Record<string, DecomposedDim> = {};
@@ -664,7 +714,7 @@ export function decodePrefixAsResult(
   address: number,
 ): DecodeResult {
   const prefix = catalog.prefixes[prefixId];
-  if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
+  if (!prefix) throw unknownPrefixError(prefixId);
   const decoded = decodePrefix(catalog, prefixId, version, address);
   const dims: Record<string, DecodedDim> = {};
 
@@ -719,7 +769,7 @@ export function decomposeAddressAsResult(
   address: number,
 ): DecodeResult {
   const prefix = catalog.prefixes[prefixId];
-  if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
+  if (!prefix) throw unknownPrefixError(prefixId);
   const decomposed = decomposeAddress(catalog, prefixId, version, address);
   const dims: Record<string, DecodedDim> = {};
 

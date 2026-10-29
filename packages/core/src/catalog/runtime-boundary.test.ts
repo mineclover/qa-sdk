@@ -3,6 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { Catalog } from './catalog.types.js';
+import { isCodecContractError } from './snapshot/codec-errors.js';
 import {
   decodePrefix,
   decodePrefixPartial,
@@ -144,5 +145,106 @@ describe('버전별 dim 목록 (D-8)', () => {
       },
     };
     expect(() => getPrefixShape(broken, 'p', 'v1')).toThrow('Unknown dim label in p@v1: ghost');
+  });
+});
+
+describe('runtime 오류의 계약 코드 (ADR-010)', () => {
+  function codeOf(fn: () => unknown): string | undefined {
+    try {
+      fn();
+    } catch (error) {
+      return isCodecContractError(error) ? error.code : `plain:${(error as Error).message}`;
+    }
+    return undefined;
+  }
+
+  it.each([
+    ['알 수 없는 prefix', () => decodePrefix(TEST_CATALOG, 'nope', 'v1', 0), 'UnknownPrefix'],
+    [
+      '알 수 없는 prefix version',
+      () => encodePrefix(TEST_CATALOG, 'service', 'v9', { env: 0 }),
+      'UnknownPrefix',
+    ],
+    ['범위 밖 주소', () => decodePrefix(TEST_CATALOG, 'service', 'v1', 4), 'AddressOutOfRange'],
+    [
+      '정수가 아닌 주소',
+      () => resolveAddress(TEST_CATALOG, 'service', 'v1', 1.5),
+      'AddressOutOfRange',
+    ],
+    [
+      '범위 밖 position',
+      () => encodePrefix(TEST_CATALOG, 'service', 'v1', { env: 4 }),
+      'InvalidDimensionValue',
+    ],
+    [
+      'position 누락',
+      () => encodePrefix(TEST_CATALOG, 'service', 'v1', {}),
+      'InvalidDimensionValue',
+    ],
+    [
+      '알 수 없는 entry',
+      () => encodePrefixByValue(TEST_CATALOG, 'service', 'v1', { env: 'qa' }),
+      'InvalidDimensionValue',
+    ],
+    [
+      '알 수 없는 ref 값',
+      () => encodePrefixByValue(TEST_CATALOG, 'permission', 'v1', { svc_ref: 99, role: 'admin' }),
+      'InvalidDimensionValue',
+    ],
+    [
+      '값 누락',
+      () => encodePrefixByValue(TEST_CATALOG, 'permission', 'v1', { role: 'admin' }),
+      'InvalidDimensionValue',
+    ],
+  ] as const)('%s → %s', (_name, fn, code) => {
+    expect(codeOf(fn)).toBe(code);
+  });
+
+  it('catalog 정의 결함은 계약 오류가 아니라 일반 Error로 남긴다', () => {
+    const broken: Catalog = {
+      ...TEST_CATALOG,
+      prefixes: {
+        service: {
+          ...TEST_CATALOG.prefixes.service,
+          versions: [{ version: 'v1', axisVersions: {} }],
+        },
+      },
+    };
+    expect(codeOf(() => decodePrefix(broken, 'service', 'v1', 0))).toMatch(
+      /^plain:Unknown axis version/,
+    );
+  });
+
+  it('2^53을 넘는 주소 공간을 number로 encode·decode하면 StrideOverflow', () => {
+    const wide: Catalog = {
+      id: 'wide',
+      name: 'wide',
+      axes: {
+        big: { id: 'big', name: 'big', versions: { v1: { entries: ['a'], capacity: 2 ** 20 } } },
+      },
+      prefixes: {
+        huge: {
+          id: 'huge',
+          name: 'huge',
+          labels: ['x', 'y', 'z'],
+          dims: {
+            x: { kind: 'axis', axisId: 'big' },
+            y: { kind: 'axis', axisId: 'big' },
+            z: { kind: 'axis', axisId: 'big' },
+          },
+          versions: [{ version: 'v1', axisVersions: { x: 'v1', y: 'v1', z: 'v1' } }],
+        },
+      },
+    };
+    expect(codeOf(() => encodePrefix(wide, 'huge', 'v1', { x: 0, y: 0, z: 0 }))).toBe(
+      'StrideOverflow',
+    );
+    expect(codeOf(() => decodePrefix(wide, 'huge', 'v1', 0))).toBe('StrideOverflow');
+    // 프로파일 조회는 계속 가능해야 한다 (safePrecision으로 보고)
+    expect(getPrefixShape(wide, 'huge', 'v1').shape).toEqual([2 ** 20, 2 ** 20, 2 ** 20]);
+  });
+
+  it('메시지는 기존 문구를 유지한다 (부분 문자열 매칭 소비자 호환)', () => {
+    expect(() => decodePrefix(TEST_CATALOG, 'nope', 'v1', 0)).toThrow('Unknown prefix: nope');
   });
 });
