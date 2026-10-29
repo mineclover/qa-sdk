@@ -96,9 +96,10 @@ query-service → HttpGateStateClient
 
 ## Transition State Store (선택적)
 
-query-service는 `@qa-sdk/spec-core/transition`이 설치된 환경에서 InMemoryStateStore를 선택적으로 초기화한다.
+query-service는 `@qa-sdk/spec-core/transition`이 설치된 환경에서 시점 replay(`/state/:c/:r/at`)용 엔진만 선택적으로 초기화한다. 현재 상태 store는 만들지 않는다 — query-service에는 전이를 기록하는 쓰기 경로가 없어 빈 store가 항상 `{}`를 돌려주기 때문이다.
 
-- `/state` 및 `/transitions` 경로로 전이 상태 조회 가능
+- `/state/:c/:r`, `/state/:c/:r/history`, `/transitions?context_id=`는 store가 주입되지 않으면 501
+- `/transitions`에는 전이 목록만 마운트한다 (`createTransitionRoutes`) — `/state` 라우트를 중복 마운트하지 않는다
 - 동적 import (`Function('return import(...)')()`) → 미설치 환경에서는 무시 (에러 격리)
 - `InMemoryStateStore`는 `get`/`set`/`snapshot` 인터페이스 충족
 
@@ -142,7 +143,8 @@ N. errorHandler (onError) — AppError, ZodError 분기 처리
 | `GET /metrics` | `createMetricsRoutes` | Prometheus 형식 (uptime, heap, rss) |
 | `POST /rules`, `GET /rules`, `PUT /rules/:id`, `DELETE /rules/:id` | `createRuleRoutes` | PolicyRule CRUD |
 | `POST /resolve`, `POST /match-ranges`, `POST /compose-query` 등 | `createQueryRoutes` | 좌표 질의 API |
-| `/state`, `/transitions` | `createStateRoutes` | 전이 상태 조회 (선택적) |
+| `/state` | `createStateRoutes` | 전이 상태 조회·시점 replay (선택적) |
+| `/transitions` | `createTransitionRoutes` | context별 전이 목록 (선택적) |
 
 ## SQLite 상태 저장소 초기화
 

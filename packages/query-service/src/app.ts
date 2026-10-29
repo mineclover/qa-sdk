@@ -24,7 +24,7 @@ import { createHealthRoutes } from './routes/health.js';
 import { createMetricsRoutes } from './routes/metrics.js';
 import { createQueryRoutes } from './routes/query.js';
 import { createRuleRoutes } from './routes/rules.js';
-import { createStateRoutes, type StateRouteDeps } from './routes/state.js';
+import { createStateRoutes, createTransitionRoutes, type StateRouteDeps } from './routes/state.js';
 import { InMemoryPolicyRuleStore } from './stores/in-memory-policy-rule-store.js';
 import type { PolicyRuleStore } from './stores/policy-rule-store.js';
 
@@ -85,7 +85,7 @@ export function createApp(deps: AppDeps) {
   app.route('/', createRuleRoutes({ ruleService, ruleMigrationService }));
   app.route('/', createQueryRoutes({ queryService }));
   app.route('/state', createStateRoutes(deps.stateRoutes ?? {}));
-  app.route('/transitions', createStateRoutes(deps.stateRoutes ?? {}));
+  app.route('/transitions', createTransitionRoutes(deps.stateRoutes ?? {}));
 
   app.onError(createErrorHandler(logger));
 

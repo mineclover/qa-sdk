@@ -820,6 +820,31 @@ describe('query-service', () => {
     expect(body.error.code).toBe('SERVICE_UNAVAILABLE');
   });
 
+  it('state store가 없으면 현재 상태 조회는 빈 상태 대신 501을 돌려준다', async () => {
+    const stateApp = createApp({ policyRuleStore, prefixRegistry, metaRegistry });
+    expect((await stateApp.request('/state/ctx-1/res-1')).status).toBe(501);
+    expect((await stateApp.request('/state/ctx-1/res-1/history')).status).toBe(501);
+  });
+
+  it('/transitions는 전이 목록만 제공하고 /state 라우트를 중복 마운트하지 않는다', async () => {
+    const transitionStore = {
+      findByContext: vi.fn(async () => [{ id: 't-1' }]),
+      findByContextAndResource: vi.fn(async () => []),
+    };
+    const stateApp = createApp({
+      policyRuleStore,
+      prefixRegistry,
+      metaRegistry,
+      stateRoutes: { transitionStore },
+    });
+
+    const list = await stateApp.request('/transitions?context_id=ctx-1');
+    expect(list.status).toBe(200);
+    expect(await list.json()).toMatchObject({ contextId: 'ctx-1', count: 1 });
+    expect((await stateApp.request('/transitions/ctx-1/res-1/history')).status).toBe(404);
+    expect((await stateApp.request('/state/ctx-1/res-1/history')).status).toBe(200);
+  });
+
   it('GET /state/:context/:resource/at filters records by explicit ids only', async () => {
     const stateApp = createApp({
       policyRuleStore,

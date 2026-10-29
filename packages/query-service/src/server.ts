@@ -28,7 +28,7 @@ const gateClient = env.GATE_SERVICE_URL
   : undefined;
 const startedAt = Date.now();
 
-// ── Transition State Store (optional) ───────────────
+// ── Transition replay (optional) ───────────────
 import type { StateRouteDeps } from './routes/state.js';
 
 const stateRoutesDeps: StateRouteDeps = {};
@@ -56,10 +56,8 @@ try {
     | undefined;
   const demoSpecs = mod?.DEMO_TRANSITION_SPECS as readonly unknown[] | undefined;
 
-  if (StoreCtor) {
-    stateRoutesDeps.stateStore = new StoreCtor();
-    logger.info('transition state store initialized (in-memory)');
-  }
+  // 현재 상태 store(stateStore)는 만들지 않는다 — query-service에는 전이를 기록하는 쓰기 경로가 없어
+  // 빈 store가 항상 `{}`를 돌려주게 된다. 없으면 `/state/:c/:r`은 501로 알린다.
 
   if (StoreCtor && RegistryCtor && EngineCtor && demoSpecs?.length) {
     const replayStore = new StoreCtor();

@@ -7,9 +7,9 @@
  * GET /state/:contextId/:resourceId          — 현재 축 스냅샷
  * GET /state/:contextId/:resourceId/history   — transition instance 이력
  * GET /state/:contextId/:resourceId/at        — 시점 상태 (replay)
- * GET /transitions                            — context별 전이 목록
+ * GET /transitions?context_id=                — context별 전이 목록 (createTransitionRoutes)
  *
- * StateStore가 없으면 501 Not Implemented.
+ * 필요한 저장소가 없으면 501 Not Implemented — 빈 결과로 성공을 가장하지 않는다.
  */
 
 import { Hono } from 'hono';
@@ -178,6 +178,13 @@ export function createStateRoutes(deps: StateRouteDeps) {
       mode: 'current-fallback',
     });
   });
+
+  return app;
+}
+
+/** `/transitions` 마운트 — context별 전이 목록 (`/state`와 따로 마운트해 경로가 겹치지 않게 한다) */
+export function createTransitionRoutes(deps: Pick<StateRouteDeps, 'transitionStore'>) {
+  const app = new Hono();
 
   // GET /transitions?context_id=&limit= — context별 전이 목록
   app.get('/', async (c) => {
