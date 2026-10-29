@@ -56,7 +56,7 @@ role: status
 
 | 순위 | 작업 | 이유 | 선행 조건 |
 |---|---|---|---|
-| **P0** | ✅ 로컬 CI — `pnpm ci:local` (`scripts/ci-local.mjs`): workflow 검사(def·codegen·format·arch)와 핵심 18개 패키지 테스트·bench smoke. 결정: CI는 로컬에서 확인한다 (2026-10-29) | — |
+| **P0** | ✅ 로컬 CI — `pnpm ci:local` (`scripts/ci-local.mjs`): workflow 검사(def·codegen·format·arch)와 핵심 18개 패키지 테스트·bench smoke. 결정: CI는 로컬에서 확인한다 (2026-10-29). `arch:verify`가 `.antigravitycli/` 깨진 symlink로 중단되던 문제는 git 기준 파일 목록으로 격리 — 28/28 | — |
 | **P0** | 49 커밋 push 여부 결정 | 원격에 반영되지 않았고, `8a624692`에 다른 주제의 삭제분이 섞여 있다 | 사람 결정 |
 | **P1** | ✅ Track B — registry generation이 digest 기준이 되어 SDK GENERATION 비교가 일치. 남은 #15 재료: batch 문맥 조회 API, VerdictReport artifact digest | — |
 | **P1** | ✅ core runtime 오류 전환, browser-codec 원인 코드 노출 | — | — |

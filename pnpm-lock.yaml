@@ -1147,6 +1147,9 @@ importers:
       '@qa-sdk/core':
         specifier: workspace:*
         version: link:../core
+      demo-types:
+        specifier: workspace:*
+        version: link:../demo-types
       typescript:
         specifier: ^5.9.3
         version: 5.9.3

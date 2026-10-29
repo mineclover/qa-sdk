@@ -104,6 +104,7 @@ Catalog ──codegen──▶ CATALOG_SNAPSHOT (Node) / BROWSER_CATALOG_SNAPSHO
 |---|---|
 | `pnpm ci:local` (`scripts/ci-local.mjs`) | workflow 게이트·핵심 패키지 테스트·bench smoke (`--only`·`--skip`·`--list`) |
 | `scripts/catalog-codegen-drift.mjs` (`--update`) | 생성물 바이트 비교 |
+| `arch:verify` (`scripts/verify-analysis-os.ts`) | 파일 목록은 `git ls-files`(추적 + 무시 규칙 밖) 기준 — 로컬 도구 상태·깨진 symlink가 결과를 바꾸지 않는다 |
 | codegen 헤더 `catalogDigest`·`sourceDigest` | 생성물이 어느 catalog·소스에서 나왔는지 |
 
 ## 3. 이번 정리에서 맞춘 것
@@ -114,6 +115,16 @@ Catalog ──codegen──▶ CATALOG_SNAPSHOT (Node) / BROWSER_CATALOG_SNAPSHO
 | Node SDK 문맥 생산 | 설정 `catalogSnapshot`은 있으나 값을 만들 생성물 없음 → Node envelope은 항상 `missing` | codegen이 `CATALOG_SNAPSHOT` 생성. 브라우저 `BROWSER_CATALOG_SNAPSHOT`과 대칭 |
 | 문맥 타입 | `BrowserCatalogSnapshot`이 `CatalogSnapshotWire`와 같은 필드를 따로 선언 | `Omit<CatalogSnapshotWire, 'snapshot_version'>`에서 파생 |
 | 환경변수 표 | `SNAPSHOT_GATE_*`가 `docs/CONVENTIONS.md`에 없음 | 추가 |
+
+## 3.1 안정성 등급과 회귀 방지 ^validation
+
+| 등급 | 의미 | 대상 | 지키는 테스트 |
+|---|---|---|---|
+| **stable** | 외부(배포된 SDK·운영 API)가 의존한다. 필드·코드는 추가만 하고 바꾸거나 지우지 않는다 | envelope `catalog_snapshot`(JSON·proto field 12), `CODEC_ERROR_CODES` 9종과 HTTP 400/422 매핑, SDK 설정 `catalogSnapshot`, 생성물 `CATALOG_SNAPSHOT`·`BROWSER_CATALOG_SNAPSHOT`, registry `snapshots/latest`·`snapshots/:digest`, `computeCatalogDigest` 결과 | demo-tests `codec-compat/interface-contract`(코드 집합, Node·브라우저 문맥 일치, registry digest 일치), `three-way-parity`·`legacy-v1-corpus`, codec-proto round-trip, ingest `snapshot-gate`·`error-handler` |
+| **experimental** | 공개돼 있지만 사내 소비자가 없다. 첫 소비자가 생길 때 형태를 확정한다 | `encodeDetailed`·`decodeDetailed`, `toSnapshotWire`, `/v1/key-observations/*`, `/v1/patterns/*` | 각 패키지 단위 테스트 |
+| **deprecated** | 읽는 곳이 없다. 수용만 하고 새 코드는 쓰지 않는다 | `entry_snapshot`·`entrySnapshot` (I-2) | schema 수용 테스트 |
+
+stable 인터페이스를 바꿔야 하면 ADR-010을 먼저 고치고, 위 테스트가 실패하는 것을 확인한 뒤 함께 갱신한다.
 
 ## 4. 남은 정리 후보 (사람 결정)
 
