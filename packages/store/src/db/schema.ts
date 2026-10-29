@@ -7,6 +7,7 @@ import {
   text,
   timestamp,
   boolean,
+  doublePrecision,
   integer,
   jsonb,
   index,
@@ -88,6 +89,15 @@ export const eventRecords = pgTable(
     actorId: text('actor_id'),
     userId: text('user_id'),
     userAttributes: jsonb('user_attributes').$type<Record<string, string>>(),
+
+    // Metric (record_kind === 'metric') — ingest-server SQLite 스키마와 같은 필드 (X-18)
+    metricType: text('metric_type'),
+    metricName: text('metric_name'),
+    metricValue: doublePrecision('metric_value'),
+    metricUnit: text('metric_unit'),
+    metricLabels: jsonb('metric_labels').$type<Record<string, string>>(),
+    metricBuckets: jsonb('metric_buckets').$type<number[]>(),
+    metricQuantiles: jsonb('metric_quantiles').$type<number[]>(),
 
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },

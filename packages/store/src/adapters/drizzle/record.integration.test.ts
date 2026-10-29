@@ -119,6 +119,36 @@ describeIfDatabase('DrizzleRecordStore', () => {
     ]);
   });
 
+  it('metric 레코드의 metric_* 필드를 저장 후 그대로 돌려준다 (X-18)', async () => {
+    await seedTrace(db, { traceId: 'trace_1' });
+    const store = new DrizzleRecordStore(db);
+    const metric = buildRecord({
+      logId: 'log_metric',
+      recordKind: 'metric',
+      metricType: 'histogram',
+      metricName: 'checkout_latency',
+      metricValue: 12.5,
+      metricUnit: 'ms',
+      metricLabels: { region: 'kr' },
+      metricBuckets: [5, 10, 25],
+      metricQuantiles: [0.5, 0.99],
+    });
+
+    await store.insertBatch([metric]);
+    const [stored] = await store.findByTraceId('trace_1');
+
+    expect(stored).toMatchObject({
+      recordKind: 'metric',
+      metricType: 'histogram',
+      metricName: 'checkout_latency',
+      metricValue: 12.5,
+      metricUnit: 'ms',
+      metricLabels: { region: 'kr' },
+      metricBuckets: [5, 10, 25],
+      metricQuantiles: [0.5, 0.99],
+    });
+  });
+
   it('ignores duplicate log IDs when inserting a later batch', async () => {
     await seedTrace(db, { traceId: 'trace_1' });
 

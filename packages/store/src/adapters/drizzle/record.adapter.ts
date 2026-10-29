@@ -47,6 +47,13 @@ export class DrizzleRecordStore implements RecordStore {
           actorId: r.actorId,
           userId: r.userId,
           userAttributes: r.userAttributes,
+          metricType: r.metricType,
+          metricName: r.metricName,
+          metricValue: r.metricValue,
+          metricUnit: r.metricUnit,
+          metricLabels: r.metricLabels,
+          metricBuckets: r.metricBuckets,
+          metricQuantiles: r.metricQuantiles,
         })),
       )
       .onConflictDoNothing({ target: eventRecords.logId })
@@ -199,6 +206,13 @@ function toStoredRecord(row: typeof eventRecords.$inferSelect): StoredRecord {
     actorId: row.actorId ?? undefined,
     userId: row.userId ?? undefined,
     userAttributes: row.userAttributes ?? undefined,
+    metricType: row.metricType ?? undefined,
+    metricName: row.metricName ?? undefined,
+    metricValue: row.metricValue ?? undefined,
+    metricUnit: row.metricUnit ?? undefined,
+    metricLabels: row.metricLabels ?? undefined,
+    metricBuckets: row.metricBuckets ?? undefined,
+    metricQuantiles: row.metricQuantiles ?? undefined,
     createdAt: row.createdAt,
   };
 }
