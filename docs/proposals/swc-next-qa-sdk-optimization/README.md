@@ -38,6 +38,7 @@ Drive 정본 계획(rev 0.1)의 Phase 0~6 로드맵을 **현재 코드 실측 �
 - 코드 인벤토리와 정리 대장: [00-code-inventory.md](./00-code-inventory.md)
 - 트랙 경계, 파일 소유권, 머지 규칙: [01-tracks.md](./01-tracks.md)
 - convergence 주기 flush 검토: [02-convergence-flush-review.md](./02-convergence-flush-review.md)
+- spec은 있으나 미배선인 기능 8건 배선 vs 삭제: [03-unwired-spec-review.md](./03-unwired-spec-review.md)
 - 트랙별 구현 계획: [plans/README.md](./plans/README.md)
 
 원본 계획의 목표·비목표·실패 상태 9종·버전 축 분리 원칙은 그대로 유지한다. 이 디렉토리는 원본을 대체하지 않고, **실행 단위로 번역**한다.
