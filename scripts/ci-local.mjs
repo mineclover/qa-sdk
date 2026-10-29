@@ -15,6 +15,7 @@
  *   TEST_PACKAGES 이름을 workspace 목록과 먼저 대조한다
  */
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 
 /** 회귀를 막아야 하는 패키지 — 빌드는 `...`로 의존 패키지까지 포함한다 */
 const TEST_PACKAGES = [
@@ -48,7 +49,11 @@ const TEST_PACKAGES = [
   'authorization-ontology',
   'db-traffic-control',
   'infra-engine',
+  'definition-catalog',
 ];
+
+/** 목적별 핵심 흐름 (docs/proposals/swc-next-qa-sdk-optimization/07-purpose-alignment.md §5 단계 1) */
+const PURPOSES = ['F', 'P1', 'P2', 'P3', 'P4', 'P5'];
 
 const PNPM = ['corepack', 'pnpm'];
 const CLI = ['node', 'packages/cli/dist/index.js'];
@@ -64,6 +69,48 @@ function unknownTestPackages() {
   return TEST_PACKAGES.filter((pkg) => !names.has(pkg));
 }
 
+/**
+ * `*.purpose-flow.test.ts`의 `@purpose <id>` 태그를 모아 목적마다 흐름이 있는지,
+ * 그 흐름이 TEST_PACKAGES 안에서 실행되는지 확인한다.
+ */
+function purposeFlowGaps() {
+  const run = spawnSync(
+    'git',
+    ['ls-files', '--cached', '--others', '--exclude-standard', '--', 'packages'],
+    {
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024,
+    },
+  );
+  if (run.status !== 0) throw new Error(`git ls-files 실패: ${run.stderr}`);
+  const files = run.stdout.split('\n').filter((f) => f.endsWith('.purpose-flow.test.ts'));
+  const projects = JSON.parse(
+    spawnSync(PNPM[0], [...PNPM.slice(1), 'ls', '-r', '--depth', '-1', '--json'], {
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024,
+    }).stdout,
+  );
+  const tested = new Set(TEST_PACKAGES);
+  const covered = new Set();
+  const problems = [];
+  for (const file of files) {
+    const tags = [...readFileSync(file, 'utf8').matchAll(/@purpose\s+(F|P\d)\b/g)].map((m) => m[1]);
+    if (tags.length === 0) problems.push(`${file}: @purpose 태그 없음`);
+    // 파일을 담은 가장 깊은 workspace 프로젝트 — 루트 프로젝트 경로는 모든 파일의 접두사다
+    const absolute = `${process.cwd()}/${file}`;
+    const owner = projects
+      .filter((p) => absolute.startsWith(`${p.path}/`))
+      .toSorted((a, b) => b.path.length - a.path.length)[0];
+    if (!owner || !tested.has(owner.name)) {
+      problems.push(`${file}: 소유 패키지(${owner?.name ?? '?'})가 TEST_PACKAGES 밖`);
+    }
+    for (const tag of tags) covered.add(tag);
+  }
+  const missing = PURPOSES.filter((id) => !covered.has(id));
+  if (missing.length > 0) problems.push(`흐름 없는 목적: ${missing.join(', ')}`);
+  return problems;
+}
+
 const STEPS = [
   // ── tests 대상 이름 검증 (in-process) ──
   {
@@ -74,6 +121,14 @@ const STEPS = [
       return unknown.length === 0
         ? { ok: true }
         : { ok: false, output: `workspace에 없는 패키지: ${unknown.join(', ')}` };
+    },
+  },
+  {
+    group: 'tests',
+    name: 'purpose flows cover F·P1~P5',
+    check: () => {
+      const problems = purposeFlowGaps();
+      return problems.length === 0 ? { ok: true } : { ok: false, output: problems.join('\n') };
     },
   },
   // ── gates: .github/workflows의 검사 + 저장소 공통 게이트 ──
