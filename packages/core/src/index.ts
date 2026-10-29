@@ -110,6 +110,7 @@ export type {
   BuildEnv,
   TransmissionBuild,
   TransmissionEnvelope,
+  CatalogSnapshotWire,
 } from './types/envelope.js';
 export type {
   ServiceIdentity,
@@ -238,6 +239,7 @@ export {
   buildEnvSchema,
   transmissionBuildSchema,
   transmissionEnvelopeSchema,
+  catalogSnapshotWireSchema,
 } from './schema/envelope.schema.js';
 export {
   recordKindSchema,

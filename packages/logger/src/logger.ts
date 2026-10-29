@@ -344,6 +344,7 @@ export class QaLogger {
       build: this.config.build,
       ...(this.config.infraContext ? { infra_context: this.config.infraContext } : {}),
       ...(this.config.entrySnapshot ? { entry_snapshot: this.config.entrySnapshot } : {}),
+      ...(this.config.catalogSnapshot ? { catalog_snapshot: this.config.catalogSnapshot } : {}),
       records,
     };
   }

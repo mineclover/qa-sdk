@@ -3,6 +3,7 @@
 
 import type {
   ActorContext,
+  CatalogSnapshotWire,
   TransmissionOwner,
   TransmissionSource,
   TransmissionRuntime,
@@ -48,8 +49,14 @@ export interface QaLoggerConfig {
   /** 엔벨로프 전체에 적용되는 인프라 주소 컨텍스트 (레코드의 address_context가 override) */
   infraContext?: Record<string, string>;
 
-  /** 배포 시점의 entry snapshot ID (envelope 전략 snapshotSupply용) */
+  /**
+   * 배포 시점의 entry snapshot ID (envelope 전략 snapshotSupply용).
+   * @deprecated catalogSnapshot 사용 (D-2)
+   */
   entrySnapshot?: string;
+
+  /** 좌표 주소를 만든 CatalogSnapshot 문맥 — envelope.catalog_snapshot으로 전송 (ADR-010) */
+  catalogSnapshot?: CatalogSnapshotWire;
 }
 
 export const DEFAULT_BATCH_SIZE = 50;

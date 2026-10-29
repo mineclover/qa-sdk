@@ -33,6 +33,13 @@ export const transmissionBuildSchema = z.object({
   release_version: z.string().optional(),
 });
 
+export const catalogSnapshotWireSchema = z.object({
+  catalog_id: z.string().min(1),
+  snapshot_version: z.number().int().positive().optional(),
+  digest: z.string().regex(/^sha256:[0-9a-f]{64}$/),
+  codec_version: z.string().min(1),
+});
+
 export const transmissionEnvelopeSchema = z.object({
   transmission_id: z.string().min(1),
   sent_at: z.string().datetime(),
@@ -42,5 +49,6 @@ export const transmissionEnvelopeSchema = z.object({
   build: transmissionBuildSchema,
   infra_context: AddressContextV1Schema.optional(),
   entry_snapshot: z.string().optional(),
+  catalog_snapshot: catalogSnapshotWireSchema.optional(),
   records: z.array(eventRecordSchema).min(1),
 });

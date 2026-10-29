@@ -58,3 +58,22 @@ describe('buildCatalogSnapshot', () => {
     ).rejects.toThrow(RangeError);
   });
 });
+
+describe('snapshot wire 변환', () => {
+  it('toSnapshotWire ↔ toSnapshotIdentity가 판정에 필요한 문맥을 보존한다', async () => {
+    const { toSnapshotIdentity, toSnapshotWire } = await import('./wire.js');
+    const { snapshot } = await buildCatalogSnapshot(SNAPSHOT_FIXTURE, OPTIONS);
+    const wire = toSnapshotWire(snapshot);
+    expect(wire).toEqual({
+      catalog_id: snapshot.catalogId,
+      snapshot_version: snapshot.snapshotVersion,
+      digest: snapshot.digest,
+      codec_version: snapshot.codecVersion,
+    });
+    expect(toSnapshotIdentity(wire)).toEqual({
+      catalogId: snapshot.catalogId,
+      digest: snapshot.digest,
+      codecVersion: snapshot.codecVersion,
+    });
+  });
+});

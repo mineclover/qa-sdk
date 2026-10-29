@@ -6,6 +6,7 @@ import type {
   TransmissionOwner,
   TransmissionRuntime,
   ActorContext,
+  CatalogSnapshotWire,
 } from '@qa-sdk/core';
 import type { QaLoggerConfig, Transport } from '@qa-sdk/sdk';
 import type { PrefixCodec } from 'weighted-index';
@@ -58,6 +59,8 @@ export interface ApmBootConfig {
   runtime?: Partial<TransmissionRuntime>;
   /** Actor 컨텍스트 */
   actor?: ActorContext;
-  /** 배포 시점의 entry snapshot ID */
+  /** 배포 시점의 entry snapshot ID. @deprecated catalogSnapshot 사용 (D-2) */
   entrySnapshot?: string;
+  /** 좌표 주소를 만든 CatalogSnapshot 문맥 (ADR-010) */
+  catalogSnapshot?: CatalogSnapshotWire;
 }

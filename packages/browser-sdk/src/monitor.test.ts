@@ -97,6 +97,26 @@ describe('QaMonitor', () => {
     await monitor.shutdown();
   });
 
+  it('catalogSnapshot 옵션을 envelope.catalog_snapshot으로 보낸다 (D-2)', async () => {
+    const fetchMock = setupFetch();
+    const catalogSnapshot = {
+      catalog_id: 'demo',
+      digest: `sha256:${'d'.repeat(64)}`,
+      codec_version: 'legacy-v1',
+    };
+    const monitor = new QaMonitor({
+      ingestUrl: 'http://localhost:3200',
+      scenarioId: 'checkout_v1',
+      catalogSnapshot,
+    });
+
+    await monitor.flush();
+
+    const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+    expect(body.catalog_snapshot).toEqual(catalogSnapshot);
+    await monitor.shutdown();
+  });
+
   it('does NOT emit session_start when scenarioId is omitted', async () => {
     const fetchMock = setupFetch();
     const monitor = new QaMonitor({ ingestUrl: 'http://localhost:3200' });

@@ -283,3 +283,57 @@ describe('scenarioSpecSchema — 잘못된 입력 거부', () => {
     expect(scenarioSpecSchema.safeParse(scenario).success).toBe(false);
   });
 });
+
+describe('transmissionEnvelopeSchema — catalog_snapshot (D-2)', () => {
+  const snapshot = {
+    catalog_id: 'demo',
+    snapshot_version: 3,
+    digest: `sha256:${'a'.repeat(64)}`,
+    codec_version: 'legacy-v1',
+  };
+
+  it('catalog_snapshot이 있으면 그대로 통과한다', () => {
+    const parsed = transmissionEnvelopeSchema.parse({
+      ...makeValidEnvelope(),
+      catalog_snapshot: snapshot,
+    });
+    expect(parsed.catalog_snapshot).toEqual(snapshot);
+  });
+
+  it('없어도 통과한다 (구버전 SDK)', () => {
+    expect(transmissionEnvelopeSchema.parse(makeValidEnvelope()).catalog_snapshot).toBeUndefined();
+  });
+
+  it('snapshot_version은 선택이다 (codegen 시점에는 알 수 없음)', () => {
+    const { snapshot_version: _omit, ...withoutVersion } = snapshot;
+    expect(() =>
+      transmissionEnvelopeSchema.parse({
+        ...makeValidEnvelope(),
+        catalog_snapshot: withoutVersion,
+      }),
+    ).not.toThrow();
+  });
+
+  it.each([
+    ['digest 형식', { digest: 'abc' }],
+    ['대문자 hex digest', { digest: `sha256:${'A'.repeat(64)}` }],
+    ['snapshot_version 0', { snapshot_version: 0 }],
+    ['빈 catalog_id', { catalog_id: '' }],
+  ])('%s 오류는 거부한다', (_name, patch) => {
+    expect(() =>
+      transmissionEnvelopeSchema.parse({
+        ...makeValidEnvelope(),
+        catalog_snapshot: { ...snapshot, ...patch },
+      }),
+    ).toThrow();
+  });
+
+  it('미지원 codec_version은 스키마에서 거부하지 않는다 (gate가 판정)', () => {
+    expect(() =>
+      transmissionEnvelopeSchema.parse({
+        ...makeValidEnvelope(),
+        catalog_snapshot: { ...snapshot, codec_version: 'legacy-v9' },
+      }),
+    ).not.toThrow();
+  });
+});

@@ -1,6 +1,6 @@
 /** @def.boundary browser-runtime-system */
 import type { BrowserCatalog } from '@qa-sdk/browser-codec';
-import type { ServiceBootConfig, TransmissionOwner } from '@qa-sdk/core';
+import type { CatalogSnapshotWire, ServiceBootConfig, TransmissionOwner } from '@qa-sdk/core';
 
 /** QaMonitor의 생명주기 상태 */
 export type MonitorStatus = 'active' | 'stopped';
@@ -30,8 +30,14 @@ export interface QaMonitorConfig {
   /** 엔벨로프 전체에 적용되는 인프라 주소 컨텍스트 */
   infraContext?: Record<string, string>;
 
-  /** 배포 시점의 entry snapshot ID */
+  /** 배포 시점의 entry snapshot ID. @deprecated catalogSnapshot 사용 (D-2) */
   entrySnapshot?: string;
+
+  /**
+   * 좌표 주소를 만든 CatalogSnapshot 문맥. 생성된 BROWSER_CATALOG_SNAPSHOT을 그대로 넘길 수 있다.
+   * ingest snapshot gate가 이 문맥으로 주소 해석 가능 여부를 판정한다 (ADR-010)
+   */
+  catalogSnapshot?: CatalogSnapshotWire;
 
   /** registry URL. 설정하면 최신 BROWSER_CATALOG를 API에서 fetch (localStorage 캐시). */
   registry?: string;

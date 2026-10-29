@@ -111,6 +111,7 @@ export class QaMonitor {
       onError: config.onError,
       ...(infraContext ? { infraContext } : {}),
       ...(config.entrySnapshot ? { entrySnapshot: config.entrySnapshot } : {}),
+      ...(config.catalogSnapshot ? { catalogSnapshot: config.catalogSnapshot } : {}),
     });
 
     // 세션 컨텍스트 연결

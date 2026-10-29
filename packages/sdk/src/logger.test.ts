@@ -494,6 +494,30 @@ describe('QaLogger — buildEnvelope infra_context / entry_snapshot', () => {
     expect(transport.sent[0].entry_snapshot).toBe('snap_demo_v1_20260312');
   });
 
+  it('catalogSnapshot이 envelope의 catalog_snapshot으로 전달된다 (D-2)', async () => {
+    const transport = new NoopTransport();
+    const catalogSnapshot = {
+      catalog_id: 'demo',
+      digest: `sha256:${'c'.repeat(64)}`,
+      codec_version: 'legacy-v1',
+    };
+    const logger = new QaLogger({
+      transport,
+      owner,
+      source,
+      runtime,
+      build,
+      flushIntervalMs: 0,
+      catalogSnapshot,
+    });
+    logger.startTrace();
+    logger.log({ event_key: 'e1', event_version: '1' });
+
+    await logger.flush();
+
+    expect(transport.sent[0].catalog_snapshot).toEqual(catalogSnapshot);
+  });
+
   it('infraContext/entrySnapshot 미지정 시 envelope에 필드가 없다', async () => {
     const { logger, transport } = createLogger();
     logger.startTrace();
@@ -503,6 +527,7 @@ describe('QaLogger — buildEnvelope infra_context / entry_snapshot', () => {
 
     expect(transport.sent[0].infra_context).toBeUndefined();
     expect(transport.sent[0].entry_snapshot).toBeUndefined();
+    expect(transport.sent[0].catalog_snapshot).toBeUndefined();
   });
 });
 

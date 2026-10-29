@@ -207,5 +207,6 @@ export function createApmLoggerFromBoot(boot: ApmBootConfig): ApmLogger {
     generation: boot.generation,
     actor: boot.actor,
     entrySnapshot: boot.entrySnapshot,
+    catalogSnapshot: boot.catalogSnapshot,
   });
 }

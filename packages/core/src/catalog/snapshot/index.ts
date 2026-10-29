@@ -51,3 +51,4 @@ export {
   type LayoutDecodeMap,
   type LayoutDecodeMapDim,
 } from './decode-map.js';
+export { toSnapshotIdentity, toSnapshotWire } from './wire.js';
