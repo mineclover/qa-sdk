@@ -460,6 +460,8 @@ DEV_DASHBOARD_ENABLED=true   # ~/.qa-sdk/state.sqlite 있으면 자동 활성화
 | `CONVERGENCE_ENABLED=true` | ingest | 관측 루프 |
 | `PATTERN_CLASSIFICATION_ENABLED=true` | ingest | 행동 패턴 분류 |
 | `CONSTRAINT_GATE_ENABLED=true` | registry | 활성화 게이트 |
+| `SNAPSHOT_GATE_MODE=off\|warn\|enforce` | ingest | envelope `catalog_snapshot` 판정 (기본 `warn`, enforce는 위반 422) |
+| `SNAPSHOT_REGISTRY_URL` | ingest | snapshot 조회 registry (미설정 → `REGISTRY_URL`) |
 | `CORS_ORIGIN` | 전체 | 프론트엔드 도메인 제한 (기본 `*`) |
 
 ---
