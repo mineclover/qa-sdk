@@ -63,9 +63,9 @@ role: audit
 
 | 개념 | 위치 | 한계 |
 |---|---|---|
-| `latestPrefixVersion` ✅ | `core/src/catalog/runtime.ts:134` | `context/src/catalog-provider.ts:82,119`, `dkg/src/resolve.ts:48`, `core/src/catalog/browser-flatten.ts:57`에 재구현 |
-| `computeCatalogHash` ✅ | `codegen-core/src/catalog-typescript.ts:43` | 12 hex, `localeCompare` 정렬, dims·refEntries·tables 제외 |
-| codegen 헤더 timestamp ✅ | `codegen-core/src/catalog-typescript.ts:76,92` | 실행마다 출력이 달라짐 |
+| `latestPrefixVersion` ✅ | `core/src/catalog/runtime.ts:134` | `context/src/catalog-provider.ts:82,119`, `dkg/src/resolve.ts:48`, `core/src/catalog/browser-flatten.ts:57`에 재구현 (전부 교체됨 — X-5) |
+| `computeCatalogHash` ✅ | `codegen-core/src/catalog-typescript.ts:43` | 12 hex, `localeCompare` 정렬, dims·refEntries·tables 제외 → **Track D에서 삭제, T0 digest로 교체 (X-7)** |
+| codegen 헤더 timestamp ✅ | `codegen-core/src/catalog-typescript.ts:76,92` | 실행마다 출력이 달라짐 → **Track D에서 제거, `codegen-core@<version>` 기록** |
 | registry `catalogHash` | `registry-service/src/health.controller.ts:49` | 원본 JSON 문자열 해시. codegen 해시와 알고리즘 다름 |
 | SDK generation 비교 | `context/src/qa-context.ts:161-172, 358-380` | warn만 (fail-open), 사실상 항상 불일치 |
 | `CatalogStore` | `registry-service/src/stores/catalog-store.ts:4-19` | id당 가변 blob 1개, 이력·parent 없음 |
@@ -117,7 +117,7 @@ role: audit
 | CON-005 | `ingest-server/src/lib/convergence-pipeline.ts:474-487` | `'CON-005'` 문자열 하드코딩, 오류 삼킴 |
 | PolicyCandidate | `decision-flow/src/policy-learning.ts:31,85` | `extends FlowPolicy`, in-memory Map, 영속화 없음 |
 | TransitionRegistry | `spec-transition/src/transition.registry.ts:13` | 유일한 version-aware 레지스트리 |
-| BROWSER_CATALOG 생성 | `viz-3d/scripts/generate-browser-catalog.ts` (viz-3d `prebuild`) | `core/src/catalog/browser-flatten.ts`를 import하지 않고 재구현. `BrowserCatalog` 타입 3벌 |
+| BROWSER_CATALOG 생성 | `viz-3d/scripts/generate-browser-catalog.ts` (viz-3d `prebuild`) | `core/src/catalog/browser-flatten.ts`를 import하지 않고 재구현. `BrowserCatalog` 타입 3벌 → **Track D: core import로 교체, drift는 `pnpm codegen:check`·`.github/workflows/codegen-drift.yml` (X-8)** |
 | codegen CLI | `cli/src/commands/codegen.ts:124-201` | `maybeWriteCodegenArtifactRegistryRecords` provenance hook 존재 (재사용 후보) |
 | drift 검사 | `scripts/tax-codegen-drift.mjs` (`pnpm tax:ci`) | taxonomy 전용. workflow 미연결. Catalog drift 검사 템플릿으로 재사용 가능 |
 | ADR | `docs/architecture-decisions.md` | ADR-009가 마지막. 다음 번호 ADR-010 |
@@ -147,10 +147,10 @@ viz-3d/scripts ──► browser-codec/src/demo-catalog-browser.ts (생성물 �
 | X-2 | `convergence/src/dkg-types.ts` 헤더가 존재하지 않는 `spec-core/src/dkg/dkg.types.ts`를 원본으로 표기 ✅ | **정리 완료** (주석 정정) | – |
 | X-3 | DecodeMap 빌더 2벌 + shape 기준 불일치 | ✅ **Track A 처리**: core `layoutToDecodeMap` 단일화, registry·worker 위임 (R-1 해소) | A |
 | X-4 | 주소 파서 9벌 | core 2벌은 ✅ 단일화(`parsePackedAddress` → `parseSerializedAddress`). weighted-index·address-index·browser-sdk·index-meta 파서는 남음 | A (후속) |
-| X-5 | `latestPrefixVersion` 재구현 4곳 | ✅ context·dkg 교체. `core/catalog/browser-flatten.ts`는 Track D 소유로 남음 | A, D |
+| X-5 | `latestPrefixVersion` 재구현 4곳 | ✅ context·dkg 교체. ✅ `core/catalog/browser-flatten.ts`도 Track D에서 runtime `latestPrefixVersion` 사용으로 교체 | A, D |
 | X-6 | QAPB 프레임 구현 2벌 + proto 필드 레이아웃 3벌 | 필드 번호 정본 결정 후 정합 | B |
-| X-7 | `computeCatalogHash` 불완전·비결정 + registry 해시 별도 알고리즘 | T0 `computeCatalogDigest`로 통일 | D (codegen), B (registry) |
-| X-8 | browser catalog 생성기 재구현 + `BrowserCatalog` 타입 3벌 | 생성기는 core `flattenForBrowser` 사용 | D (생성기·core 타입), A (browser-codec import 교체) |
+| X-7 | `computeCatalogHash` 불완전·비결정 + registry 해시 별도 알고리즘 | ✅ **Track D 처리 (codegen)**: `computeCatalogHash` 삭제, `generateCatalogTypes`(async)가 `catalogDigest = computeCatalogDigest(catalog)`, `contentHash`·`GENERATION` = `shortDigest(catalogDigest)`, drift용 `sourceDigest = digestCanonical({catalog, dkgConfig, generator, options})`를 헤더(전체 64 hex)·`VERSION_META`·CLI provenance metadata에 기록. 헤더 시각 제거, `localeCompare` 정렬 제거 → 같은 입력이면 같은 바이트. **남은 일 (B)**: registry `health.controller.ts:49`는 아직 `sha256(catalog.data)` 12 hex라 `GENERATION`과 다름 — B Task 4에서 `shortDigest(computeCatalogDigest)`로 교체해야 SDK 비교가 일치 | D (codegen) ✅, B (registry) |
+| X-8 | browser catalog 생성기 재구현 + `BrowserCatalog` 타입 3벌 | ✅ **Track D 처리 (생성기·core)**: viz-3d 생성기의 재구현·로컬 타입 삭제, `@qa-sdk/core` `flattenForBrowser`·`browserCatalogSnapshotOf` import (viz-3d devDependency 추가). core `flattenForBrowser`는 버전 labels(D-8) 순서로 차원을 고정. 생성물은 `BROWSER_CATALOG_SNAPSHOT`(`catalog_id`·전체 `digest`·`codec_version`)과 `generate-browser-catalog@<viz-3d version>` 헤더를 가짐. 착수 시점 커밋본 `BROWSER_CATALOG`는 `flattenForBrowser(DEMO_CATALOG)`와 이미 동치였다(drift 없음, 테스트로 고정). **남은 일 (A)**: `browser-codec/src/browser-codec.ts:33`의 `BrowserCatalog` 사본 교체 — 단 browser-codec은 의존성 0인 패키지라 core import 대신 구조 동치 테스트로 고정하는 방안도 검토 | D ✅, A (browser-codec 타입) |
 | X-9 | `stores/store-factory.ts` 미사용 | D-3 | E |
 | X-10 | `server.ts` 미전달 transition 초기화 | D-5 (배선 or 제거) | E |
 | X-11 | convergence timer 2개 | D-4 | E |
@@ -158,7 +158,7 @@ viz-3d/scripts ──► browser-codec/src/demo-catalog-browser.ts (생성물 �
 | X-13 | `QaLogger` ↔ `IngestForwarder` batching 중복 | G2에서 공용 buffer로 통합 | G2 |
 | X-14 | `convergence/src/dkg-types.ts` 타입 사본(`metadata` 누락으로 drift) | **Track F 처리**: `metadata`·`provenance` 동기화, `dkg-enrichment/src/type-drift.test.ts`가 `toEqualTypeOf`로 고정 (`test` 스크립트에 `tsc --noEmit`) | F |
 | X-15 | `scaffoldDecision` 2벌 (`dkg`, `convergence`), dkg ↔ dkg-enrichment skills 근사 중복 | **판정 완료 (§5.1)**: `scaffoldDecision` 정본 = `dkg`, skills 정본 = `dkg-enrichment`. 이동·삭제는 G3 | F → G3 |
-| X-16 | `data-object-codegen` 패키지 소비처 0건, `event-catalog/src/track-codegen.ts` ↔ `codegen-core` 중복 | 제거 여부 결정 (공개 API 영향 확인 필요) | D |
+| X-16 | `data-object-codegen` 패키지 소비처 0건, `event-catalog/src/track-codegen.ts` ↔ `codegen-core` 중복 | ✅ **판정 기록 (§5.2)**: 둘 다 제거 후보. 삭제는 사람 결정 대기 | D → 결정 대기 |
 | X-17 | `runConvergenceAnalysis`, `transitionFlushToMetrics`, `aggregateTransitionResults` 프로덕션 호출 0건 | G3에서 incremental 진입점으로 흡수 또는 제거. `runConvergenceAnalysis`는 Track F에서 `clock` 옵션을 받으므로 흡수 시 그대로 재사용 가능 | G3 |
 
 X-1, X-2 외 항목은 동작이나 공개 API를 바꾸므로 담당 트랙에서 테스트와 함께 처리한다.
@@ -173,6 +173,17 @@ X-1, X-2 외 항목은 동작이나 공개 API를 바꾸므로 담당 트랙에�
 | skills `converge-chain`, `coverage-audit`, `flow-trace` | `dkg` 판은 convergence 분석기를 import하지 않고 로컬 근사 재구현 (헤더에 명시). `dkg-enrichment` 판은 `@qa-sdk/convergence` 분석기(`scanAxisOverlaps`, `analyzeSimplification`, `discoverCausality`, `analyzeDeploymentSkew`, `analyzeEntryCoverage`)를 호출. `resolveRecoveredFlowObservations`는 `dkg` 판에만 있음 | **`dkg` 판만 프로덕션 사용**: CLI `commands/dkg.ts`가 `from 'dkg'`로 import, ingest-server는 `@qa-sdk/spec-core/dkg`(= `export * from 'dkg'`) 경유 `traceFlows`·`resolveRecoveredFlowObservations`. `dkg-enrichment` 판은 자체 테스트(`operational-loop`, `converge-review`, `converge-chain`)에서만 호출. 외부 패키지는 `dkg-enrichment`에서 `bootstrapDkg`만 import | **정본 = `dkg-enrichment`** (분석 로직은 convergence 단일 구현을 써야 G3 cache key·differential test가 의미를 가짐. `dkg`는 graph·store tier로 남김). `dkg` 판은 deprecated 후보 | ① `resolveRecoveredFlowObservations`를 `dkg-enrichment`로 이식 ② `dkg` 판 vs `dkg-enrichment` 판 differential test(같은 graph·usage fixture)로 출력 차이 목록화 ③ CLI·ingest-server import를 `dkg-enrichment`로 전환 (ingest-server·cli·spec-core는 이미 `dkg-enrichment` 의존 선언) ④ `dkg/src/skills/{converge-chain,coverage-audit,flow-trace}.ts`와 `dkg/src/index.ts` export 제거 |
 
 Track F에서는 코드를 옮기지 않았다.
+
+### 5.2 X-16 제거 판정 (Track D Task 5, HEAD `d4f9b650` 기준)
+
+조사: `grep -rn "data-object-codegen\|track-codegen" packages apps scripts` (`*.ts`·`*.tsx`·`*.mjs`·`package.json`, node_modules·dist 제외), `generateTrackCode`·`summarizeMappings` import 탐색, `scripts/publish-local.sh` `PACKAGES` 목록.
+
+| 대상 | 코드 소비처 | 문자열 참조 (코드 아님) | 외부 배포 | 중복 관계 | 판정 |
+|---|---|---|---|---|---|
+| `packages/data-object-codegen` (`generateDataObjectBindings`, 688줄) | **0건** — 어떤 `package.json`도 의존하지 않음. CLI `codegen data-objects`는 `codegen-core`의 같은 이름 함수(167줄, 다른 구현)를 쓴다 | `demo-snapshot` axis entry·`demo-types` 생성물(정의 ID `'data-object-codegen'`), CLI `ownerDefinitionId` 기본값, `scripts/package-surfaces.mjs:237` (`spec-analysis-kernel` 그룹, verdict `keep`), `verify-analysis-os.ts`의 spec 경로 | Verdaccio `publish-local.sh` 목록에 없음 → 외부 npm 소비 없음 | 같은 이름·다른 출력의 구현 2벌. 정본은 CLI가 쓰는 `codegen-core` | **제거 후보**. 삭제 시 `package-surfaces.mjs`에서 항목 제거, 정의 ID 문자열은 개념(definition) 이름이라 유지. 688줄 판의 추가 기능이 필요하면 `codegen-core`로 이식 후 삭제 |
+| `event-catalog/src/track-codegen.ts` (`generateTrackCode`, `summarizeMappings`, 141줄) | **0건** — `@qa-sdk/event-catalog` 의존 8개 패키지 중 두 함수를 import하는 곳 없음 (자체 테스트만) | `docs/specs/meta-semantic/interface/event-track-codegen.spec.md` (`verify-analysis-os.ts`가 경로 참조) | `@qa-sdk/event-catalog`도 `publish-local.sh` 목록에 없음 | `codegen-core/src/event-track-typescript.ts`(445줄)에 같은 이름 `generateTrackCode`가 있고 `codegen-core` index에서 공개 | **제거 후보**. `@qa-sdk/event-catalog` index의 공개 export 3개(`generateTrackCode`, `summarizeMappings`, `TrackCodegenOptions`)가 사라지는 breaking change이나 workspace 내 소비처 0건 |
+
+Track D에서는 삭제하지 않았다. 삭제 여부는 사람이 결정한다.
 
 ## 6. 정리 완료 내역
 

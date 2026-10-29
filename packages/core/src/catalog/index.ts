@@ -56,8 +56,13 @@ export type {
 } from './dkg-config.types.js';
 
 // ── Browser Flatten ───────────────────────────────────────────
-export type { BrowserDimDef, BrowserPrefixDef, BrowserCatalog } from './browser-flatten.js';
-export { flattenForBrowser } from './browser-flatten.js';
+export type {
+  BrowserDimDef,
+  BrowserPrefixDef,
+  BrowserCatalog,
+  BrowserCatalogSnapshot,
+} from './browser-flatten.js';
+export { flattenForBrowser, browserCatalogSnapshotOf } from './browser-flatten.js';
 
 // ── Runtime (Catalog Accessors) ──────────────────────────────
 export {

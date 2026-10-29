@@ -19,6 +19,7 @@
     "three": "^0.170.0"
   },
   "devDependencies": {
+    "@qa-sdk/core": "workspace:*",
     "demo-snapshot": "workspace:*",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",

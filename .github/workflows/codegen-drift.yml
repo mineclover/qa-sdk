@@ -1,0 +1,60 @@
+name: codegen drift
+
+# 커밋된 catalog 생성물(demo-types, BROWSER_CATALOG)이 source와 바이트 단위로 일치하는지 검사한다.
+# 생성기를 다시 실행해 비교하므로 해시 lockfile이 없다. 실패 시 `pnpm codegen:update` 후 커밋.
+
+on:
+  pull_request:
+    paths:
+      - 'packages/demo-snapshot/**'
+      - 'packages/demo-dkg-config/**'
+      - 'packages/config-loader/**'
+      - 'packages/codegen-core/**'
+      - 'packages/core/src/catalog/**'
+      - 'packages/cli/src/commands/codegen.ts'
+      - 'packages/demo-types/src/**'
+      - 'packages/browser-codec/src/demo-catalog-browser.ts'
+      - 'packages/viz-3d/scripts/**'
+      - 'packages/viz-3d/package.json'
+      - 'scripts/catalog-codegen-drift.mjs'
+      - '.oxfmtrc.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/codegen-drift.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: codegen-drift-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          # 생성기 입력은 private submodule에 없다
+          submodules: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.28.6 --activate
+
+      - name: Install dependencies
+        run: pnpm install --filter '@qa-sdk/cli...' --filter '@qa-sdk/viz-3d...' --frozen-lockfile
+
+      - name: Build codegen chain
+        run: pnpm --workspace-concurrency=1 --filter '@qa-sdk/cli...' run build
+
+      - name: Check codegen drift
+        run: node scripts/catalog-codegen-drift.mjs

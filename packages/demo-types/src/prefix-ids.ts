@@ -1,4 +1,5 @@
-// Generated from Catalog "demo" (hash: 9bf649aab9a4) at 2026-06-03T23:14:15
+// Generated from Catalog "demo" (hash: cc012d402486) by codegen-core@0.1.0
+// catalogDigest: sha256:cc012d402486255e232f4dc53651d0299cf66098a91e0f1c0ed986e4797c2789 · sourceDigest: sha256:4fe36cb1b82c6248c9f2fc7d564b0d06d008cf2ed00bc6610fd5649a1e6cd545
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 /** Catalog prefix 이름 리터럴 유니온 (68개) */
@@ -435,10 +436,14 @@ export const TABLE_IDS = [
 export const VERSION_META = {
   /** Catalog ID */
   catalogId: 'demo' as const,
-  /** Catalog 구조 content hash (SHA-256 prefix 12자) */
-  contentHash: '9bf649aab9a4' as const,
-  /** 생성 시각 (ISO 8601) */
-  generatedAt: '2026-06-03T23:14:15.219Z' as const,
+  /** 표시용 catalog 식별자 (shortDigest(catalogDigest), 12 hex) */
+  contentHash: 'cc012d402486' as const,
+  /** Catalog 전체 digest (sha256:<64 hex>) */
+  catalogDigest: 'sha256:cc012d402486255e232f4dc53651d0299cf66098a91e0f1c0ed986e4797c2789' as const,
+  /** 좌표 codec 버전 */
+  codecVersion: 'legacy-v1' as const,
+  /** 생성기 식별자 (name@version) */
+  generator: 'codegen-core@0.1.0' as const,
   /** prefix별 version (생성 시점 기준) */
   prefixVersions: {
     auth_event: 'v2',
@@ -513,4 +518,4 @@ export const VERSION_META = {
 } as const;
 
 /** GENERATION — 빌드 시점 version 식별자. SDK 부트 시 전달. */
-export const GENERATION = 'demo:9bf649aab9a4' as const;
+export const GENERATION = 'demo:cc012d402486' as const;

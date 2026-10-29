@@ -9,6 +9,7 @@ export {
   type CatalogCodegenOptions,
   type MigrationTestResult,
 } from './catalog-typescript.js';
+export { GENERATOR_NAME, GENERATOR_VERSION } from './generator-info.js';
 export { toUpperSnake, toPascal, toConstKey, toEnumValue, toTsConstKey } from './naming.js';
 export type { SchemaSnapshot, Axis, Composite, SnapshotSupply } from './types.js';
 export {
