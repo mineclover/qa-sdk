@@ -15,9 +15,11 @@ import {
 } from '@qa-sdk/store';
 import type { TaskPayload } from '@qa-sdk/core';
 import { InMemoryTaskQueue } from './in-memory-task-queue.js';
+import { createMetricsCollector } from './metrics-collector.js';
 import {
   buildReconstructionTask,
   buildVerdictTask,
+  PHASE_TWO_FAILURES_METRIC,
   PHASE_TWO_TASK_QUEUE_OPTIONS,
   processPhaseTwoTask,
   processPendingPhaseTwo,
@@ -212,6 +214,27 @@ describe('processPhaseTwoTask', () => {
       },
       'phase-two job failed',
     );
+  });
+
+  it('job 실패를 stage label이 붙은 counter로 기록한다', async () => {
+    const deps = createWorkerDeps();
+    const metricsCollector = createMetricsCollector();
+    await seedPendingTrace(deps, 'trace_fail_metric');
+    vi.spyOn(deps.graphStore, 'upsert').mockRejectedValue(new Error('boom'));
+
+    await expect(
+      processPhaseTwoTask(buildReconstructionTask('trace_fail_metric'), {
+        ...deps,
+        logger: createLoggerMock(),
+        metricsCollector,
+      }),
+    ).rejects.toThrow('boom');
+    expect(metricsCollector.snapshot()).toContainEqual({
+      name: PHASE_TWO_FAILURES_METRIC,
+      type: 'counter',
+      labels: { stage: 'reconstruction' },
+      value: 1,
+    });
   });
 });
 

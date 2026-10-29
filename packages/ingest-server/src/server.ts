@@ -50,6 +50,7 @@ import { installCleanupScheduler } from './lib/cleanup-scheduler.js';
 import { installGracefulShutdown } from './lib/graceful-shutdown.js';
 import { InMemoryDebugStore } from './lib/in-memory-debug-store.js';
 import { createLogger } from './lib/logger.js';
+import { createMetricsCollector } from './lib/metrics-collector.js';
 import { registerTaskQueueWorker } from './lib/phase-two-worker.js';
 import { RecordStreamBroker } from './lib/record-stream-broker.js';
 import { resolveRuntimeMode } from './lib/runtime-mode.js';
@@ -127,6 +128,7 @@ async function startServer() {
     dlqStore: stores.dlqStore,
     logger,
   });
+  const metricsCollector = createMetricsCollector();
 
   // ── Convergence Pipeline (optional) ──────────────────
   let convergencePipeline: ConvergencePipelineRunner | undefined;
@@ -209,6 +211,7 @@ async function startServer() {
           catalogProvider: () => graphProvider.getCatalog() as Catalog,
           dkgStore: graphProvider.getDkgStore() ?? undefined,
           logger,
+          metrics: metricsCollector,
         },
         {
           recordThreshold: env.CONVERGENCE_RECORD_THRESHOLD,
@@ -295,9 +298,6 @@ async function startServer() {
   } catch {
     logger.warn('catalog validator 초기화 실패 — event/prefix 검증 비활성화');
   }
-
-  const { createMetricsCollector } = await import('./lib/metrics-collector.js');
-  const metricsCollector = createMetricsCollector();
 
   // ── InsightsStore (INSIGHTS_DRIVER 기반 선택) ────────
   let insightsStore: InsightsStore | undefined;

@@ -30,6 +30,10 @@ import type {
   ObservationNode,
 } from '@qa-sdk/convergence';
 import type { Logger } from 'pino';
+import type { MetricsCollector } from './metrics-collector.js';
+
+/** convergence 버퍼에 쌓인 trace 수 gauge */
+export const CONVERGENCE_BUFFER_DEPTH_METRIC = 'convergence_buffer_depth';
 
 // ── 동적 import 대상 함수 시그니처 (구체 타입) ─────────
 
@@ -171,6 +175,8 @@ export interface ConvergencePipelineDeps {
   catalogProvider: () => Catalog;
   dkgStore?: DkgStorePort;
   logger?: Logger;
+  /** 버퍼 depth gauge (optional) */
+  metrics?: Pick<MetricsCollector, 'setGauge'>;
 }
 
 export interface PatternFlushResult {
@@ -245,6 +251,8 @@ export class ConvergencePipelineRunner {
       this.buffer.push(id);
     }
 
+    this.reportBufferDepth();
+
     if (this.buffer.length >= this.config.recordThreshold) {
       void this.flush().catch((err) => {
         this.deps.logger?.error({ err }, 'convergence threshold flush failed');
@@ -262,6 +270,7 @@ export class ConvergencePipelineRunner {
     // 버퍼 스왑 (flush 중 새 notification 수용)
     const traceIds = this.buffer;
     this.buffer = [];
+    this.reportBufferDepth();
 
     try {
       return await this.runPipeline(traceIds);
@@ -294,6 +303,10 @@ export class ConvergencePipelineRunner {
   }
 
   // ── Private ────────────────────────────────────────
+
+  private reportBufferDepth(): void {
+    this.deps.metrics?.setGauge(CONVERGENCE_BUFFER_DEPTH_METRIC, this.buffer.length);
+  }
 
   /** 이전 윈도우의 패턴 통계 (비율 비교용) */
   private previousPatternStats: PatternStats[] = [];

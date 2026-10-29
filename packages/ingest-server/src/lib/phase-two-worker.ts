@@ -18,6 +18,7 @@ import {
 import { computePendingVerdicts, reconstructPendingTraces } from '@qa-sdk/engine';
 import { aggregateMetrics } from './metric-aggregator.js';
 import { decodeAddressContext } from './decode-client.js';
+import type { MetricsCounterPort } from './metrics-collector.js';
 import type { Logger } from 'pino';
 
 export const PHASE_TWO_TASK_QUEUE_OPTIONS = {
@@ -55,7 +56,25 @@ export interface PhaseTwoWorkerDeps {
   /** decode-service URL — 설정 시 address_context 디코딩에 외부 서비스 사용 */
   decodeServiceUrl?: string;
   logger?: Logger;
+  /** Phase 2 단계 실패·decode skip counter (optional) */
+  metricsCollector?: MetricsCounterPort;
   taskQueue?: TaskQueue<TaskPayload>;
+}
+
+/** Phase 2 실패 counter 이름 — label `stage`로 단계를 구분한다 */
+export const PHASE_TWO_FAILURES_METRIC = 'phase_two_failures_total';
+/** decode-service 응답이 없어 로컬 decode로 대체한 횟수 */
+export const DECODE_SKIPPED_METRIC = 'decode_skipped_total';
+
+export type PhaseTwoStage =
+  | 'reconstruction'
+  | 'verdict'
+  | 'metric_aggregation'
+  | 'transition'
+  | 'convergence';
+
+function countFailure(deps: Pick<PhaseTwoWorkerDeps, 'metricsCollector'>, stage: PhaseTwoStage) {
+  deps.metricsCollector?.increment(PHASE_TWO_FAILURES_METRIC, { stage });
 }
 
 export function buildReconstructionTask(traceId: string): TaskPayload {
@@ -101,6 +120,7 @@ export async function processPhaseTwoTask(
       'phase-two job completed',
     );
   } catch (error) {
+    countFailure(deps, task.phase);
     deps.logger?.error(
       {
         err: error,
@@ -123,6 +143,7 @@ export async function processPendingPhaseTwo(deps: PhaseTwoWorkerDeps): Promise<
     },
     {
       onError: (traceId, error) => {
+        countFailure(deps, 'reconstruction');
         deps.logger?.error(
           {
             err: error,
@@ -155,6 +176,7 @@ export async function processPendingPhaseTwo(deps: PhaseTwoWorkerDeps): Promise<
     reconstructResult.reconstructedTraceIds,
     {
       onError: (traceId, error) => {
+        countFailure(deps, 'verdict');
         deps.logger?.error(
           {
             err: error,
@@ -184,6 +206,9 @@ export async function processPendingPhaseTwo(deps: PhaseTwoWorkerDeps): Promise<
           let decoded: Record<string, string> | undefined;
           if (deps.decodeServiceUrl) {
             const result = await decodeAddressContext(deps.decodeServiceUrl, ctx);
+            if (!result) {
+              deps.metricsCollector?.increment(DECODE_SKIPPED_METRIC);
+            }
             if (result) {
               decoded = {};
               for (const [k, v] of Object.entries(result)) {
@@ -220,6 +245,7 @@ export async function processPendingPhaseTwo(deps: PhaseTwoWorkerDeps): Promise<
         }
       }
     } catch (error) {
+      countFailure(deps, 'transition');
       deps.logger?.error(
         { err: error },
         'transition matching failed (Phase 2.5) — verdict unaffected',
@@ -232,6 +258,7 @@ export async function processPendingPhaseTwo(deps: PhaseTwoWorkerDeps): Promise<
     try {
       deps.convergencePipeline.notifyCompletion(reconstructResult.reconstructedTraceIds);
     } catch (error) {
+      countFailure(deps, 'convergence');
       deps.logger?.error({ err: error }, 'convergence notification failed');
     }
   }
@@ -270,6 +297,7 @@ async function aggregateMetricsForPendingTraces(deps: PhaseTwoWorkerDeps): Promi
         'metric aggregation completed',
       );
     } catch (error) {
+      countFailure(deps, 'metric_aggregation');
       deps.logger?.error({ err: error, traceId: trace.traceId }, 'metric aggregation failed');
     }
   }

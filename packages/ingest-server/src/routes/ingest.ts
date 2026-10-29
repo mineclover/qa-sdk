@@ -32,6 +32,7 @@ import {
   type ConvergencePipelinePort,
 } from '../lib/phase-two-worker.js';
 import type { CatalogValidator } from '../lib/catalog-validator.js';
+import type { MetricsCollector } from '../lib/metrics-collector.js';
 import { extractKeyObservations } from '../lib/extract-key-observations.js';
 
 export type RegistryValidationMode = 'strict' | 'warn' | 'off';
@@ -60,7 +61,7 @@ export interface IngestDeps {
   withTraceTransaction?: TraceTransactionRunner;
   taskQueue?: TaskQueue<TaskPayload>;
   convergencePipeline?: ConvergencePipelinePort;
-  metricsCollector?: { inc(name: string, labels?: Record<string, string>, delta?: number): void };
+  metricsCollector?: Pick<MetricsCollector, 'inc' | 'increment'>;
   logger?: Logger;
   /** 건전성 검증용 prefix 메타 (설정 시 address_context 건전성 검증 활성화) */
   knownPrefixes?: ReadonlySet<string>;

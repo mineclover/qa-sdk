@@ -3,12 +3,14 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
+  CONVERGENCE_BUFFER_DEPTH_METRIC,
   ConvergencePipelineRunner,
   type ConvergencePipelineDeps,
   type ConvergenceFunctions,
   type PatternFunctions,
   type DkgStorePort,
 } from './convergence-pipeline.js';
+import { createMetricsCollector } from './metrics-collector.js';
 
 // ── Mock Factories ──────────────────────────────────
 
@@ -178,6 +180,20 @@ describe('ConvergencePipelineRunner', () => {
 
   afterEach(async () => {
     await pipeline?.close();
+  });
+
+  it('버퍼 depth gauge를 notify·flush 시점에 갱신한다', async () => {
+    const metrics = createMetricsCollector();
+    const deps = createDeps({ metrics });
+    pipeline = new ConvergencePipelineRunner(deps, { recordThreshold: 999 });
+    const depth = () =>
+      metrics.snapshot().find((s) => s.name === CONVERGENCE_BUFFER_DEPTH_METRIC)?.value;
+
+    pipeline.notifyCompletion(['t1', 't2']);
+    expect(depth()).toBe(2);
+
+    await pipeline.flush();
+    expect(depth()).toBe(0);
   });
 
   it('threshold 도달 시 자동 flush', async () => {
