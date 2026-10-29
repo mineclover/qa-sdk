@@ -158,13 +158,18 @@ export interface DkgSqliteStoreConstructor {
 
 // ── Analysis Module (동적 import 결과) ──────────────────
 
-export interface AnalysisModulePort {
+/** `import('dkg-enrichment')` 결과 중 실제로 쓰는 부분 */
+export interface DkgBootstrapPort {
   bootstrapDkg(options: {
     catalog: CatalogPort;
     config: DkgConfigPort;
     date?: string;
     transitionSpecs?: readonly TransitionSpecPort[];
   }): GraphRegistryPort;
+}
+
+/** dev 대시보드용 — DKG bootstrap(dkg-enrichment) + metric 분석(@qa-sdk/convergence)을 묶은 포트 */
+export interface AnalysisModulePort extends DkgBootstrapPort {
   collectMetrics(
     catalog: CatalogPort,
     graph: GraphRegistryPort,

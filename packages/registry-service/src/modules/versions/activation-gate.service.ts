@@ -11,8 +11,8 @@ import {
 } from '../../lib/activation-gate-adapter.js';
 import { createLogger } from '../../lib/logger.js';
 import type {
-  AnalysisModulePort,
   CatalogPort,
+  DkgBootstrapPort,
   DkgConfigPort,
   PropagationModulePort,
 } from '../../types/spec-core-ports.js';
@@ -27,7 +27,7 @@ export interface BuildActivationGateOptions {
   mode?: 'strict' | 'warn';
   logger?: Logger;
   loadPropagationModule?: () => Promise<PropagationModulePort>;
-  loadAnalysisModule?: () => Promise<AnalysisModulePort>;
+  loadAnalysisModule?: () => Promise<DkgBootstrapPort>;
   loadDemoSnapshot?: () => Promise<DemoSnapshotModulePort>;
 }
 
@@ -47,7 +47,7 @@ export async function buildActivationGatePort(
       )(),
       (
         options.loadAnalysisModule ??
-        (async () => import('dkg-enrichment') as unknown as AnalysisModulePort)
+        (async (): Promise<DkgBootstrapPort> => import('dkg-enrichment'))
       )(),
       (
         options.loadDemoSnapshot ??
