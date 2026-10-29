@@ -4,7 +4,7 @@
 import type { StoredRecord } from '@qa-sdk/core';
 import {
   DEFAULT_DEBUG_STORE_MAX_ENTRIES,
-  resolveDebugStoreTtlMs,
+  DEFAULT_DEBUG_STORE_TTL_MS,
   type DebugStore,
 } from './debug-store.js';
 
@@ -26,7 +26,7 @@ export class InMemoryDebugStore implements DebugStore {
 
   constructor(options: InMemoryDebugStoreOptions = {}) {
     this.defaultTtlMs = normalizePositiveInteger(
-      options.ttlMs ?? resolveDebugStoreTtlMs(),
+      options.ttlMs ?? DEFAULT_DEBUG_STORE_TTL_MS,
       'ttlMs',
     );
     this.maxEntries = normalizePositiveInteger(

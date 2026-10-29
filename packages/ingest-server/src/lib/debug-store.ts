@@ -25,19 +25,3 @@ const noopDebugStore: DebugStore = {
 export function createNoopDebugStore(): DebugStore {
   return noopDebugStore;
 }
-
-export function resolveDebugStoreTtlMs(source: NodeJS.ProcessEnv = process.env): number {
-  const rawValue = source.DEBUG_STORE_TTL_MS;
-
-  if (rawValue === undefined || rawValue.trim().length === 0) {
-    return DEFAULT_DEBUG_STORE_TTL_MS;
-  }
-
-  const ttlMs = Number(rawValue);
-
-  if (!Number.isInteger(ttlMs) || ttlMs <= 0) {
-    throw new Error('DEBUG_STORE_TTL_MS must be a positive integer');
-  }
-
-  return ttlMs;
-}

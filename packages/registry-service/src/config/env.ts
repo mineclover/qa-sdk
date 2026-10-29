@@ -29,7 +29,6 @@ export const envSchema = z
     ),
     CONSTRAINT_GATE_ENABLED: booleanWithDefaultFalse,
     CONSTRAINT_GATE_MODE: z.enum(['strict', 'warn']).default('warn'),
-    CONSTRAINT_GATE_DKG_PATH: z.string().optional(),
     POST_ACTIVATION_HOOK_ENABLED: booleanWithDefaultFalse,
     POST_ACTIVATION_DKG_PATH: z.string().optional(),
     /** Dev Dashboard — DKG_PATH가 있으면 자동 활성화 */

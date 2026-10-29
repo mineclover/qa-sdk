@@ -8,7 +8,7 @@
  * CF Worker와 동일한 라우팅 로직 사용.
  *
  * 실행: node --loader tsx gateway/server.ts
- * 환경변수: AUTH_MODE, REGISTRY_URL, INGEST_URL 등
+ * 환경변수: config/env.ts (zod) — AUTH_MODE, GATEWAY_ENV, 서비스 URL 등
  */
 
 import { serve } from '@hono/node-server';
@@ -17,19 +17,21 @@ import { cors } from 'hono/cors';
 import { JwksVerifier } from './lib/jwks-verifier.js';
 import { getRoutePermission, checkPermission } from './lib/route-permissions.js';
 import { GATEWAY_ROUTES, GATEWAY_SERVICES, matchRoute, targetPath } from './lib/route-table.js';
+import { parseEnv } from './config/env.js';
 
 const app = new Hono();
 
 // ── 환경변수 ────────────────────────────────────────
 
-const AUTH_MODE = process.env.AUTH_MODE ?? 'bypass';
-const REGISTRY_URL = process.env.REGISTRY_URL ?? 'http://localhost:3300';
-const PORT = parseInt(process.env.PORT ?? '8787');
-const GATEWAY_ENV = process.env.GATEWAY_ENV ?? 'dev'; // dev | staging | prod — ScopedEngine env 분리
+const env = parseEnv(process.env);
+const AUTH_MODE = env.AUTH_MODE;
+const REGISTRY_URL = env.REGISTRY_URL;
+const PORT = env.PORT;
+const GATEWAY_ENV = env.GATEWAY_ENV; // dev | staging | prod — ScopedEngine env 분리
 
 // ── JWKS 검증기 ────────────────────────────────────────
 
-const JWKS_URL = process.env.JWKS_URL; // e.g., "http://localhost:8085/oauth/v2/keys"
+const JWKS_URL = env.JWKS_URL; // e.g., "http://localhost:8085/oauth/v2/keys"
 const JWKS_VERIFIER = JWKS_URL ? new JwksVerifier(JWKS_URL) : null;
 if (JWKS_VERIFIER) {
   console.log(`[gateway] JWKS 서명 검증 활성: ${JWKS_URL}`);
@@ -41,7 +43,7 @@ if (JWKS_VERIFIER) {
 // Zitadel Action의 metadata 주입이 불안정하므로,
 // enrichment 서버가 발급한 HS256 JWT도 검증한다.
 
-const ENRICHMENT_JWT_SECRET = process.env.ENRICHMENT_JWT_SECRET;
+const ENRICHMENT_JWT_SECRET = env.ENRICHMENT_JWT_SECRET;
 if (ENRICHMENT_JWT_SECRET) {
   console.log(`[gateway] Enrichment JWT (HS256) 검증 활성`);
 }
@@ -87,9 +89,9 @@ async function verifyHS256(token: string, secret: string): Promise<Record<string
 
 // ── Zitadel Metadata / Enrichment Fallback ────────────
 
-const ZITADEL_URL = process.env.ZITADEL_URL; // e.g., "http://localhost:8085"
-const ZITADEL_SERVICE_TOKEN = process.env.ZITADEL_SERVICE_TOKEN; // admin PAT for metadata API
-const ENRICHMENT_URL = process.env.ENRICHMENT_URL; // e.g., "http://localhost:3900"
+const ZITADEL_URL = env.ZITADEL_URL; // e.g., "http://localhost:8085"
+const ZITADEL_SERVICE_TOKEN = env.ZITADEL_SERVICE_TOKEN; // admin PAT for metadata API
+const ENRICHMENT_URL = env.ENRICHMENT_URL; // e.g., "http://localhost:3900"
 
 interface PermsResult {
   perms: unknown;
@@ -169,7 +171,7 @@ async function fetchPermsFromZitadel(userId: string): Promise<PermsResult | null
 
 function serviceUrl(service: keyof typeof GATEWAY_SERVICES): string {
   const target = GATEWAY_SERVICES[service];
-  return process.env[target.urlEnv] ?? target.defaultUrl;
+  return (env as Record<string, string | undefined>)[target.urlEnv] ?? target.defaultUrl;
 }
 
 // ── 동적 라우팅 (registry 기반) ─────────────────────
@@ -188,8 +190,7 @@ async function getRoutes(): Promise<GatewayRoute[]> {
   if (dynamicRoutes && now < routesCacheExpiry) return dynamicRoutes;
 
   try {
-    const env = AUTH_MODE === 'bypass' ? 'dev' : 'prod';
-    const resp = await fetch(`${REGISTRY_URL}/api/services/gateway?env=${env}`, {
+    const resp = await fetch(`${REGISTRY_URL}/api/services/gateway?env=${GATEWAY_ENV}`, {
       signal: AbortSignal.timeout(3_000),
     });
     if (resp.ok) {
@@ -235,7 +236,7 @@ app.use('*', async (c, next) => {
   if (AUTH_MODE === 'api-key') {
     const auth = c.req.header('Authorization');
     if (!auth?.startsWith('Bearer ')) return c.json({ error: 'Unauthorized' }, 401);
-    const keys = (process.env.AUTH_API_KEYS ?? '').split(',').map((k) => k.trim());
+    const keys = (env.AUTH_API_KEYS ?? '').split(',').map((k) => k.trim());
     if (!keys.includes(auth.slice(7))) return c.json({ error: 'Forbidden' }, 403);
     c.set('identity', `key:${auth.slice(7, 15)}`);
     return next();

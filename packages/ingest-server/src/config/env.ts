@@ -13,6 +13,7 @@ import {
   getServiceDevUrl,
 } from '@qa-sdk/core';
 import { otelEnvSchema } from '@qa-sdk/otel';
+import { DEFAULT_DEBUG_STORE_TTL_MS } from '../lib/debug-store.js';
 
 const DEFAULT_PORT = getRequiredServicePort('ingest-server');
 
@@ -83,6 +84,10 @@ export const envSchema = z
     RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
     RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(100),
     WORKER_CONCURRENCY: z.coerce.number().int().positive().default(5),
+    /** 실시간 디버그 store(최근 레코드) 보존 시간 (밀리초) */
+    DEBUG_STORE_TTL_MS: z.coerce.number().int().positive().default(DEFAULT_DEBUG_STORE_TTL_MS),
+    /** gRPC 디버그 서버 포트. 설정 시에만 활성화 */
+    GRPC_PORT: z.preprocess(emptyStringToUndefined, z.coerce.number().int().positive().optional()),
     REGISTRY_URL: z.preprocess(
       emptyStringToUndefined,
       z

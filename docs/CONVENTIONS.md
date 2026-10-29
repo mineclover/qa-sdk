@@ -462,6 +462,8 @@ DEV_DASHBOARD_ENABLED=true   # ~/.qa-sdk/state.sqlite 있으면 자동 활성화
 | `CONSTRAINT_GATE_ENABLED=true` | registry | 활성화 게이트 |
 | `SNAPSHOT_GATE_MODE=off\|warn\|enforce` | ingest | envelope `catalog_snapshot` 판정 (기본 `warn`, enforce는 위반 422) |
 | `SNAPSHOT_REGISTRY_URL` | ingest | snapshot 조회 registry (미설정 → `REGISTRY_URL`) |
+| `GRPC_PORT` | ingest | gRPC 디버그 서버 (설정 시 활성) |
+| `DECODE_MAP_REFRESH_MS` | decode | registry catalog digest 확인 주기 (기본 60000, 0이면 부팅 때만) |
 | `CORS_ORIGIN` | 전체 | 프론트엔드 도메인 제한 (기본 `*`) |
 
 ---

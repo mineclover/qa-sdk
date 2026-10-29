@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "tsup",
-    "test": "tsup && tsx scripts/route-permissions.test.ts && tsx scripts/route-table.test.ts",
+    "test": "tsup && tsx scripts/route-permissions.test.ts && tsx scripts/route-table.test.ts && tsx scripts/env.test.ts",
     "start": "node dist/server.js",
     "dev": "tsx server.ts",
     "dev:worker": "wrangler dev",
@@ -17,7 +17,8 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.14.1",
-    "hono": "^4.7.5"
+    "hono": "^4.7.5",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "tsup": "^8.5.1",

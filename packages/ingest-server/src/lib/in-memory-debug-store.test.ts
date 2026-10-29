@@ -3,7 +3,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { StoredRecord } from '@qa-sdk/core';
-import { DEFAULT_DEBUG_STORE_TTL_MS, resolveDebugStoreTtlMs } from './debug-store.js';
+import { DEFAULT_DEBUG_STORE_TTL_MS } from './debug-store.js';
 import { InMemoryDebugStore } from './in-memory-debug-store.js';
 
 function makeRecord(overrides: Partial<StoredRecord> = {}): StoredRecord {
@@ -117,9 +117,8 @@ describe('InMemoryDebugStore', () => {
     ]);
   });
 
-  it('expires entries using DEBUG_STORE_TTL_MS when no ttl override is provided', async () => {
-    vi.stubEnv('DEBUG_STORE_TTL_MS', '50');
-    const store = new InMemoryDebugStore();
+  it('expires entries using the store default TTL when no per-record ttl is provided', async () => {
+    const store = new InMemoryDebugStore({ ttlMs: 50 });
 
     await store.append(
       makeRecord({
@@ -182,12 +181,22 @@ describe('InMemoryDebugStore', () => {
   });
 });
 
-describe('resolveDebugStoreTtlMs', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
+describe('InMemoryDebugStore 기본 TTL', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-18T00:00:00.000Z'));
   });
 
-  it('defaults to five minutes when DEBUG_STORE_TTL_MS is unset', () => {
-    expect(resolveDebugStoreTtlMs({})).toBe(DEFAULT_DEBUG_STORE_TTL_MS);
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('ttlMs를 주지 않으면 5분을 쓴다 (환경변수는 config/env.ts가 읽어 주입한다)', async () => {
+    const store = new InMemoryDebugStore();
+    await store.append(makeRecord({ logId: 'log_default', traceId: 'trace_default' }));
+    await vi.advanceTimersByTimeAsync(DEFAULT_DEBUG_STORE_TTL_MS - 1);
+    await expect(store.getRecentByTrace('trace_default', 10)).resolves.toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(2);
+    await expect(store.getRecentByTrace('trace_default', 10)).resolves.toHaveLength(0);
   });
 });

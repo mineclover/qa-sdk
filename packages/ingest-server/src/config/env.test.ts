@@ -2,6 +2,7 @@
 // @def.doc ingest-system
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_DEBUG_STORE_TTL_MS } from '../lib/debug-store.js';
 import { envSchema, resolveStoreDriver } from './env.js';
 
 describe('parseEnv', { timeout: 15_000 }, () => {
@@ -136,4 +137,26 @@ describe('제거된 환경변수 (X-12, D-4)', () => {
       expect(shape).not.toHaveProperty(key);
     }
   });
+});
+
+describe('디버그 서버 설정 (S-9)', () => {
+  it('DEBUG_STORE_TTL_MS 기본 5분, GRPC_PORT 미설정이면 undefined', () => {
+    const env = envSchema.parse({});
+    expect(env.DEBUG_STORE_TTL_MS).toBe(DEFAULT_DEBUG_STORE_TTL_MS);
+    expect(env.GRPC_PORT).toBeUndefined();
+  });
+
+  it('문자열 값을 숫자로 받는다', () => {
+    const env = envSchema.parse({ DEBUG_STORE_TTL_MS: '50', GRPC_PORT: '50051' });
+    expect(env.DEBUG_STORE_TTL_MS).toBe(50);
+    expect(env.GRPC_PORT).toBe(50051);
+    expect(envSchema.parse({ GRPC_PORT: '' }).GRPC_PORT).toBeUndefined();
+  });
+
+  it.each([{ DEBUG_STORE_TTL_MS: '0' }, { DEBUG_STORE_TTL_MS: 'abc' }, { GRPC_PORT: '-1' }])(
+    '잘못된 값 %o는 부팅 시 거부한다',
+    (source) => {
+      expect(() => envSchema.parse(source)).toThrow();
+    },
+  );
 });

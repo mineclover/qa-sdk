@@ -7,5 +7,5 @@ export default defineConfig({
   platform: 'node',
   splitting: false,
   clean: true,
-  external: ['@hono/node-server', 'hono'],
+  external: ['@hono/node-server', 'hono', 'zod'],
 });
