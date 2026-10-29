@@ -42,6 +42,7 @@ Drive 정본 계획(rev 0.1)의 Phase 0~6 로드맵을 **현재 코드 실측 �
 - 진행 현황·남은 작업·관련 이슈(#15, #16): [04-status-and-remaining.md](./04-status-and-remaining.md)
 - 공개 인터페이스·기능과 소비자, 남은 정리 후보 I-1~I-5: [05-interface-map.md](./05-interface-map.md)
 - 저장소 전체 기능 정리·안정화 후보군 (결함 S, stub N, 미사용 라우트, 중복 M, 패키지 그룹, 테스트 T, 배포 V): [06-feature-cleanup-candidates.md](./06-feature-cleanup-candidates.md)
+- 목적(F·P1~P5) 기반 top-down 기능 정렬, 분석 출력 신뢰도, 가지치기 5단계 계획: [07-purpose-alignment.md](./07-purpose-alignment.md)
 - 트랙별 구현 계획: [plans/README.md](./plans/README.md)
 
 원본 계획의 목표·비목표·실패 상태 9종·버전 축 분리 원칙은 그대로 유지한다. 이 디렉토리는 원본을 대체하지 않고, **실행 단위로 번역**한다.
