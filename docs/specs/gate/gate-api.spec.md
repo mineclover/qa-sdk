@@ -65,7 +65,7 @@ RPC 엔드포인트 명세. 요청/응답 스키마, 에러 코드, 인증 요�
 prefix의 전체 상태 범위를 반환한다.
 
 ```
-응답: { reserved: [number,number][], inactive: [number,number][], open: [number,number][] } | null
+응답: { prefix, versionId, specs, reservedRanges: [number,number][], inactiveRanges: [number,number][], openRanges: [number,number][], computedAt } | null
 ```
 
 ### POST /gate/recompute
@@ -96,7 +96,7 @@ leaf 변경을 composite까지 전파한다.
 
 ```
 요청: { prefix: string, versionId: string, ranges: [number,number][], mode: "encodable"|"decodable"|"active" }
-응답: { ranges: [number,number][] }
+응답: [number,number][]
 ```
 
 ## 에러 코드
@@ -116,4 +116,4 @@ NOT_FOUND, NOT_COMPUTED, STALE_CACHE 3종 ^overview
 
 ## OpenAPI
 
-개별 엔드포인트 상세는 OpenAPI 스펙을 참조: `packages/gate-service/openapi.json`
+개별 엔드포인트 상세는 OpenAPI 스펙을 참조: `packages/gate-service/openapi.json` (`src/routes/gate-openapi.ts` 선언에서 생성, 실제 응답과의 일치는 `gate-openapi.test.ts`가 검증)

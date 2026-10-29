@@ -2,17 +2,14 @@
 // @def.doc gate-system
 
 /**
- * Gate Service OpenAPI 라우트.
+ * Gate Service OpenAPI 계약 — 문서 전용.
  *
- * 기존 gate.ts의 기능을 @hono/zod-openapi로 래핑하여
- * OpenAPI 3.1 스펙을 자동 생성한다.
- *
- * 기존 gate.ts는 유지 — 이 파일은 OpenAPI 스펙 생성 + 라우트 등록 겸용.
+ * 실제 라우트는 gate.ts 한 곳에만 있다. 이 파일은 경로·요청·응답 스키마만 선언하고
+ * 핸들러를 두지 않는다 (핸들러 사본이 실제 응답과 갈라졌던 문제, 06 M-5).
+ * 선언과 실제 응답이 맞는지는 gate-openapi.test.ts가 served app으로 확인한다.
  */
 
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
-import type { GateLookupService } from '../lib/gate-service.js';
-import { assertEngineConfigured } from './gate.js';
 import {
   gateLookupRequestSchema,
   gateRecomputeRequestSchema,
@@ -34,22 +31,25 @@ const gateCheckResponseSchema = z
 
 const gateClassifyResponseSchema = addressStateEnum.openapi('GateClassifyResponse');
 
+const rangeSchema = z.tuple([z.number(), z.number()]);
+
+/** index-meta AddressStateCacheRecord 그대로 — 상태가 계산된 적 없으면 null */
 const gateStateResponseSchema = z
   .object({
-    reserved: z.array(z.tuple([z.number(), z.number()])),
-    inactive: z.array(z.tuple([z.number(), z.number()])),
-    open: z.array(z.tuple([z.number(), z.number()])),
+    prefix: z.string(),
+    versionId: z.string(),
+    specs: z.array(z.unknown()),
+    reservedRanges: z.array(rangeSchema),
+    inactiveRanges: z.array(rangeSchema),
+    openRanges: z.array(rangeSchema),
+    computedAt: z.string(),
   })
   .nullable()
   .openapi('GateStateResponse');
 
-const gateFilterResponseSchema = z
-  .object({
-    ranges: z.array(z.tuple([z.number(), z.number()])),
-  })
-  .openapi('GateFilterResponse');
+/** gate 차단 범위를 뺀 [start, end] 목록 */
+const gateFilterResponseSchema = z.array(rangeSchema).openapi('GateFilterResponse');
 
-/** middleware/error-handler.ts 응답 형태 */
 const errorResponseSchema = z
   .object({
     error: z.object({
@@ -175,6 +175,8 @@ const healthRoute = createRoute({
             .object({
               status: z.string(),
               gate_engine_configured: z.boolean(),
+              uptime_seconds: z.number().optional(),
+              version: z.string().optional(),
             })
             .openapi('HealthResponse'),
         },
@@ -184,82 +186,27 @@ const healthRoute = createRoute({
   },
 });
 
-// ── 앱 생성 ──────────────────────────────────────────
+// ── 문서 생성 ────────────────────────────────────────
 
-export interface GateOpenAPIDeps {
-  gateService: GateLookupService;
-  engineConfigured: boolean;
-}
+/** gate-service가 공개하는 라우트 계약 전체 */
+export const GATE_OPENAPI_ROUTES = [
+  checkRoute,
+  classifyRoute,
+  recomputeRoute,
+  cascadeRecomputeRoute,
+  filterRangesRoute,
+  getStateRoute,
+  healthRoute,
+] as const;
 
-export function createGateOpenAPIApp(deps: GateOpenAPIDeps) {
+export const GATE_OPENAPI_INFO = {
+  title: 'Gate Service API',
+  version: '1.0.0',
+  description: '주소 공간의 물리적 유효성을 관리하여 encode/decode 가능 여부를 결정하는 서비스.',
+} as const;
+
+export function buildGateOpenAPIDocument(): ReturnType<OpenAPIHono['getOpenAPI31Document']> {
   const app = new OpenAPIHono();
-
-  app.openapi(checkRoute, async (c) => {
-    const req = c.req.valid('json');
-    const result = await deps.gateService.checkGate(req.prefix, req.versionId, req.address);
-    return c.json(result, 200);
-  });
-
-  app.openapi(classifyRoute, async (c) => {
-    const req = c.req.valid('json');
-    const state = await deps.gateService.classifyAddress(req.prefix, req.versionId, req.address);
-    return c.json(state, 200);
-  });
-
-  app.openapi(recomputeRoute, async (c) => {
-    assertEngineConfigured(deps.gateService);
-    const req = c.req.valid('json');
-    await deps.gateService.recompute(req.prefix, req.versionId);
-    return c.body(null, 204);
-  });
-
-  app.openapi(cascadeRecomputeRoute, async (c) => {
-    assertEngineConfigured(deps.gateService);
-    const req = c.req.valid('json');
-    await deps.gateService.cascadeRecompute(req.prefix, req.versionId);
-    return c.body(null, 204);
-  });
-
-  app.openapi(filterRangesRoute, async (c) => {
-    const req = c.req.valid('json');
-    const ranges = await deps.gateService.filterRanges(
-      req.prefix,
-      req.versionId,
-      req.ranges,
-      req.mode,
-    );
-    return c.json({ ranges }, 200);
-  });
-
-  app.openapi(getStateRoute, async (c) => {
-    const { prefix, version } = c.req.valid('param');
-    const record = await deps.gateService.getStateRanges(prefix, version);
-    // AddressStateCacheRecord → 간소화된 응답 변환
-    if (!record) return c.json(null, 200);
-    return c.json(
-      {
-        reserved: record.reservedRanges as unknown as [number, number][],
-        inactive: record.inactiveRanges as unknown as [number, number][],
-        open: record.openRanges as unknown as [number, number][],
-      },
-      200,
-    );
-  });
-
-  app.openapi(healthRoute, async (c) => {
-    return c.json({ status: 'ok', gate_engine_configured: deps.engineConfigured }, 200);
-  });
-
-  // OpenAPI JSON 엔드포인트
-  app.doc('/openapi.json', {
-    openapi: '3.1.0',
-    info: {
-      title: 'Gate Service API',
-      version: '1.0.0',
-      description:
-        '주소 공간의 물리적 유효성을 관리하여 encode/decode 가능 여부를 결정하는 서비스.',
-    },
-  });
-
-  return app;
+  for (const route of GATE_OPENAPI_ROUTES) app.openAPIRegistry.registerPath(route);
+  return app.getOpenAPI31Document({ openapi: '3.1.0', info: GATE_OPENAPI_INFO });
 }

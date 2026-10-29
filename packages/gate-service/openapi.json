@@ -49,29 +49,33 @@
         "enum": ["active", "inactive", "open", "reserved"]
       },
       "GateFilterResponse": {
-        "type": "object",
-        "properties": {
-          "ranges": {
-            "type": "array",
-            "items": {
-              "type": "array",
-              "prefixItems": [
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "number"
-                }
-              ]
+        "type": "array",
+        "items": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
             }
-          }
-        },
-        "required": ["ranges"]
+          ]
+        }
       },
       "GateStateResponse": {
         "type": ["object", "null"],
         "properties": {
-          "reserved": {
+          "prefix": {
+            "type": "string"
+          },
+          "versionId": {
+            "type": "string"
+          },
+          "specs": {
+            "type": "array",
+            "items": {}
+          },
+          "reservedRanges": {
             "type": "array",
             "items": {
               "type": "array",
@@ -85,7 +89,7 @@
               ]
             }
           },
-          "inactive": {
+          "inactiveRanges": {
             "type": "array",
             "items": {
               "type": "array",
@@ -99,7 +103,7 @@
               ]
             }
           },
-          "open": {
+          "openRanges": {
             "type": "array",
             "items": {
               "type": "array",
@@ -112,9 +116,20 @@
                 }
               ]
             }
+          },
+          "computedAt": {
+            "type": "string"
           }
         },
-        "required": ["reserved", "inactive", "open"]
+        "required": [
+          "prefix",
+          "versionId",
+          "specs",
+          "reservedRanges",
+          "inactiveRanges",
+          "openRanges",
+          "computedAt"
+        ]
       },
       "HealthResponse": {
         "type": "object",
@@ -124,6 +139,12 @@
           },
           "gate_engine_configured": {
             "type": "boolean"
+          },
+          "uptime_seconds": {
+            "type": "number"
+          },
+          "version": {
+            "type": "string"
           }
         },
         "required": ["status", "gate_engine_configured"]
