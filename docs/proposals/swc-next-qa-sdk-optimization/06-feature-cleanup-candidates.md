@@ -80,6 +80,15 @@ sources:
 | N-6 | `STORE_DRIVER=clickhouse` | 스토어 삭제 후 enum 값만 남아 경고 뒤 SQLite로 동작 | 한 릴리스 뒤 enum에서 제거 |
 | N-7 | registry `AnalysisModulePort` | `collectMetrics`·`metricsToObservations`를 선언하지만 dkg-enrichment는 둘 다 export하지 않음 (`types/spec-core-ports.ts:161`) | 실제로 쓰는 `bootstrapDkg`만 남기기 |
 
+### 2.1 처리 결과 (2026-10-29)
+
+| # | 처리 |
+|---|---|
+| N-2 | ✅ `InsightsStore.collect`를 선택 메서드로 — local 드라이버는 구현하지 않고, ingest는 `collect`가 없으면 요청마다 만들던 batch(전 record 매핑 + trace 집계)를 만들지 않는다 |
+| N-3 | ✅ `CON-005` 하드코딩 제거 — `patternPromptEdges`가 DKG active constraint 중 `scope`가 observation `subjects`와 겹치는 것에 연결 (`pattern_anomaly` → CON-004·CON-005). 저장 실패는 warn 로그 |
+| N-7 | ✅ registry `DkgBootstrapPort`(bootstrapDkg만) 분리 — activation gate가 `dkg-enrichment`를 `as unknown as`로 거짓 캐스트하던 것 제거. dev 대시보드용 `AnalysisModulePort`는 bootstrap + convergence metric 조합으로 유지. ingest의 미사용 동명 포트 삭제 |
+| N-1·N-4·N-5·N-6 | 대기 (N-1 App Hub stub 삭제는 사람 결정, N-6은 한 릴리스 뒤) |
+
 ## 3. 읽는 곳 없는 HTTP 라우트
 
 저장소 안 클라이언트(cli, *-web, *-ui, sdk, browser-sdk, registry-client, definition-client, e2e) 기준이다. 외부 운영 도구가 쓰고 있을 수 있으므로 **삭제 전에 사용 여부를 확인**해야 한다.
@@ -105,6 +114,25 @@ sources:
 | M-4 | gate·query 패키지 루트 `worker.ts` | wrangler `main`은 `src/worker.ts`. 루트 파일은 쓰이지 않는 사본 (gate 쪽은 예전 API) | 삭제 |
 | M-5 | gate `routes/gate-openapi.ts` ↔ `gate.ts` | 같은 계약을 두 곳에서 정의 | 한쪽에서 다른 쪽을 파생 |
 | M-6 | gate `services/{cache-invalidation,consistency}`, `memory-event-bus`, `event-bus.port` | 프로덕션 import 0 | S-4 판정과 함께 |
+
+### 4.1 처리 결과 (2026-10-29)
+
+| # | 처리 |
+|---|---|
+| M-4 | ✅ gate·query 루트 `worker.ts` 사본 삭제 (wrangler `main`은 `src/worker.ts`) |
+| M-5 | ✅ `gate-openapi.ts`를 선언 전용으로 — 핸들러 사본 제거, `buildGateOpenAPIDocument()`. 사본이 실제와 갈라져 있던 것 2건 발견·수정: `/gate/filter-ranges`(실제 배열 ↔ 문서 `{ranges}`), `/gate/state`(실제 `AddressStateCacheRecord` ↔ 문서 `{reserved,inactive,open}`). `gate-openapi.test.ts`가 문서의 모든 경로를 실제 앱에 보내 status·본문 스키마를 대조 (예전 스키마로 되돌리면 실패하는 것 확인) |
+| M-1 | 🟡 **결정 필요** — 아래 |
+| M-2·M-3·M-6 | 대기 |
+
+**M-1 조사 결과.** 두 사본은 이름만 같고 구현 수준이 다르다.
+
+| skill | dkg (CLI·ingest가 사용) | dkg-enrichment (사용처 0, 자체 테스트만) |
+|---|---|---|
+| `convergeChain` | convergence에 의존할 수 없어 entry 단위 경험칙으로 직접 계산 — 근사치 | `@qa-sdk/convergence` 분석기(`scanAxisOverlaps`·`analyzeSimplification`·`discoverCausality`·`analyzeDeploymentSkew`) 위임 |
+| `auditCoverage` | 자체 계산 | `analyzeEntryCoverage` 위임 |
+| `traceFlows`·`validateDslInvariants` | 상위 집합 (`resolveRecoveredFlowObservations` 포함) | 부분 집합 |
+
+enrichment 테스트를 dkg 구현으로 돌리면 `flow-trace`는 모두 통과하고, `convergeChain`은 2건이 실패한다 (usage에서 단일값 차원 단순화 0건 — dkg 구현에 차원 단위 분석이 없다). 권장: `traceFlows`는 dkg를 정본으로 두고 enrichment 사본 삭제. `convergeChain`·`auditCoverage`는 convergence 위임 구현(enrichment)을 정본으로 하고 dkg의 근사 구현을 삭제한 뒤 CLI import를 `dkg-enrichment`로 옮긴다 — CLI `dkg converge` 결과가 풍부해지는 **동작 변경**이다.
 
 ## 5. 패키지 그룹 (`conditional-keep`·consumer·의존 0)
 

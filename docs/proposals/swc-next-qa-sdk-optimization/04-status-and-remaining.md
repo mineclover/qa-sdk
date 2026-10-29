@@ -23,7 +23,7 @@ role: status
 
 ## 목적 ^purpose
 
-원본 이슈(Notion `ISSUE-TEMP-SWC-NEXT-QA-SDK-OPTIMIZATION`)의 체크리스트와 관련 GitHub 이슈(#15, #16)를 기준으로 지금까지 반영한 것과 남은 것을 한 곳에 정리한다. 로컬 `main`은 `origin/main`보다 60 커밋 이상 앞서 있고 push하지 않았다.
+원본 이슈(Notion `ISSUE-TEMP-SWC-NEXT-QA-SDK-OPTIMIZATION`)의 체크리스트와 관련 GitHub 이슈(#15, #16)를 기준으로 지금까지 반영한 것과 남은 것을 한 곳에 정리한다. 로컬 `main`은 `origin/main`보다 80 커밋 이상 앞서 있고 push하지 않았다.
 
 ## 1. 원본 이슈 체크리스트 대조 ^defines
 
@@ -57,10 +57,10 @@ role: status
 | 순위 | 작업 | 이유 | 선행 조건 |
 |---|---|---|---|
 | **P0** | ✅ 로컬 CI — `pnpm ci:local` (`scripts/ci-local.mjs`): workflow 검사(def·codegen·format·arch)와 핵심 18개 패키지 테스트·bench smoke. 결정: CI는 로컬에서 확인한다 (2026-10-29). `arch:verify`가 `.antigravitycli/` 깨진 symlink로 중단되던 문제는 git 기준 파일 목록으로 격리 — 28/28 | — |
-| **P0** | 49 커밋 push 여부 결정 | 원격에 반영되지 않았고, `8a624692`에 다른 주제의 삭제분이 섞여 있다 | 사람 결정 |
+| **P0** | 미push 커밋(80+) push 여부 결정 | 원격에 반영되지 않았고, `8a624692`에 다른 주제의 삭제분이 섞여 있다 | 사람 결정 |
 | **P1** | ✅ Track B — registry generation이 digest 기준이 되어 SDK GENERATION 비교가 일치. 남은 #15 재료: batch 문맥 조회 API, VerdictReport artifact digest | — |
 | **P1** | ✅ core runtime 오류 전환, browser-codec 원인 코드 노출 | — | — |
-| **P1** | 기능 정리·안정화 후보군 — [06-feature-cleanup-candidates.md](./06-feature-cleanup-candidates.md) §9 순서. 결함 S-1~S-9(gateway 경로·gate 엔진·query state·ingest 영속) 먼저 | 기능이 조용히 동작하지 않음 | S-3·M-3·그룹 판정은 사람 결정 |
+| **P1** | 🟡 기능 정리·안정화 — [06](./06-feature-cleanup-candidates.md). 완료: 결함 S-1·S-2·S-5~S-9(S-4 부분), 테스트 공백 T-1·T-2·T-4~T-6(registry e2e 45건 NestJS 이식 + SQL capacity 정밀도 결함 수정), 중복 M-4·M-5, stub N-2·N-3·N-7. 남음: S-3(gateway 인증 기본값)·S-4 엔진 데이터 공급·M-1(skill 정본)·M-3(Plan 07d)·N-1(App Hub stub)·§3 미사용 라우트·§5 패키지 그룹·V-1 배포 규칙 | 남은 항목은 대부분 사람 결정 | — |
 | **P2** | 2순위 정리: 의존 0 라이브러리 8개, consumer 그룹(시각화 7·시뮬 6·데모 8), `stores/pg/*`(Plan 07d), 구조 중복 | 관리 비용 축소 | 그룹별 사람 결정 |
 | **P2** | ✅ I-1 삭제. 남은 인터페이스 정리 후보 I-2(`entrySnapshot` 옵션 제거 시점) — [05-interface-map.md](./05-interface-map.md) §4 | 실제 envelope 계약과 다른 두 번째 정의 | 사람 결정 |
 | **P2** | ✅ demo-tests 전체 `tsc` 검사 (`tsconfig.typecheck.json`) — 16건 수정, 죽은 registry skip 테스트 5개만 제외(06 T-6) | — | — |
