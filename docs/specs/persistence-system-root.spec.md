@@ -33,7 +33,7 @@ def:
     - packages/index-meta/src/adapters/sql-store.test.ts
     - packages/definition-data-source/src/factory.test.ts
     - packages/dkg/src/store/dkg-sqlite-store.test.ts
-    - packages/ingest-server/src/stores/store-factory.ts
+    - packages/ingest-server/src/stores/runtime-stores.ts
 ---
 # Persistence System Root
 

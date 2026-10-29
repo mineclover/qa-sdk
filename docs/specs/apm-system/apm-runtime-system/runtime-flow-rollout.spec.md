@@ -14,7 +14,7 @@ def:
     - target: apm-runtime-system
       type: refines
 sources:
-  - packages/ingest-server/src/stores/store-factory.ts
+  - packages/ingest-server/src/stores/runtime-stores.ts
   - packages/ingest-server/src/lib/in-memory-task-queue.ts
   - packages/ingest-server/src/lib/bullmq-task-queue.ts
   - packages/ingest-server/src/lib/convergence-pipeline.ts

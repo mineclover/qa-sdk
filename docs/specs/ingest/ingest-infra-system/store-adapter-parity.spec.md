@@ -22,7 +22,7 @@ sources:
   - packages/core/src/ports/transmission-store.port.ts
   - packages/core/src/ports/dlq-store.port.ts
   - packages/core/src/ports/key-observation-store.port.ts
-  - packages/ingest-server/src/stores/store-factory.ts
+  - packages/ingest-server/src/stores/runtime-stores.ts
   - packages/ingest-server/src/stores/d1-record-store.ts
   - packages/ingest-server/src/stores/d1-key-observation-store.ts
   - packages/ingest-server/src/stores/pg/event-record.adapter.ts
@@ -221,17 +221,17 @@ ClickHouse는 OLAP 분석 전용이다. CRUD 포트와 분리된 `AnalyticsStore
 - Store 어댑터: RecordStore 1종만 기존 구현 (ClickhouseRecordStore)
 - 분석 어댑터: `bulkInsert`, time series, top keys, distribution, key observation, trace stats 집계 구현
 
-## store-factory 드라이버 선택 ^delegates
+## 런타임 드라이버 선택 ^delegates
 
-```typescript
-type StoreDriver = "memory" | "sqlite" | "pg" | "d1" | "clickhouse";
-```
+`STORE_DRIVER` 환경변수로 선택. `stores/runtime-stores.ts` `createRuntimeStores`가 server·worker 모드의 단일 진입점이다
+(미사용 `store-factory.ts`는 SWC Next Track E D-3에서 삭제).
 
-`STORE_DRIVER` 환경변수로 선택. 각 드라이버별 `createXxxStores()` 팩토리가 StoreSet을 반환.
+| 드라이버 | 런타임 구성 | 비고 |
+|---------|------|------|
+| memory·sqlite | D1 core 4종(Record·Trace·Session·Verdict) + 나머지 InMemory | node-sqlite. 초기화 실패 시 전체 InMemory |
+| d1 | sqlite와 동일 | deprecation 경고 1회 |
+| pg | `@qa-sdk/store` Drizzle 8종 | `TRACE_DATABASE_URL` 필수. ingest-server PG adapter(`stores/pg/factory.ts`)는 미배선 (Plan 07d) |
+| clickhouse | sqlite와 동일 | 미지원 경고 1회. `ClickhouseRecordStore`는 미배선 |
 
-| 드라이버 | 9 포트 커버리지 | 비고 |
-|---------|:---:|------|
-| memory | 9/9 | InMemory 어댑터 (dev/test) |
-| sqlite/d1 | 9/9 | D1/SQLite (CF Workers, 경량 배포). `d1`은 alias |
-| pg | 9/9 | PostgreSQL. Record/KeyObservation은 ingest-server PG adapter, 나머지는 @qa-sdk/store Drizzle |
-| clickhouse | 1/9 | RecordStore만 ClickHouse, support stores는 InMemory. OLAP 조회는 `ClickHouseAnalyticsStore` |
+D1 support store(`D1GraphStore`, `D1DlqStore`, `D1TransmissionStore`, `D1ScenarioSpecStore`, `D1KeyObservationStore`)는
+cross-adapter contract test에서만 생성된다. 런타임 배선 여부는 후속 판정 대상이다.

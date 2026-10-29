@@ -22,7 +22,7 @@ def:
 sources:
   - packages/ingest-server/src/app.ts
   - packages/ingest-server/src/server.ts
-  - packages/ingest-server/src/stores/store-factory.ts
+  - packages/ingest-server/src/stores/runtime-stores.ts
   - packages/ingest-server/src/routes/ingest.ts
   - packages/ingest-server/src/routes/health.ts
   - packages/ingest-server/src/lib/graceful-shutdown.ts

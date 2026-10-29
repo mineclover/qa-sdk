@@ -53,14 +53,13 @@ interface EventRecord {
 
 ## 스토어 드라이버별 처리
 
-store-factory.ts (STORE_DRIVER 환경변수)가 백엔드를 선택한다:
+`stores/runtime-stores.ts` `createRuntimeStores` (STORE_DRIVER 환경변수)가 백엔드를 선택한다:
 
 | 드라이버 | 저장 형태 | 조회 | 구현 위치 |
 |----------|-----------|------|-----------|
-| memory (기본) | JS Object | 직접 필터 | @qa-sdk/store |
-| d1 | TEXT (JSON) | JSON_EXTRACT | d1-record-store.ts |
+| memory (기본)·sqlite·d1 | TEXT (JSON) | JSON_EXTRACT | d1-record-store.ts (node-sqlite, 초기화 실패 시 @qa-sdk/store InMemory) |
 | pg | JSONB | GIN 인덱스 가능 | drizzle + TRACE_DATABASE_URL |
-| clickhouse | Map(String, String) | mapContains | clickhouse-record-store.ts |
+| clickhouse | Map(String, String) | mapContains | clickhouse-record-store.ts — 런타임 미배선, server 모드는 경고 후 SQLite |
 
 D1 store는 4개 core store(Record, Trace, Session, Verdict)를 구현하고, 나머지는 InMemory이다. ClickHouse runtime store는 RecordStore만 구현하고, OLAP 조회는 별도 `ClickHouseAnalyticsStore`가 담당한다.
 
