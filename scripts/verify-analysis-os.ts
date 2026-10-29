@@ -1,8 +1,11 @@
-import { execSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { execFileSync, execSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
+import { basename } from 'node:path';
 import chalk from 'chalk';
 import { SURFACES } from './package-surfaces.mjs';
+
+/** 실행 명령으로서의 pnpm 토큰 — `pnpm-lock.yaml`·`pnpm-workspace.yaml` 같은 파일 이름은 제외 */
+const PNPM_COMMAND = /(?<![\w./-])pnpm(?![\w./-])/;
 
 /**
  * Analysis OS Verification Suite
@@ -883,20 +886,23 @@ function collectDefinitionDocIds(root: string): Set<string> {
 }
 
 function walkMarkdownFiles(root: string): string[] {
-  const files: string[] = [];
-  if (!existsSync(root)) return files;
+  return listRepoFiles(root).filter((path) => path.endsWith('.md'));
+}
 
-  for (const entry of readdirSync(root)) {
-    const path = join(root, entry);
-    const stats = statSync(path);
-    if (stats.isDirectory()) {
-      files.push(...walkMarkdownFiles(path));
-    } else if (entry.endsWith('.md')) {
-      files.push(path);
-    }
-  }
-
-  return files;
+/**
+ * 저장소에 속한 파일 목록 — git이 추적하거나 추적 예정(무시 규칙 밖)인 파일만.
+ *
+ * 파일 시스템을 직접 순회하면 에이전트 도구 상태(.antigravitycli 등)·깨진 symlink·빌드 산출물처럼
+ * 로컬 환경에만 있는 파일이 검증 결과를 바꾼다. 무시 규칙은 .gitignore 하나로 모은다.
+ * 작업 트리에서 지워졌거나 대상이 없는 symlink는 읽을 수 없으므로 제외한다.
+ */
+function listRepoFiles(root: string): string[] {
+  const output = execFileSync(
+    'git',
+    ['ls-files', '--cached', '--others', '--exclude-standard', '-z', '--', root],
+    { encoding: 'utf-8', maxBuffer: 256 * 1024 * 1024 },
+  );
+  return [...new Set(output.split('\0').filter(Boolean))].filter((path) => existsSync(path));
 }
 
 function findToolchainScriptViolations(roots: string[]): string[] {
@@ -918,34 +924,7 @@ function findToolchainScriptViolations(roots: string[]): string[] {
 }
 
 function walkPackageJsonFiles(root: string): string[] {
-  const files: string[] = [];
-  if (!existsSync(root)) return files;
-
-  for (const entry of readdirSync(root)) {
-    if (
-      [
-        '.git',
-        '.claude',
-        'node_modules',
-        'dist',
-        'build',
-        'coverage',
-        '.turbo',
-        '.next',
-        '.vite',
-      ].includes(entry)
-    )
-      continue;
-    const path = join(root, entry);
-    const stats = statSync(path);
-    if (stats.isDirectory()) {
-      files.push(...walkPackageJsonFiles(path));
-    } else if (entry === 'package.json') {
-      files.push(path);
-    }
-  }
-
-  return files;
+  return listRepoFiles(root).filter((path) => basename(path) === 'package.json');
 }
 
 function usesBarePnpm(command: string): boolean {
@@ -1010,7 +989,7 @@ function usesBarePnpmInAutomationLine(path: string, line: string): boolean {
   ) {
     return false;
   }
-  if (!/\bpnpm\b/.test(trimmed)) return false;
+  if (!PNPM_COMMAND.test(trimmed)) return false;
   if (/\bcorepack\s+pnpm\b/.test(trimmed)) return false;
   if (path.endsWith('sim-smoke-full.ts')) {
     return /cmd:\s*["']pnpm["']/.test(trimmed);

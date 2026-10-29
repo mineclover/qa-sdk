@@ -29,6 +29,9 @@ tasks/archive/
 
 # claude code
 .claude/
+
+# 다른 에이전트 도구의 로컬 상태 (홈 디렉토리 설정을 가리키는 symlink 포함)
+.antigravitycli/
 data/
 !packages/taxonomy-web/src/data/
 dist/tarballs/
