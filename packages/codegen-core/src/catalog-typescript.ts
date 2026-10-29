@@ -194,6 +194,15 @@ function genPrefixIds(
   lines.push(``);
   lines.push(`/** GENERATION — 빌드 시점 version 식별자. SDK 부트 시 전달. */`);
   lines.push(`export const GENERATION = "${catalog.id}:${digests.contentHash}" as const;`);
+  lines.push(``);
+  lines.push(
+    `/** CatalogSnapshot 문맥 — SDK 설정 catalogSnapshot으로 넘기면 envelope.catalog_snapshot에 실린다 (ADR-010) */`,
+  );
+  lines.push(`export const CATALOG_SNAPSHOT = {`);
+  lines.push(`  catalog_id: "${catalog.id}",`);
+  lines.push(`  digest: "${digests.catalogDigest}",`);
+  lines.push(`  codec_version: "${LEGACY_V1_CODEC}",`);
+  lines.push(`} as const;`);
 
   lines.push(``);
   return lines.join('\n');

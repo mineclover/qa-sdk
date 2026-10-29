@@ -1,5 +1,5 @@
 import type { Catalog, DkgConfig } from '@qa-sdk/core';
-import { computeCatalogDigest, shortDigest } from '@qa-sdk/core';
+import { buildCatalogSnapshot, computeCatalogDigest, shortDigest } from '@qa-sdk/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SNAPSHOT_FIXTURE } from '../../core/src/catalog/snapshot/__fixtures__/snapshot-fixture.js';
 import { generateCatalogTypes } from './catalog-typescript.js';
@@ -101,6 +101,24 @@ describe('generateCatalogTypes digest', () => {
     expect(prefixIds).toContain(`GENERATION = "${CATALOG.id}:${r.contentHash}"`);
     expect(prefixIds).toContain(`catalogDigest: "${r.catalogDigest}"`);
     expect(prefixIds).toContain('codecVersion: "legacy-v1"');
+  });
+
+  it('CATALOG_SNAPSHOT은 registry가 발행하는 snapshot과 같은 digest의 wire 문맥이다', async () => {
+    const r = await generateCatalogTypes(CATALOG);
+    const prefixIds = r.files.find((f) => f.path === 'prefix-ids.ts')!.content;
+    const { snapshot } = await buildCatalogSnapshot(CATALOG, {
+      snapshotVersion: 1,
+      parentDigest: null,
+    });
+    expect(prefixIds).toContain(
+      [
+        'export const CATALOG_SNAPSHOT = {',
+        `  catalog_id: "${snapshot.catalogId}",`,
+        `  digest: "${snapshot.digest}",`,
+        `  codec_version: "${snapshot.codecVersion}",`,
+        '} as const;',
+      ].join('\n'),
+    );
   });
 
   it('refEntries만 바뀌어도 catalogDigest가 바뀐다', async () => {

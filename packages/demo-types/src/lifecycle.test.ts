@@ -11,12 +11,13 @@
 import { describe, it, expect } from 'vitest';
 import { DEMO_CATALOG } from 'demo-snapshot';
 import { createQaContext } from '@qa-sdk/context';
-import { latestPrefixVersion } from '@qa-sdk/core';
+import { buildCatalogSnapshot, catalogSnapshotWireSchema, latestPrefixVersion } from '@qa-sdk/core';
 import {
   PREFIX_IDS,
   AXIS_IDS,
   VERSION_META,
   GENERATION,
+  CATALOG_SNAPSHOT,
   sdk,
   DSL_OBSERVATION,
   DSL_CHECKOUT,
@@ -76,6 +77,24 @@ describe('GENERATION', () => {
   it('hash 부분이 VERSION_META.contentHash와 일치한다', () => {
     const hash = GENERATION.split(':')[1];
     expect(hash).toBe(VERSION_META.contentHash);
+  });
+});
+
+describe('CATALOG_SNAPSHOT', () => {
+  it('envelope catalog_snapshot 스키마를 통과한다', () => {
+    expect(catalogSnapshotWireSchema.parse(CATALOG_SNAPSHOT)).toEqual(CATALOG_SNAPSHOT);
+  });
+
+  it('registry가 같은 catalog로 발행하는 snapshot과 문맥이 같다', async () => {
+    const { snapshot } = await buildCatalogSnapshot(DEMO_CATALOG, {
+      snapshotVersion: 1,
+      parentDigest: null,
+    });
+    expect(CATALOG_SNAPSHOT).toEqual({
+      catalog_id: snapshot.catalogId,
+      digest: snapshot.digest,
+      codec_version: snapshot.codecVersion,
+    });
   });
 });
 

@@ -9,6 +9,7 @@
  */
 
 import type { Catalog, PrefixDef, PrefixVersionDef, VersionedAxis } from './catalog.types.js';
+import type { CatalogSnapshotWire } from '../types/envelope.js';
 import { latestPrefixVersion } from './runtime.js';
 import { LEGACY_V1_CODEC } from './snapshot/catalog-snapshot.types.js';
 import { computeCatalogDigest } from './snapshot/digest.js';
@@ -31,15 +32,10 @@ export interface BrowserPrefixDef {
 export type BrowserCatalog = Record<string, BrowserPrefixDef>;
 
 /**
- * BrowserCatalog가 어느 Catalog에서 파생됐는지 나타내는 문맥.
- * CatalogSnapshotWire와 필드 호환 (snapshot_version 없음 — 브라우저 카탈로그는 snapshot 저장소를 거치지 않는다).
+ * BrowserCatalog가 어느 Catalog에서 파생됐는지 나타내는 문맥 = CatalogSnapshotWire에서 snapshot_version을 뺀 것
+ * (브라우저 카탈로그는 snapshot 저장소를 거치지 않는다).
  */
-export interface BrowserCatalogSnapshot {
-  readonly catalog_id: string;
-  /** computeCatalogDigest 결과 (`sha256:<64 hex>`) */
-  readonly digest: string;
-  readonly codec_version: string;
-}
+export type BrowserCatalogSnapshot = Readonly<Omit<CatalogSnapshotWire, 'snapshot_version'>>;
 
 // ── 변환 ──────────────────────────────────────────────────────
 

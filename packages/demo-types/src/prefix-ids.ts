@@ -519,3 +519,10 @@ export const VERSION_META = {
 
 /** GENERATION — 빌드 시점 version 식별자. SDK 부트 시 전달. */
 export const GENERATION = 'demo:cc012d402486' as const;
+
+/** CatalogSnapshot 문맥 — SDK 설정 catalogSnapshot으로 넘기면 envelope.catalog_snapshot에 실린다 (ADR-010) */
+export const CATALOG_SNAPSHOT = {
+  catalog_id: 'demo',
+  digest: 'sha256:cc012d402486255e232f4dc53651d0299cf66098a91e0f1c0ed986e4797c2789',
+  codec_version: 'legacy-v1',
+} as const;

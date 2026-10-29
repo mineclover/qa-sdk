@@ -55,7 +55,10 @@ export interface QaLoggerConfig {
    */
   entrySnapshot?: string;
 
-  /** 좌표 주소를 만든 CatalogSnapshot 문맥 — envelope.catalog_snapshot으로 전송 (ADR-010) */
+  /**
+   * 좌표 주소를 만든 CatalogSnapshot 문맥 — envelope.catalog_snapshot으로 전송 (ADR-010).
+   * codegen 생성물의 CATALOG_SNAPSHOT을 그대로 넘길 수 있다.
+   */
   catalogSnapshot?: CatalogSnapshotWire;
 }
 
