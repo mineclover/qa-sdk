@@ -17,6 +17,7 @@ def:
       type: depends_on
 sources:
   - packages/decode-service/src/lib/decoder-pool.ts
+  - packages/decode-service/src/lib/decode-map-sync.ts
   - packages/decode-service/src/routes/decode.ts
   - packages/decode-service/src/schemas/decode.ts
   - packages/decode-service/src/server.ts
@@ -46,18 +47,20 @@ sources:
 
 **실패 시 수정 대상**: `decode-system`의 `decode-bundle` 스키마와 registry-service DecodeMap 공급 경로. BigInt 자동 라우팅은 `numberType: "bigint"`를 기준으로 하므로 registry DTO가 이 값을 공급하지 않으면 REST 경로는 Number decoder 중심으로 동작한다.
 
-## 시나리오 2: bundle TTL 기반 만료 ^overview
+## 시나리오 2: catalog 변경 시 decode-map 갱신 ^overview
 
-**전제**: `decode-system`의 `DecoderPool`은 Node.js 에서 `CACHE_TTL_MS`(기본 60초) 기반 TTL 캐시를 쓴다.
+**전제**: `decode-system`의 `DecoderPool`은 decoder를 만료시키지 않는다(TTL=0). Node.js에서는 decode-map 동기화가 `DECODE_MAP_REFRESH_MS`마다 registry catalog digest를 확인한다.
 
-**동작**: prefix 스키마가 변경되거나 TTL이 지나면 다음 `get(prefix, version)`에서 캐시 엔트리를 제거하고 `null`을 반환한다.
+**동작**: catalog가 바뀌어 digest가 달라지면 `/api/decode-map`을 다시 불러와 같은 `prefix:version` 키의 decoder를 교체한다.
 
 **기대**:
-- TTL 만료 시 decode 라우트는 `DECODER_NOT_LOADED` (404)를 반환한다.
-- Node.js 라우트는 요청 시점에 registry를 다시 fetch하지 않는다. 자동 재생성은 현재 계약이 아니다.
-- Worker 모드는 `DecoderPool(0)`을 사용하므로 로드된 decoder는 Worker 수명 동안 만료되지 않는다.
+- digest가 같으면 decode-map을 다시 받지 않는다.
+- 갱신 실패 시 기존 decoder를 유지한다 (fail-open). 만료로 decoder가 사라져 `DECODER_NOT_LOADED`가 되는 일은 없다.
+- 같은 `prefix:version`의 decoder를 계속 써도 안전하다 — 발행된 version의 layout은 append-only로만 바뀌고, 호환되지 않는 변경은 registry publish가 `MigrationRequired`로 막아 새 version을 요구한다 (ADR-010).
 
-**실패 시 수정 대상**: `decode-system`의 캐시 전략과 갱신 정책. stale decoder를 계속 쓰지 않는 것이 현재 안전 계약이며, 자동 refresh/stampede 방지는 별도 기능으로 다룬다.
+**이전 계약과의 차이**: 이전에는 Node.js TTL(`CACHE_TTL_MS`) 만료 후 `DECODER_NOT_LOADED`를 "stale decoder를 쓰지 않는 안전 계약"으로 봤지만, 다시 불러올 경로가 없어 만료 뒤 모든 decode가 실패했다 (S-8).
+
+**실패 시 수정 대상**: `decode-system`의 캐시 전략과 `lib/decode-map-sync.ts`.
 
 ## 시나리오 3: registry fetch fail-open ^overview
 

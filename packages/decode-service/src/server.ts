@@ -5,16 +5,22 @@ import 'dotenv/config';
 import { serve } from '@hono/node-server';
 import { warnPortConflict, installSimpleShutdown, createServiceBootConfig } from '@qa-sdk/core';
 import type { KeyCache } from '@qa-sdk/core';
-import type { DecodeMap } from 'index-meta-workers';
 import { env } from './config/env.js';
 import { createApp } from './app.js';
 import { DecoderPool } from './lib/decoder-pool.js';
 import { initializeDecodeCache } from './lib/decode-cache.js';
+import { createDecodeMapSync } from './lib/decode-map-sync.js';
 import { createLogger } from './lib/logger.js';
 import type { DecodeCacheHealth } from './routes/health.js';
 
 const logger = createLogger('decode-service');
-const pool = new DecoderPool(env.CACHE_TTL_MS);
+// decoder는 DecodeMap에서 결정론적으로 만들어지므로 만료시키지 않는다.
+// 갱신은 decode-map 동기화가 catalog digest 변경을 보고 수행한다.
+const pool = new DecoderPool(0);
+const decodeMapSync = env.REGISTRY_URL
+  ? createDecodeMapSync({ registryUrl: env.REGISTRY_URL, pool, logger })
+  : undefined;
+let refreshTimer: ReturnType<typeof setInterval> | undefined;
 const startedAt = Date.now();
 
 // Redis L2 캐시 초기화 (CACHE_DRIVER=redis)
@@ -24,32 +30,6 @@ if (env.CACHE_DRIVER === 'redis' && env.REDIS_URL) {
   const redisCache = await initializeDecodeCache(env.REDIS_URL, { logger });
   decodeCache = redisCache.decodeCache;
   cacheHealth = redisCache.cacheHealth;
-}
-
-/** registry-service에서 전체 DecodeMap 자동 fetch */
-async function loadFromRegistry(registryUrl: string) {
-  try {
-    const res = await fetch(`${registryUrl}/api/decode-map`, {
-      signal: AbortSignal.timeout(5_000),
-    });
-    if (!res.ok) {
-      logger.warn({ status: res.status }, 'registry decode-map fetch failed');
-      return;
-    }
-    const maps = (await res.json()) as DecodeMap[];
-    let loaded = 0;
-    for (const map of maps) {
-      try {
-        pool.loadMap(map);
-        loaded++;
-      } catch (err) {
-        logger.warn({ indexId: map.indexId, err }, 'decode-map load failed');
-      }
-    }
-    logger.info({ loaded, total: maps.length }, 'loaded decode-maps from registry');
-  } catch (err) {
-    logger.warn({ err }, 'registry decode-map fetch failed — starting with empty pool');
-  }
 }
 
 const app = createApp({
@@ -74,10 +54,20 @@ const server = serve({ fetch: app.fetch, port: env.PORT }, async (info) => {
   );
   warnPortConflict('decode-service', env.PORT, logger);
 
-  // registry에서 DecodeMap 자동 로드
-  if (env.REGISTRY_URL) {
-    await loadFromRegistry(env.REGISTRY_URL);
+  // registry에서 DecodeMap 로드 + catalog 변경 시 갱신
+  if (decodeMapSync) {
+    await decodeMapSync.sync();
+    if (env.DECODE_MAP_REFRESH_MS > 0) {
+      refreshTimer = setInterval(() => void decodeMapSync.sync(), env.DECODE_MAP_REFRESH_MS);
+      refreshTimer.unref();
+    }
   }
 });
 
-installSimpleShutdown({ server, logger });
+installSimpleShutdown({
+  server,
+  logger,
+  cleanup: async () => {
+    if (refreshTimer) clearInterval(refreshTimer);
+  },
+});

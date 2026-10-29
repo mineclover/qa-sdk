@@ -54,7 +54,7 @@ decode에 필요한 최소 데이터(entity name → ID 매핑)를 DecodeMap 번
 | `clear()` | 전체 캐시 초기화 |
 
 - 캐시 키: `${prefix}:${version}`
-- TTL: `CACHE_TTL_MS` (기본 60초). 0이면 만료 없음 (Worker 모드).
+- TTL: 생성자 인자. 서비스는 Node.js·Worker 모두 0(만료 없음)으로 만들고, 갱신은 decode-map 동기화(`DECODE_MAP_REFRESH_MS`)가 맡는다. `CACHE_TTL_MS`는 L2 decode 결과 캐시 TTL이다.
 
 ## DecodeMap 빌드 규칙
 

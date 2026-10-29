@@ -51,7 +51,7 @@ sources:
 **동작**: 운영팀이 동일 decode-service 코드를 3개 환경에 동시 배포.
 
 **기대**:
-- Worker 배포 → TTL=0 (프로세스 수명 동안 유지), Node.js 배포 → CACHE_TTL_MS=60s
+- Worker 배포 → TTL=0 (isolate 수명 동안 유지), Node.js 배포 → TTL=0 + catalog digest 변경 시 decode-map 재로드 (`DECODE_MAP_REFRESH_MS`)
 - Worker 에서는 server.ts/@hono/node-server 경로를 import하지 않고 `worker.ts` + 공통 Hono app을 사용
 - `/metrics`는 process가 없는 런타임에서도 0 fallback으로 응답 가능
 - 각 배포 형태의 제약이 decode-deploy spec 에 명시, deploy 파이프라인에서 자동 검증

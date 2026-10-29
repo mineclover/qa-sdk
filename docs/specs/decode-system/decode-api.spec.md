@@ -138,7 +138,8 @@ BigInt 주소를 디코딩하고 index_ref 차원을 확장한다.
 | 변수 | 기본값 | 설명 |
 |------|--------|------|
 | `PORT` | `3600` | 서비스 포트 |
-| `REGISTRY_URL` | registry-service dev URL 또는 `http://localhost:3300` | startup 시 `/api/decode-map` 자동 fetch |
-| `CACHE_TTL_MS` | `60000` | DecoderPool 캐시 TTL (밀리초) |
+| `REGISTRY_URL` | registry-service dev URL 또는 `http://localhost:3300` | `/api/decode-map` 로드·갱신 대상 |
+| `CACHE_TTL_MS` | `60000` | L2 decode 결과 캐시(redis) TTL (ms). decoder는 만료하지 않는다 |
+| `DECODE_MAP_REFRESH_MS` | `60000` | registry catalog digest 확인 주기 (ms). 바뀌었을 때만 decode-map 재로드. 0이면 부팅 때 한 번만 |
 | `CACHE_DRIVER` | `memory` | L2 decode 캐시 드라이버 (`memory` 또는 `redis`) |
 | `REDIS_URL` | - | `CACHE_DRIVER=redis`일 때 필수 |

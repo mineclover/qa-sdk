@@ -26,6 +26,7 @@ sources:
   - packages/decode-service/src/server.ts
   - packages/decode-service/src/worker.ts
   - packages/decode-service/src/lib/decoder-pool.ts
+  - packages/decode-service/src/lib/decode-map-sync.ts
   - packages/decode-service/src/routes/decode.ts
   - packages/decode-service/src/routes/health.ts
   - packages/decode-service/src/routes/metrics.ts
@@ -71,8 +72,8 @@ decode-service
 
 ### 캐시 전략
 
-- `DecoderPool`: prefix/version별 `PrefixDecoder` 또는 `PrefixDecoderBig` TTL 기반 캐시
-- Node.js: `CACHE_TTL_MS` (기본 60초). TTL 만료 → 다음 접근 시 null → 클라이언트 재요청
-- Worker: TTL=0 (만료 없음, 프로세스 수명 동안 유지)
-- 능동적 갱신 없음 — pull 모델
+- `DecoderPool`: prefix/version별 `PrefixDecoder` 또는 `PrefixDecoderBig` 캐시. Node.js·Worker 모두 TTL=0 (decoder는 DecodeMap에서 결정론적으로 만들어지므로 만료시키지 않는다)
+- Node.js 갱신: `lib/decode-map-sync.ts`가 `DECODE_MAP_REFRESH_MS`(기본 60초)마다 registry `/health/generation`의 catalog digest를 확인하고, 바뀌었을 때만 `/api/decode-map`을 다시 불러온다. digest를 알 수 없으면 매번 다시 불러오고, 실패하면 기존 decoder를 유지한다 (fail-open)
+- Worker: isolate 수명 동안 유지 (첫 요청에 로드)
+- 이전 설계("TTL 만료 → 클라이언트 재요청")는 decode-map을 다시 불러올 경로가 없어 만료 후 모든 decode가 `DECODER_NOT_LOADED`가 되는 결함이었다 (2026-10-29 수정, `docs/proposals/swc-next-qa-sdk-optimization/06-feature-cleanup-candidates.md` S-8)
 - `POST /decode`는 선택적으로 Redis 기반 L2 decode 결과 캐시를 사용하고, `/health`는 cache driver/status를 노출
