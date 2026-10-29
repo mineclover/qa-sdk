@@ -146,7 +146,7 @@ F  좌표계 (기반) ─ Catalog 하나에서 주소·코덱·snapshot·생성�
 |---|---|
 | F | catalog 변경 → codegen → SDK encode → decode-service decode가 같은 값 |
 | P1 | prefix draft → impact/dry-run → release (overflow·breaking은 거부) |
-| P2 | spec `tests:` 선언 → `test scan` → `test report`에 커버리지 반영 |
+| P2 | spec `tests:` 선언 → `test scan` → `test assign` → `test record` → `test report`에 실행 결과 반영 |
 | P3 | 구버전 SDK envelope → snapshot gate 판정 → 등록 안 된 key 관측 |
 | P4 | 결정 기록 → DKG decision 노드 → 문서 링크 검증 |
 | P5 | SDK 이벤트 → trace 재구성 → convergence observation → `dkg observations` |
@@ -159,7 +159,7 @@ F  좌표계 (기반) ─ Catalog 하나에서 주소·코덱·snapshot·생성�
 |---|---|---|
 | F | `decode-service/src/coordinate.purpose-flow.test.ts` — catalog → registry decode-map → decode-map 동기화 → HTTP `/decode`가 모든 product prefix에서 SDK encode 값과 같음. entry를 덧붙여도 예전 주소 유지 | — |
 | P1 | `registry-service/src/e2e/design.purpose-flow.test.ts` — draft → simulate → lock·release·activate → active, overflow는 OVERFLOW | 첫 차원 capacity 확대는 stride 불변(마이그레이션 불필요)이라는 simulate 판정이 맞았다 — 흐름 작성자(나)의 기대가 틀렸다 |
-| P2 | `cli/src/commands/test-list.purpose-flow.test.ts` — spec `tests:` → scan → assign → report (assigned까지) | ① 같은 spec·같은 kind 선언 둘째부터 조용히 버려짐 → scan이 경고하도록 수정 ② definition-catalog yaml-lite가 블록 배열 항목 값의 따옴표를 벗기지 않아 `module: '@qa-sdk/…'`가 파일 경로를 깨뜨림 → `unquote`로 수정 ③ collected·verified 경로 없음 (위 표) |
+| P2 | `cli/src/commands/test-list.purpose-flow.test.ts` — spec `tests:` → scan → assign → record → report (collected까지) | ① 같은 spec·같은 kind 선언 둘째부터 조용히 버려짐 → scan이 경고하도록 수정 ② definition-catalog yaml-lite가 블록 배열 항목 값의 따옴표를 벗기지 않아 `module: '@qa-sdk/…'`가 파일 경로를 깨뜨림 → `unquote`로 수정 ③ `test record`로 collected까지 진행했으며 collected → verified 정책은 별도 결정 필요 |
 | P3 | `ingest-server/src/integrity.purpose-flow.test.ts` — 구버전 SDK 수락, catalog 밖 prefix key는 미등록 관측(warn), layout 밖 주소는 enforce 422 | — |
 | P4 | `cli/src/commands/intent.purpose-flow.test.ts` — recordDecision → DKG 저장 → 재로드 후 `traceNode`에서 결정 추적, 결정 문서 링크 검증 | — |
 | P5 | `ingest-server/src/observation.purpose-flow.test.ts` — 이벤트 3건 → trace 재구성 → 실제 convergence·DKG 분석 → usage snapshot에 관측량 반영 | — |
@@ -172,6 +172,26 @@ demo catalog로 사람 판정 골든 세트를 만들고, §3 출력마다 preci
 
 - 고친다 (표본 하한, 판정 규칙 보정)
 - 제안 등급을 낮춘다 (결정 생성 대신 observation만)
+
+#### 2단계 결과 (2026-10-29, 골든 초안)
+
+골든 데이터는 `packages/dkg-enrichment/src/__golden__/purpose-alignment.ts`에 두고, `judgment: proposed`를 유지한다. 정밀도는 `TP / (TP + FP)`로 계산했으며, 판단 보류와 제안하지 않은 경우는 분모에서 제외한다. 아래 80% 하한은 §6의 사람 확정 전 임시 기준이다.
+
+| 분석 | 현재 출력 요약 | 골든 초안 항목 수 | precision (임시 기준 ≥80%) | 처리 | 근거 |
+|---|---|---:|---:|---|---|
+| `convergeChain` prefix merge | 순수 demo에서 4건(`engine_event↔validation_event`, `test_event↔test_coverage`, `cli_event↔cli_tracking`, `ir_pipe↔ir_intent_path`)이 구조 유사도 75~100%로 merge 후보 | 4 | 기존 0/4=0%; 수정 후 merge 결정 0건·observation 4건 | 등급 하향 | DEMO_DKG_CONFIG의 validation layer, flow_variant 확장, skill outcome 분리와 IR의 category/addressModel 차이가 병합보다 분리를 지지한다. |
+| `convergeChain` simplify·deactivate | 1건 관측에서 page_view 단일값 제안(기존에는 공유 축을 통해 다른 prefix에도 전파); 500건 안정 표본에서는 page·locale·userType 3건 | 2 | 저표본 기존 0/3=0%; 30건 하한 후 500건 후보 3/3=100% | 수정 + 보고 | 주소 표본 합계 30건 미만은 제안하지 않는다. 충분한 표본 후보는 사람 확정 전 proposed로 남긴다. |
+| `auditCoverage` dormant·phantom | 빈 usage에서 0%, dormant 783건, zero prefix 68개, phantom 0; 축별 충돌값 `flow_step=admin`은 기존 phantom 누락 | 3 | dormant Decision 기준 기존 0/68=0% (수정 후 0건); 축별 phantom 1/1=100% | 수정 + 보고 | traffic 없는 prefix는 `OBS-COV-ZERO`만 만들고, low coverage Decision은 실제 주소가 있는 prefix로 제한한다. 공유 축의 완전한 prefix 귀속은 추가 자료가 필요하다. |
+| `analyzeDeploymentSkew`, `dkg skew` | 현재 snapshot의 `cli_event v1 1건`은 스큐 없음; count가 큰 v1과 작은 v4를 비교하면 v1을 최신으로 오판 | 1 | 기존 canary 0/1=0%; catalog 최신 version 전달 후 1/1=100% | 수정 | 동시 version 탐지는 집계로 유지하고, 최신·구버전과 stale consumer 판정은 catalog release metadata를 전달할 때만 수행한다. |
+| pattern anomaly → observation | 첫 윈도우·저트래픽에서 ratio/volume 급변이 warning/critical이 될 수 있음; pipeline은 info를 Observation으로 저장하지 않음 | 3 | 기존 저표본 0/2=0%; 하한 후 충분 표본 1/1=100% | 수정 + 보고 | previous/current 각 5세션 미만은 ratio·volume을 보류한다. 첫 윈도우 미분류 info는 통계에만 남기고, pipeline 경로를 골든 테스트로 고정했다. |
+
+판정은 아직 사람이 확정하지 않았다. 다음 항목을 확정해야 한다.
+
+1. 임시 precision 하한 80%, simplify 최소 표본 30건, pattern 윈도우 최소 5세션의 운영 기준.
+2. prefix merge를 다시 결정으로 올릴 수 있는 의미 근거(category·addressModel·invariant·owner)와 IR 쌍의 분리 여부.
+3. 공유 축 EntryUsage의 prefix provenance를 보강하기 전 coverage를 observation 전용으로 둘지.
+4. catalog 최신 version이 아직 관측되지 않은 skew와 session별 사용량을 사람이 어떻게 해석할지.
+5. pattern anomaly Observation에 `svc_ref·behavior_pattern·severity` 좌표를 추가할지. `/v1/insights/*` 행은 이번 1~5 대상 범위 밖이며 별도 사람 결정으로 남긴다.
 
 ### 단계 3 — CLI 260개 명령 목적 태깅
 
@@ -195,4 +215,4 @@ spec 문서에도 목적을 붙여 단계 3과 같은 기준으로 정리한다.
 
 1. §4 표의 질문들 (motion·ontology·taxonomy·RLSC·federated·simulation)
 2. §5 단계 1 핵심 흐름 초안이 목적을 대표하는지
-3. 단계 2의 판정 기준 (분석 출력 precision 하한)
+3. 단계 2의 판정 기준 (현재 제안: precision 하한 80%, 사람 확정 필요)

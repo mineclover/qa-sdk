@@ -22,6 +22,7 @@
   "dependencies": {
     "drizzle-orm": "catalog:",
     "index-meta": "workspace:*",
+    "index-meta-store": "workspace:*",
     "test-types": "workspace:*"
   },
   "devDependencies": {

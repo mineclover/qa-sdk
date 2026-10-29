@@ -28,7 +28,7 @@ import {
   GateEngine,
   GateAwareVersionLifecycleStore,
   GateAwareEntryFlagStore,
-} from 'index-meta';
+} from 'index-meta-store';
 
 // ── 공통 픽스처 ─────────────────────────────────────────────
 

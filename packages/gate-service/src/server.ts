@@ -3,7 +3,7 @@
 
 import 'dotenv/config';
 import { serve } from '@hono/node-server';
-import { createSqliteDriver } from 'index-meta';
+import { createSqliteDriver } from 'index-meta-store';
 import { SqlAddressStateStore } from 'index-meta-workers';
 import { warnPortConflict, installSimpleShutdown, createServiceBootConfig } from '@qa-sdk/core';
 import { env } from './config/env.js';

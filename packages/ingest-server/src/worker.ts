@@ -8,7 +8,7 @@
  * Phase 2 (verdict, transition, convergence)는 비활성 (CF Workers 제약).
  * 이벤트 수집 + 저장 + WebSocket 실시간 스트림.
  */
-import { D1SqlDriver } from 'index-meta';
+import { D1SqlDriver } from 'index-meta-store';
 import { drizzle } from 'drizzle-orm/d1';
 import { createApp } from './app.js';
 import { INGEST_D1_SCHEMA_DDL } from './stores/d1-schema.sql.js';

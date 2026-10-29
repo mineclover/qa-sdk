@@ -110,8 +110,9 @@ export function analyzeEntryCoverage(
   // 어떤 prefix가 어떤 주소를 사용했는지
   const prefixUsed = new Set<string>();
   for (const a of addressUsages) {
-    prefixUsed.add(a.prefix);
+    if (a.count > 0) prefixUsed.add(a.prefix);
   }
+  const hasAddressEvidence = addressUsages.length > 0;
 
   const allEntries: EntryState[] = [];
   const prefixCoverages: PrefixCoverage[] = [];
@@ -140,7 +141,12 @@ export function analyzeEntryCoverage(
 
       // catalog에 정의된 entries
       for (const entry of snap.entries) {
-        const usage = usageMap.get(`${label}:${entry}`) ?? usageMap.get(`${axisId}:${entry}`);
+        // aggregateUsageData의 EntryUsage는 축 label 전역 집계다. 실제 주소가
+        // 없는 prefix에 그 값을 재사용하면 공유 축의 관측이 오염되므로 막는다.
+        const usage =
+          !hasAddressEvidence || prefixUsed.has(prefixId)
+            ? (usageMap.get(`${label}:${entry}`) ?? usageMap.get(`${axisId}:${entry}`))
+            : undefined;
         const isObserved = usage !== undefined && usage.count > 0;
 
         entries.push({
@@ -186,17 +192,33 @@ export function analyzeEntryCoverage(
 
   // phantom 감지: entryUsage에 있지만 catalog에 없는 entry
   const definedEntryKeys = new Set<string>();
-  for (const [, axis] of Object.entries(catalog.axes)) {
+  for (const [axisId, axis] of Object.entries(catalog.axes)) {
     for (const [, snap] of Object.entries(axis.versions)) {
       for (const entry of (snap as { entries: readonly string[] }).entries) {
-        definedEntryKeys.add(entry);
+        definedEntryKeys.add(`${axisId}:${entry}`);
       }
+    }
+  }
+  // aggregateUsageData는 prefix label을 axisId로 내보낼 수 있으므로 label→axis 매핑을 만든다.
+  const labelAxisIds = new Map<string, Set<string>>();
+  for (const prefix of Object.values(catalog.prefixes)) {
+    for (const label of prefix.labels) {
+      const dim = prefix.dims[label];
+      if (dim.kind !== 'axis') continue;
+      const axisIds = labelAxisIds.get(label) ?? new Set<string>();
+      axisIds.add(dim.axisId);
+      labelAxisIds.set(label, axisIds);
     }
   }
 
   for (const u of entryUsages) {
+    const canonicalKey = `${u.axisId}:${u.entry}`;
+    const definedByLabel = [...(labelAxisIds.get(u.axisId) ?? [])].some((axisId) =>
+      definedEntryKeys.has(`${axisId}:${u.entry}`),
+    );
     if (
-      !definedEntryKeys.has(u.entry) &&
+      !definedEntryKeys.has(canonicalKey) &&
+      !definedByLabel &&
       !u.entry.startsWith('(reserved:') &&
       isNaN(Number(u.entry))
     ) {

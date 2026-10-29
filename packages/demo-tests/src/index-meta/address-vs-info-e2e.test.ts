@@ -47,8 +47,8 @@ import {
   type DimStateSpec,
   type GateResult,
   type EntryRecord,
-} from 'index-meta';
-import type { EntityId } from 'index-meta';
+} from 'index-meta-store';
+import type { EntityId } from 'index-meta-store';
 
 // ── 픽스처 설명 ────────────────────────────────────────────
 //

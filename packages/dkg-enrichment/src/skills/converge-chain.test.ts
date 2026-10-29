@@ -40,9 +40,10 @@ describe('converge-chain — 4가지 행위 구분', () => {
     const mergeActions = result.actions.filter((a) => a.kind === 'merge');
     expect(mergeActions.length).toBeGreaterThan(0);
 
-    // usage가 없으므로 deactivate/simplify/observe는 0
+    // usage가 없어도 구조 유사도 병합 후보는 observation으로만 남긴다.
     expect(result.summary.deactivations).toBe(0);
-    expect(result.summary.observations).toBe(0);
+    expect(result.summary.observations).toBeGreaterThan(0);
+    expect(result.summary.merges).toBeGreaterThan(0);
   });
 
   it('usage 있음 — 4가지 행위 모두 구분', () => {

@@ -16,6 +16,7 @@ import {
   analyzeSimplification,
   discoverCausality,
   analyzeDeploymentSkew,
+  catalogLatestVersions,
 } from '@qa-sdk/convergence';
 import { scaffoldDecision } from 'dkg';
 
@@ -112,7 +113,23 @@ export function convergeChain(
         // 기존 DEC-SEP 분리 결정이 있으면 건너뜀
         if (hasActiveSeparationDecision(graph, overlap.a, overlap.b)) continue;
 
-        actions.push({ kind: 'merge', targets: [overlap.a, overlap.b], overlap });
+        // 공유 축/참조의 구조 유사도만으로 prefix 병합을 결정하지 않는다.
+        // category·addressModel·invariant 같은 의미 근거가 없는 후보는 관측으로 낮춘다.
+        const obs: ObservationNode = {
+          kind: 'observation',
+          id: `OBS-PREFIX-MERGE-${overlap.a}-${overlap.b}`,
+          date,
+          source: 'metric',
+          subjects: [overlap.a, overlap.b],
+          finding: `${overlap.a}↔${overlap.b} 구조 유사도 ${(overlap.structuralSimilarity * 100).toFixed(0)}% — 의미 근거 확인 전 병합 보류`,
+          intent: 'monitoring',
+          suggestion: {
+            kind: 'add-constraint',
+            rule: `${overlap.a}↔${overlap.b}의 category·addressModel·invariant를 확인한 뒤 병합 여부 결정`,
+          },
+        };
+        observations.push(obs);
+        actions.push({ kind: 'observe', finding: obs.finding, source: 'prefix-structure' });
       }
     }
   }
@@ -121,6 +138,13 @@ export function convergeChain(
 
   if (usage) {
     for (const prefixId of prefixIds) {
+      // 주소가 실제로 관측된 prefix만 단순화·비활성화 대상으로 삼는다.
+      // EntryUsage는 축 label 기준 전역 집계라 traffic 없는 prefix에 재사용될 수 있다.
+      const hasPrefixTraffic = usage.addressUsages.some(
+        (address) => address.prefix === prefixId && address.count > 0,
+      );
+      if (!hasPrefixTraffic) continue;
+
       const simplification = analyzeSimplification(
         graph,
         prefixId,
@@ -187,7 +211,9 @@ export function convergeChain(
 
     // 배포 스큐
     if (usage.versionUsages.length > 0) {
-      const skews = analyzeDeploymentSkew(usage.versionUsages);
+      const skews = analyzeDeploymentSkew(usage.versionUsages, {
+        latestVersions: catalogLatestVersions(catalog),
+      });
       for (const s of skews) {
         if (s.severity !== 'ok') {
           const obs: ObservationNode = {

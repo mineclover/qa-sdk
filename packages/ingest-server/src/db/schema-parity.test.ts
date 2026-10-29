@@ -17,7 +17,7 @@ import { is } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-sqlite';
 import { migrate } from 'drizzle-orm/node-sqlite/migrator';
 import { getTableConfig, SQLiteTable } from 'drizzle-orm/sqlite-core';
-import { NodeSqliteDriver } from 'index-meta';
+import { NodeSqliteDriver } from 'index-meta-store';
 import { describe, expect, it } from 'vitest';
 import { INGEST_D1_SCHEMA_DDL } from '../stores/d1-schema.sql.js';
 import * as schema from './schema.js';

@@ -2,7 +2,7 @@
 // @def.doc registry-system
 
 import { afterEach, describe, expect, it } from 'vitest';
-import type { SqlDriver } from 'index-meta';
+import type { SqlDriver } from 'index-meta-store';
 
 import { createRegistryDatabaseDriver } from '../bootstrap/stores.js';
 import { InMemoryOntologyRegistryStore } from './in-memory-ontology-registry-store.js';

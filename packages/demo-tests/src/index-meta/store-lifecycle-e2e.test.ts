@@ -28,7 +28,7 @@ import {
   checkGate,
   activeRanges,
   type DimStateSpec,
-} from 'index-meta';
+} from 'index-meta-store';
 
 // ── 공통 픽스처 ───────────────────────────────────────────
 

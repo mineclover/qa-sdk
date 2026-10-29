@@ -75,7 +75,7 @@ describe('activation gate — 실제 spec-core 동적 import', () => {
 
 describe('post-activation hook — 실제 spec-core 동적 import', () => {
   it('DkgSqliteStore(:memory:)에 hook 결과 저장', async () => {
-    const storeModule = await import('@qa-sdk/spec-core/store');
+    const storeModule = await import('dkg-store');
 
     const dkgStore = new (storeModule as any).DkgSqliteStore(':memory:', 'test-hook');
 
@@ -107,7 +107,7 @@ describe('전체 activate 경로 시뮬레이션', () => {
   it('gate check → activate → hook 순서 실행', async () => {
     const specCore = await import('@qa-sdk/spec-core/propagation');
     const analysis = await import('dkg-enrichment');
-    const storeModule = await import('@qa-sdk/spec-core/store');
+    const storeModule = await import('dkg-store');
 
     const graph = (analysis as any).bootstrapDkg({
       catalog: DEMO_CATALOG,

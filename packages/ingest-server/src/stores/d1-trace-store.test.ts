@@ -4,7 +4,7 @@
 // ── d1-trace-store.test.ts 분리 from d1-stores.test.ts ───
 
 import { describe, expect, it, beforeEach } from 'vitest';
-import { NodeSqliteDriver } from 'index-meta';
+import { NodeSqliteDriver } from 'index-meta-store';
 import { D1TraceStore } from './d1-trace-store.js';
 import { createD1Drizzle, type D1Db } from './d1-db-type.js';
 import { drizzle } from 'drizzle-orm/node-sqlite';

@@ -2,7 +2,7 @@
 // @def.doc registry-system
 
 import { Global, Module } from '@nestjs/common';
-import type { SqlDriver } from 'index-meta';
+import type { SqlDriver } from 'index-meta-store';
 import { env } from './config/env.js';
 import { createRegistryDatabaseDriver } from './bootstrap/stores.js';
 

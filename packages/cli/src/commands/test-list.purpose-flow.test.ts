@@ -4,15 +4,15 @@
 /**
  * @purpose P2 테스트 목록 관리 — 핵심 흐름 (docs/proposals/swc-next-qa-sdk-optimization/07-purpose-alignment.md §5 단계 1)
  *
- * spec frontmatter `tests:` 선언 → `test scan`(declared) → `test assign`(B 좌표·파일 경로) → `test report`.
- * 실행 결과로 collected·verified로 넘어가는 경로는 아직 CLI에 없다 (07 §2 P2 참고) — 이 흐름은 assigned까지 고정한다.
+ * spec frontmatter `tests:` 선언 → `test scan`(declared) → `test assign`(B 좌표·파일 경로) →
+ * `test record`(collected) → `test report`. verified 승격은 별도 검증 정책이 필요하다.
  */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SqliteTestScenarioStore } from 'test-scenario-store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { testAssign, testReport, testScan } from './test.js';
+import { testAssign, testRecord, testReport, testScan } from './test.js';
 
 const SPEC = `---
 id: checkout-flow
@@ -73,11 +73,20 @@ describe('P2 테스트 목록 관리 — 선언 → 좌표 부여 → 리포트'
       '모듈 미선언 — 할당 보류',
     ]);
 
+    testRecord({
+      bCoord: assigned[0].id,
+      passed: true,
+      commitHash: 'abc123',
+      durationMs: 42,
+      db,
+    });
+    expect(store.listByLifecycle('collected')).toHaveLength(1);
+
     const log = vi.mocked(console.log);
     log.mockClear();
     testReport({ db });
     const report = log.mock.calls.map((args) => args.join(' ')).join('\n');
     expect(report).toContain('@qa-sdk/shop/checkout');
-    expect(report).toContain('○'); // assigned
+    expect(report).toContain('🔄'); // collected
   });
 });

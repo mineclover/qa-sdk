@@ -2,7 +2,7 @@
 // @def.doc registry-system
 
 import { Global, Module } from '@nestjs/common';
-import { SqlPrefixRegistry, SqlVersionLifecycleStore, type SqlDriver } from 'index-meta';
+import { SqlPrefixRegistry, SqlVersionLifecycleStore, type SqlDriver } from 'index-meta-store';
 import { DATABASE } from './database.module.js';
 import { RegistryService } from './lib/registry-service.js';
 import { SqlDraftLockStore } from './stores/sql-draft-lock-store.js';

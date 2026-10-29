@@ -10,7 +10,14 @@ import {
   type CommandUsageSpec,
   type RestCommandHandler,
 } from '../command-spec.js';
-import { testAssign, testReport, testScan, testScaffold, testStatus } from '../commands/test.js';
+import {
+  testAssign,
+  testRecord,
+  testReport,
+  testScan,
+  testScaffold,
+  testStatus,
+} from '../commands/test.js';
 
 export const TEST_COMMAND_DESCRIPTORS = [
   {
@@ -31,6 +38,13 @@ export const TEST_COMMAND_DESCRIPTORS = [
     path: ['scaffold'],
     usage: 'qa-sdk test scaffold [--b-coord <c>] [--db <path>]         테스트 스텁 파일 생성',
     handlerKey: 'test.scaffold',
+  },
+  {
+    id: 'test.record',
+    path: ['record'],
+    usage:
+      'qa-sdk test record <b-coord> (--passed|--failed) [--commit <hash>] [--duration-ms <n>] [--db <path>]  실행 결과 → collected',
+    handlerKey: 'test.record',
   },
   {
     id: 'test.status',
@@ -93,6 +107,28 @@ export const TEST_HANDLER_REGISTRY = {
     testScaffold({
       bCoord: values['b-coord'] as string | undefined,
       mirror: values.mirror as string | undefined,
+      db: values.db as string | undefined,
+    });
+  },
+  'test.record': (rest: string[]) => {
+    const { positionals, values } = parseArgs({
+      args: rest,
+      options: {
+        passed: { type: 'boolean' },
+        failed: { type: 'boolean' },
+        commit: { type: 'string' },
+        'duration-ms': { type: 'string' },
+        db: { type: 'string' },
+      },
+      allowPositionals: true,
+      strict: false,
+    });
+    const passed = values.passed === true ? true : values.failed === true ? false : undefined;
+    testRecord({
+      bCoord: positionals[0],
+      passed,
+      commitHash: values.commit as string | undefined,
+      durationMs: values['duration-ms'] === undefined ? undefined : Number(values['duration-ms']),
       db: values.db as string | undefined,
     });
   },

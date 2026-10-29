@@ -8,7 +8,7 @@ import {
   SqlIndexMetaStore,
   SqlPrefixRegistry,
   type SqlDriver,
-} from 'index-meta';
+} from 'index-meta-store';
 import { operationalOntologyAllocationPlane } from 'operational-ontology/allocation';
 import { operationalOntologyPackPlane } from 'operational-ontology/pack';
 import type { OperationalOntologyPack } from 'operational-ontology/pack';

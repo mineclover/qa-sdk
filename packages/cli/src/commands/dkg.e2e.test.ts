@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createServer } from 'node:http';
 
-import { DkgSqliteStore } from '../../../spec-core/src/store/index.js';
+import { DkgSqliteStore } from 'dkg-store';
 
 const originalHome = process.env.HOME;
 const originalAuditIngestUrl = process.env.QA_CLI_AUDIT_INGEST_URL;

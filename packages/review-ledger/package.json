@@ -31,7 +31,8 @@
     "@qa-sdk/core": "workspace:*",
     "drizzle-orm": "catalog:",
     "execa": "^9.6.1",
-    "index-meta": "workspace:*"
+    "index-meta": "workspace:*",
+    "index-meta-store": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

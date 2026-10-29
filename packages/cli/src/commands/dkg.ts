@@ -94,6 +94,7 @@ import {
   scanAxisOverlaps,
   scanDecisionConflicts,
   analyzeDeploymentSkew,
+  catalogLatestVersions,
   collectMetrics,
   metricsToObservations,
   resolveRecoveredMetrics,
@@ -115,7 +116,7 @@ import {
 } from '@qa-sdk/convergence';
 import { auditSchemaHealth } from '@qa-sdk/spec-core';
 import { executeEntryAdd, EntryAddError, writeCatalogFile } from '@qa-sdk/spec-core/propagation';
-import { DkgSqliteStore, type UsageData as DkgUsageData } from 'dkg/store';
+import { DkgSqliteStore, type UsageData as DkgUsageData } from 'dkg-store';
 import { join, dirname } from 'node:path';
 import { mkdirSync, existsSync, writeFileSync, readFileSync } from 'node:fs';
 import { execaSync } from 'execa';
@@ -955,7 +956,9 @@ export function dkgReport(): void {
   // 최근 배포 스큐
   const recent = store.loadRecentVersionUsages(1);
   if (recent.length > 0 && recent[0].versionUsages.length > 0) {
-    const skews = analyzeDeploymentSkew(recent[0].versionUsages);
+    const skews = analyzeDeploymentSkew(recent[0].versionUsages, {
+      latestVersions: catalogLatestVersions(DEMO_CATALOG),
+    });
     const critical = skews.filter((s) => s.severity === 'critical');
     const warning = skews.filter((s) => s.severity === 'warning');
     if (critical.length > 0) {
@@ -1427,7 +1430,9 @@ export function dkgHistory(opts: { limit?: number }): void {
     console.log(`\n  #${snap.snapshotId} (${snap.collectedAt})`);
 
     // 배포 스큐
-    const skews = analyzeDeploymentSkew(snap.versionUsages);
+    const skews = analyzeDeploymentSkew(snap.versionUsages, {
+      latestVersions: catalogLatestVersions(DEMO_CATALOG),
+    });
     for (const s of skews) {
       if (s.severity === 'ok') continue;
       const icon = s.severity === 'critical' ? '🔴' : '⚠';
@@ -1666,7 +1671,9 @@ export function dkgSkew(): void {
     return;
   }
 
-  const skews = analyzeDeploymentSkew(recent[0].versionUsages);
+  const skews = analyzeDeploymentSkew(recent[0].versionUsages, {
+    latestVersions: catalogLatestVersions(DEMO_CATALOG),
+  });
 
   console.log(`\n══ 배포 스큐 (최근 스냅샷: ${recent[0].collectedAt}) ══`);
 
@@ -4006,15 +4013,24 @@ export function dkgRun(skillId: string, args: string[]): void {
         : DEMO_CATALOG;
       const result = auditCoverage(catalog, graph, entryUsages, addressUsages);
       const report = result.report;
+      const observedPrefixes = new Set(
+        addressUsages.filter((usage) => usage.count > 0).map((usage) => usage.prefix),
+      );
       console.log(`  전체 커버리지: ${Math.round(report.overallCoverageRate * 100)}%`);
       console.log(`  dormant: ${report.dormantCount}개, phantom: ${report.phantomCount}개`);
       if (report.prefixes.length > 0) {
-        const low = report.prefixes.filter((p) => p.coverageRate < 0.5);
+        const low = report.prefixes.filter(
+          (p) => p.coverageRate < 0.5 && observedPrefixes.has(p.prefixId),
+        );
         if (low.length > 0) {
           console.log(`  저커버리지 prefix (${low.length}개):`);
           for (const p of low.slice(0, 10)) {
             console.log(`    ${p.prefixId}: ${Math.round(p.coverageRate * 100)}%`);
           }
+        }
+        const unobserved = report.prefixes.filter((p) => !observedPrefixes.has(p.prefixId));
+        if (unobserved.length > 0) {
+          console.log(`  미관측 prefix (${unobserved.length}개): usage 없음 — dormant 판정 보류`);
         }
       }
       if (result.observations.length > 0) {
@@ -4513,7 +4529,7 @@ function suggestNextSteps(graph: GraphRegistry, skillId: string, skillNode: Skil
       'dkg run skill-commerce-skew-audit  — 버전 스큐 상세',
     ],
     'skill-converge-chain': [
-      'dkg run skill-record-decision <targetId> merge <title> <rationale>  — merge 결정 기록',
+      'dkg run skill-record-observation <targetId> <finding>  — 구조 유사도 관측 기록',
     ],
     'skill-entry-add-chain': [
       'dkg run skill-record-decision <axisId> capacity <title> <rationale>  — capacity 결정 기록',

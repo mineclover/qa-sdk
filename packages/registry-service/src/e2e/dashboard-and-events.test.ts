@@ -1,23 +1,35 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CompatApp } from '../test/nest-helpers.js';
 
-const TEST_DKG_PATH = '/tmp/registry-service-dashboard-e2e.sqlite';
+// AppModule + DKG dashboard bootstrap is expensive on a contended CI worker.
+// Keep the test default above Vitest's 15s global timeout without changing the
+// production bootstrap path.
+vi.setConfig({ testTimeout: 30_000 });
+
 const originalDashboardEnabled = process.env.DEV_DASHBOARD_ENABLED;
 const originalDashboardPath = process.env.DEV_DASHBOARD_DKG_PATH;
 const closers: Array<() => Promise<void>> = [];
 
 async function buildDashboardApp(): Promise<CompatApp> {
   vi.resetModules();
+  const dkgDir = mkdtempSync(join(tmpdir(), 'registry-service-dashboard-e2e-'));
+  const dkgPath = join(dkgDir, 'state.sqlite');
   process.env.DEV_DASHBOARD_ENABLED = 'true';
-  process.env.DEV_DASHBOARD_DKG_PATH = TEST_DKG_PATH;
+  process.env.DEV_DASHBOARD_DKG_PATH = dkgPath;
 
   const { AppModule } = await import('../app.module.js');
   const { createNestTestApp, wrapNestApp } = await import('../test/nest-helpers.js');
   const nestApp = await createNestTestApp({ imports: [AppModule] });
-  closers.push(() => nestApp.close());
+  closers.push(async () => {
+    await nestApp.close();
+    rmSync(dkgDir, { recursive: true, force: true });
+  });
   return wrapNestApp(nestApp);
 }
 

@@ -29,7 +29,8 @@
     "@qa-sdk/core": "workspace:*",
     "decision-flow": "workspace:*",
     "drizzle-orm": "catalog:",
-    "index-meta": "workspace:*"
+    "index-meta": "workspace:*",
+    "index-meta-store": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

@@ -1,0 +1,46 @@
+{
+  "name": "index-meta-store",
+  "version": "0.1.0",
+  "description": "SQL, SQLite, D1, and native persistence adapters for index-meta",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "drizzle"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./workers": {
+      "types": "./dist/workers.d.ts",
+      "import": "./dist/workers.js",
+      "require": "./dist/workers.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "db:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "drizzle-orm": "catalog:",
+    "index-meta": "workspace:*",
+    "weighted-index": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "catalog:",
+    "better-sqlite3": "catalog:",
+    "drizzle-kit": "catalog:",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.1",
+    "vitest": "^1.6.1"
+  }
+}

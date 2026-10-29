@@ -99,7 +99,7 @@ export interface AppDeps {
   version?: string;
   corsOrigin?: string;
   /** D1 SqlDriver — labels 등 raw SQL 쿼리용 (Worker 모드) */
-  sqlDriver?: import('index-meta').SqlDriver;
+  sqlDriver?: import('index-meta-store').SqlDriver;
   /** InsightsStore — 인사이트 조회/수집 (INSIGHTS_DRIVER로 구현체 선택) */
   insightsStore?: InsightsStore;
   /** 카탈로그 기반 event/prefix 검증 (fail-open) */

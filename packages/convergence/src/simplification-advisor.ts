@@ -15,6 +15,8 @@ import type {
 } from './convergence.types.js';
 
 const LOW_USAGE_THRESHOLD = 0.05; // 5% 미만 → 저사용
+/** 단일값·저사용 판정을 시작하기 위한 최소 관측량(제안값). */
+export const MIN_SIMPLIFICATION_SAMPLE_COUNT = 30;
 
 /**
  * prefix의 단순화 기회를 분석한다.
@@ -25,7 +27,7 @@ export function analyzeSimplification(
   prefixId: string,
   entryUsages: readonly EntryUsage[],
   addressUsages: readonly AddressUsage[],
-  options?: { addressSpaceSize?: number },
+  options?: { addressSpaceSize?: number; minSampleCount?: number },
 ): SimplificationCandidate {
   const prefixNode = graph.getNode(prefixId) as PrefixNode | undefined;
   const dims = prefixNode?.dimLabels ?? [];
@@ -45,21 +47,27 @@ export function analyzeSimplification(
     }
   }
 
+  const totalEntryCount = entryUsages
+    .filter((u) => dims.includes(u.axisId) || isAxisOfPrefix(graph, prefixId, u.axisId))
+    .reduce((sum, u) => sum + u.count, 0);
+  const prefixSampleCount = prefixAddresses.reduce((sum, usage) => sum + usage.count, 0);
+  const minSampleCount = options?.minSampleCount ?? MIN_SIMPLIFICATION_SAMPLE_COUNT;
+  const enoughSamples =
+    (prefixSampleCount > 0 ? prefixSampleCount : totalEntryCount) >= minSampleCount;
+
   // 단일 값 차원 (모든 관측에서 1개 값만 사용)
   const singleValueDims: { dim: string; value: string }[] = [];
-  for (const [dim, values] of dimValueSets) {
-    if (values.size === 1) {
-      singleValueDims.push({ dim, value: [...values][0] });
+  if (enoughSamples) {
+    for (const [dim, values] of dimValueSets) {
+      if (values.size === 1) {
+        singleValueDims.push({ dim, value: [...values][0] });
+      }
     }
   }
 
   // 저사용 entry
-  const totalEntryCount = entryUsages
-    .filter((u) => dims.includes(u.axisId) || isAxisOfPrefix(graph, prefixId, u.axisId))
-    .reduce((sum, u) => sum + u.count, 0);
-
   const lowUsageEntries: { axis: string; entry: string; usageRate: number }[] = [];
-  if (totalEntryCount > 0) {
+  if (enoughSamples) {
     for (const usage of entryUsages) {
       if (!dims.includes(usage.axisId) && !isAxisOfPrefix(graph, prefixId, usage.axisId)) continue;
       const rate = usage.count / totalEntryCount;

@@ -11,7 +11,7 @@ import {
   NodeSqliteDriver,
   SqlPrefixRegistry,
   SqlVersionLifecycleStore,
-} from 'index-meta';
+} from 'index-meta-store';
 import { drizzle } from 'drizzle-orm/node-sqlite';
 import { migrate } from 'drizzle-orm/node-sqlite/migrator';
 import { createLogger } from '../lib/logger.js';

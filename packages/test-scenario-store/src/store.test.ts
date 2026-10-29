@@ -3,6 +3,11 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SqliteTestScenarioStore } from './store.js';
+import {
+  canTransitionTestScenario,
+  TEST_SCENARIO_LIFECYCLE_TRANSITIONS,
+  type TestScenarioStore,
+} from './port.js';
 
 describe('SqliteTestScenarioStore', () => {
   let store: SqliteTestScenarioStore;
@@ -76,6 +81,13 @@ describe('SqliteTestScenarioStore', () => {
 
     const s = store.getById('test_scenario:v1:1');
     expect(s?.lifecycle).toBe('collected');
+    expect(store.listRuns('test_scenario:v1:1')).toHaveLength(1);
+    expect(store.latestRun('test_scenario:v1:1')).toMatchObject({
+      scenarioId: 'test_scenario:v1:1',
+      passed: true,
+      commitHash: 'abc123',
+      durationMs: 200,
+    });
   });
 
   it('listByLifecycle → lifecycle 필터', () => {
@@ -117,5 +129,20 @@ describe('SqliteTestScenarioStore', () => {
     store.assign('def:20/unit', 'test_scenario:v1:1', 'svc.test.ts', false);
     expect(store.nextSeq('unit', 'single')).toBe(2);
     expect(store.nextSeq('e2e', 'system')).toBe(2); // kind/scope 무관 — 전역.
+  });
+
+  it('backend-agnostic port는 현재 lifecycle과 실행 메타데이터 계약을 고정한다', () => {
+    const port: TestScenarioStore = store;
+    expect(port).toBe(store);
+    expect(TEST_SCENARIO_LIFECYCLE_TRANSITIONS).toEqual({
+      declared: ['assigned'],
+      assigned: ['collected'],
+      collected: [],
+      verified: [],
+      archived: [],
+    });
+    expect(canTransitionTestScenario('declared', 'assigned')).toBe(true);
+    expect(canTransitionTestScenario('assigned', 'collected')).toBe(true);
+    expect(canTransitionTestScenario('collected', 'verified')).toBe(false);
   });
 });

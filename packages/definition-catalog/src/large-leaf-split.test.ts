@@ -190,7 +190,7 @@ describe('US-012/013 large leaf split', () => {
       'behavioral-traversal',
       'dx-lifecycle-spec',
       'address-scenarios',
-      'index-meta-store',
+      'index-meta',
       'adr-address-separation',
       'spec-core-types',
       'convergence-layer-spec',

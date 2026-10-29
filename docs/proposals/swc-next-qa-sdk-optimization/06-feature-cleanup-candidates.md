@@ -41,6 +41,14 @@ sources:
 
 "(추정)"은 정적 분석만 했고 실제로 돌려 보지 않은 항목이다.
 
+## 0. 이번 정리의 범위 결정 (2026-10-30)
+
+이번 단계는 외부 라이브러리·서비스형 런타임을 확장하는 작업이 아니라 순수 로직, 좌표·Catalog·definition·spec·decision 데이터 모델, validator·serialization을 닫는 작업으로 한정한다. 서비스·gateway·DB adapter·provider·web·demo·motion·visual 기능은 신규 구현을 멈추고 버그·보안·호환성·계약 테스트만 유지한다.
+
+따라서 convergence scheduler·worker·flush와 snapshot의 ingest 수집·replay·backend adapter 구현은 서비스 후순위다. CatalogSnapshot shape, digest, codec, compatibility 판정, 목적별 논리 저장 인터페이스와 필드 불변식처럼 실행 환경과 분리된 데이터 설계·로직은 핵심 범위에 남긴다.
+
+이 결정은 패키지 즉시 삭제를 승인하지 않는다. 각 후보는 `focus`(계속 구현), `freeze`(유지보수만), `quarantine`(신규 승격 금지)으로 먼저 표시하고, fan-in과 외부 소비자를 확인한 뒤 삭제·통합·archive를 별도 결정한다. 저장소 backend는 선택적 adapter이며, 필수 계약은 목적·필드 의미·상태·provenance·version/digest·idempotency·조회/보존 요구로 선언한다.
+
 ## 1. 결함 — 지금 고칠 가치가 큼 ^defines
 
 | # | 대상 | 문제 | 근거 | 제안 |
@@ -110,7 +118,7 @@ sources:
 |---|---|---|---|
 | M-1 | dkg ↔ dkg-enrichment `skills/` 3개 (`converge-chain`·`coverage-audit`·`flow-trace`) | 같은 이름의 파일이 서로 다르게 갈라짐. CLI·서비스는 dkg 쪽만 쓰고, dkg-enrichment 쪽은 자기 테스트에서만 쓰임 | dkg를 정본으로 두고 enrichment 사본 삭제. enrichment 테스트에만 있는 케이스는 dkg로 이전 |
 | M-2 | `AddressConverter`(weighted-index) ↔ `AddressProtocolManager`(index-meta) | APM이 converter를 감싸면서 프로토콜 레지스트리를 따로 또 들고 있음. APM은 index-meta 밖에서 쓰이지 않음 | APM은 수명 관리(write/read 전환, fallback)만 남기고 레지스트리는 converter에 위임 |
-| M-3 | ingest `stores/pg/*` (Plan 07d) | runtime은 `@qa-sdk/store` Drizzle store를 씀. pg adapter 2개·factory·schema(747줄)와 테스트(812줄)는 runtime에서 도달하지 않음 | **사람 결정** — Plan 07d를 진행하지 않으면 삭제하고, RLS·cross-adapter 테스트를 Drizzle 경로 기준으로 다시 작성 |
+| M-3 | ingest `stores/pg/*` (Plan 07d) | runtime은 `@qa-sdk/store` Drizzle store를 씀. pg adapter 2개·factory·schema(747줄)와 테스트(812줄)는 runtime에서 도달하지 않음 | backend 선택은 후순위로 두고 목적 기반 논리 저장 인터페이스를 먼저 정의한다. 외부 소비자 확인 후 adapter를 삭제·archive할지 결정 |
 | M-4 | gate·query 패키지 루트 `worker.ts` | wrangler `main`은 `src/worker.ts`. 루트 파일은 쓰이지 않는 사본 (gate 쪽은 예전 API) | 삭제 |
 | M-5 | gate `routes/gate-openapi.ts` ↔ `gate.ts` | 같은 계약을 두 곳에서 정의 | 한쪽에서 다른 쪽을 파생 |
 | M-6 | gate `services/{cache-invalidation,consistency}`, `memory-event-bus`, `event-bus.port` | 프로덕션 import 0 | S-4 판정과 함께 |

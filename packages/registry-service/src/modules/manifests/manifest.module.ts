@@ -2,7 +2,7 @@
 // @def.doc registry-system
 
 import { Module } from '@nestjs/common';
-import type { SqlDriver } from 'index-meta';
+import type { SqlDriver } from 'index-meta-store';
 import { SqliteManifestRegistry } from 'pipe-store-sqlite';
 import { DATABASE } from '../../database.module.js';
 import { env } from '../../config/env.js';

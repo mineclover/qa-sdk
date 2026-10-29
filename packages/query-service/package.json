@@ -26,6 +26,7 @@
     "drizzle-orm": "catalog:",
     "hono": "^4.7.5",
     "index-meta": "workspace:*",
+    "index-meta-store": "workspace:*",
     "index-meta-workers": "workspace:*",
     "pino": "workspace:@qa-sdk/pino@*",
     "zod": "^3.25.76"

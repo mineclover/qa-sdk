@@ -9,7 +9,7 @@
  */
 
 import { describe, expect, it, beforeAll } from 'vitest';
-import { NodeSqliteDriver } from 'index-meta';
+import { NodeSqliteDriver } from 'index-meta-store';
 import { drizzle } from 'drizzle-orm/node-sqlite';
 import { migrate } from 'drizzle-orm/node-sqlite/migrator';
 import {

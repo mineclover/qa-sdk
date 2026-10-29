@@ -18,6 +18,8 @@ export interface AnomalyDetectionInput {
   readonly ratioShiftThreshold?: number;
   /** 볼륨 급증 배수 (기본 3.0 = 3배) */
   readonly volumeSpikeMultiplier?: number;
+  /** 비율·볼륨 비교를 허용하는 윈도우별 최소 세션 수 */
+  readonly minWindowSampleSize?: number;
 }
 
 /**
@@ -33,6 +35,7 @@ export function detectAnomalies(
   const now = isoInstant(options?.clock ?? systemClock);
   const ratioThreshold = input.ratioShiftThreshold ?? 0.3;
   const spikeMultiplier = input.volumeSpikeMultiplier ?? 3.0;
+  const minWindowSampleSize = input.minWindowSampleSize ?? 5;
 
   // 1. unclassified 감지
   const unclassified = input.current.filter((c) => c.pattern === 'unclassified');
@@ -44,12 +47,18 @@ export function detectAnomalies(
       seqGroups.set(key, (seqGroups.get(key) ?? 0) + 1);
     }
     for (const [_key, count] of seqGroups) {
+      const lowSample = input.current.length < minWindowSampleSize;
       anomalies.push({
         kind: 'unclassified',
         sessionId: `aggregate:${count}`,
         eventSequence: [],
         description: `미분류 패턴 ${count}건 감지. 새 규칙 추가를 검토하세요.`,
-        severity: count >= 10 ? 'critical' : count >= 3 ? 'warning' : 'info',
+        severity:
+          lowSample || count < 3
+            ? 'info'
+            : count >= 10 || count / input.current.length >= 0.5
+              ? 'critical'
+              : 'warning',
         detectedAt: now,
       });
     }
@@ -60,11 +69,17 @@ export function detectAnomalies(
     const currentCounts = new Map<string, number>();
     const total = input.current.length || 1;
     for (const c of input.current) {
-      currentCounts.set(c.pattern, (currentCounts.get(c.pattern) ?? 0) + 1);
+      const key = `${c.identificationMode}:${c.pattern}`;
+      currentCounts.set(key, (currentCounts.get(key) ?? 0) + 1);
     }
 
+    const previousTotal = input.previous.reduce((s, p) => s + p.count, 0);
+    const enoughSamples =
+      input.current.length >= minWindowSampleSize && previousTotal >= minWindowSampleSize;
+
     for (const prev of input.previous) {
-      const currentCount = currentCounts.get(prev.pattern) ?? 0;
+      if (!enoughSamples) continue;
+      const currentCount = currentCounts.get(`${prev.identificationMode}:${prev.pattern}`) ?? 0;
       const currentRatio = currentCount / total;
       const diff = Math.abs(currentRatio - prev.percentage);
 
@@ -81,9 +96,9 @@ export function detectAnomalies(
     }
 
     // 3. 볼륨 급증 감지
-    const _prevTotal = input.previous.reduce((s, p) => s + p.count, 0) || 1;
-    for (const [pattern, count] of currentCounts) {
-      const prevStat = input.previous.find((p) => p.pattern === pattern);
+    for (const [key, count] of currentCounts) {
+      if (!enoughSamples) continue;
+      const prevStat = input.previous.find((p) => `${p.identificationMode}:${p.pattern}` === key);
       const prevCount = prevStat?.count ?? 0;
       // 이전 대비 spikeMultiplier 배 이상 증가
       if (prevCount > 0 && count >= prevCount * spikeMultiplier) {
@@ -91,7 +106,7 @@ export function detectAnomalies(
           kind: 'volume_spike',
           sessionId: 'aggregate',
           eventSequence: [],
-          description: `${pattern} 볼륨 급증: ${prevCount} → ${count} (${(count / prevCount).toFixed(1)}배)`,
+          description: `${prevStat?.pattern ?? key} 볼륨 급증: ${prevCount} → ${count} (${(count / prevCount).toFixed(1)}배)`,
           severity: count / prevCount >= 10 ? 'critical' : 'warning',
           detectedAt: now,
         });

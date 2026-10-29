@@ -17,7 +17,7 @@
  */
 
 import { Hono } from 'hono';
-import type { SqlDriver } from 'index-meta';
+import type { SqlDriver } from 'index-meta-store';
 import { parseJsonColumn, type InsightMetadataJson } from '../db/json-types.js';
 
 export interface LabelsDeps {

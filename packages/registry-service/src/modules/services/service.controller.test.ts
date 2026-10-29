@@ -4,7 +4,7 @@
 import 'reflect-metadata';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
-import type { SqlDriver } from 'index-meta';
+import type { SqlDriver } from 'index-meta-store';
 import { AppModule } from '../../app.module.js';
 import { DATABASE } from '../../database.module.js';
 import { DatabaseModule } from '../../database.module.js';

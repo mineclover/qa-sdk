@@ -17,7 +17,7 @@ import type {
   FlowInstance,
 } from 'decision-flow';
 import { createLogger } from '@qa-sdk/core';
-import { getDatabaseSync, type DatabaseSyncInstance } from 'index-meta';
+import { getDatabaseSync, type DatabaseSyncInstance } from 'index-meta-store';
 import { drizzle } from 'drizzle-orm/node-sqlite';
 import { migrate } from 'drizzle-orm/node-sqlite/migrator';
 

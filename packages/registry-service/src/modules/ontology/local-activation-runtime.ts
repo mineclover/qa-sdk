@@ -4,7 +4,7 @@
 import { mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 
-import { SqlIndexMetaStore, SqlPrefixRegistry, type NodeSqliteDriver } from 'index-meta';
+import { SqlIndexMetaStore, SqlPrefixRegistry, type NodeSqliteDriver } from 'index-meta-store';
 
 import { createRegistryDatabaseDriver } from '../../bootstrap/stores.js';
 import { SqlOntologyRegistryStore } from '../../stores/sql-ontology-registry-store.js';

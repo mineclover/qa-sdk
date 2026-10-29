@@ -16,8 +16,8 @@ def:
       type: depends_on
 sources:
   - packages/cli/src/commands/dkg.ts
-  - packages/dkg/src/store/dkg-sqlite-store.ts
-  - packages/dkg/src/db/schema.ts
+  - packages/dkg-store/src/dkg-sqlite-store.ts
+  - packages/dkg-store/src/db/schema.ts
 ---
 
 
@@ -62,5 +62,5 @@ usage snapshot은 coarse telemetry이고, `cli_audit_events`가 실제 감사 �
 ## 관련 소스
 
 - `packages/cli/src/commands/dkg.ts`
-- `packages/dkg/src/store/dkg-sqlite-store.ts`
-- `packages/dkg/src/db/schema.ts`
+- `packages/dkg-store/src/dkg-sqlite-store.ts`
+- `packages/dkg-store/src/db/schema.ts`

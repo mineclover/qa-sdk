@@ -58,7 +58,7 @@ export interface DkgSqliteStoreConstructor {
 
 // ── 동적 import 모듈 타입 ───────────────────────────────
 
-/** `import("@qa-sdk/spec-core/store")` 결과의 최소 인터페이스 */
+/** `import("dkg-store")` 결과의 최소 인터페이스 */
 export interface StoreModulePort {
   DkgSqliteStore: DkgSqliteStoreConstructor;
 }

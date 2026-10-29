@@ -353,6 +353,12 @@ export type {
 export type { SessionStore, SessionUpsert, StoredSession } from './ports/session-store.port.js';
 export type { TransmissionStore, TransmissionInsert } from './ports/transmission-store.port.js';
 export type { ScenarioSpecStore } from './ports/scenario-spec-store.port.js';
+export type {
+  CatalogSnapshotStore,
+  CatalogSnapshotPublishResult,
+  CatalogSnapshotConflictCode,
+  CatalogSnapshotConflict,
+} from './ports/catalog-snapshot-store.port.js';
 export type { KeyCache, CacheEntry, CacheStats } from './ports/key-cache.port.js';
 export type {
   Aggregator,

@@ -58,6 +58,32 @@ export type {
   MergeParams,
   DeprecateParams,
 } from './dkg.types.js';
+export type {
+  AddressUsage,
+  CoOccurrence,
+  EntryUsage,
+  MetricValue,
+  UsageData,
+  VersionUsage,
+} from './usage-types.js';
+export {
+  assertDecisionNode,
+  assertObservationNode,
+  validateDecisionNode,
+  validateObservationNode,
+} from './node-contract.js';
+export type { NodeContractIssue, NodeContractResult } from './node-contract.js';
+export {
+  assertUsageSnapshotContract,
+  validateUsageSnapshotContract,
+} from './usage-snapshot-contract.js';
+export type {
+  UsageSnapshotContract,
+  UsageSnapshotContractIssue,
+  UsageSnapshotContractResult,
+  UsageSnapshotPublishResult,
+  UsageSnapshotStore,
+} from './usage-snapshot-contract.js';
 
 export { GraphRegistry } from './graph-registry.js';
 export { deriveFlowSchemaEdges, attachFlowSchemaEdges } from './flow-schema-relations.js';

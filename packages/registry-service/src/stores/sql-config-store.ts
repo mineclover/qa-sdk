@@ -1,7 +1,7 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import type { SqlDriver } from 'index-meta';
+import type { SqlDriver } from 'index-meta-store';
 import type { ConfigRecord, ConfigStore } from './config-store.js';
 
 export class SqlConfigStore implements ConfigStore {

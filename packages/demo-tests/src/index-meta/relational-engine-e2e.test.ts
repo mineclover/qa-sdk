@@ -28,7 +28,7 @@ import {
   type MetaRegistryInput,
   type PatternRule,
   type ConflictStrategy,
-} from 'index-meta';
+} from 'index-meta-store';
 import { AXIS } from 'demo-snapshot';
 
 // ── 스키마 정의 ──────────────────────────────────────────────────────────────

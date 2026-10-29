@@ -50,7 +50,7 @@ export async function createGraphProvider(
 ): Promise<GraphProviderResult> {
   // spec-core 동적 import — unknown 모듈을 port 인터페이스로 단언
   const [storeModule, enrichmentModule] = await Promise.all([
-    import('@qa-sdk/spec-core/store') as unknown as StoreModulePort,
+    import('dkg-store') as unknown as StoreModulePort,
     import('dkg-enrichment'),
   ]);
 

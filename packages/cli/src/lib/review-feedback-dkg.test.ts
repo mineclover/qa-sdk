@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { DEMO_CATALOG } from 'demo-snapshot';
 import { DEMO_DKG_CONFIG } from 'demo-dkg-config';
 import { bootstrapDkg } from 'dkg-enrichment';
-import { DkgSqliteStore } from 'dkg/store';
+import { DkgSqliteStore } from 'dkg-store';
 import type { FeedbackRequest } from 'review-ledger';
 import { bridgeFeedbackRequestToDkg, buildFeedbackObservation } from './review-feedback-dkg.js';
 

@@ -37,10 +37,13 @@ export function auditCoverage(
   const report = analyzeEntryCoverage(catalog, entryUsages, addressUsages);
   const observations: ObservationNode[] = [];
   const decisions: DecisionNode[] = [];
+  const observedPrefixes = new Set(
+    addressUsages.filter((usage) => usage.count > 0).map((usage) => usage.prefix),
+  );
 
   // 1. 저커버리지 prefix → Observation + Decision
   const lowCoveragePrefixes = report.prefixes.filter(
-    (p) => p.coverageRate < threshold && p.coverageRate > 0,
+    (p) => p.coverageRate < threshold && p.coverageRate > 0 && observedPrefixes.has(p.prefixId),
   );
 
   for (const pc of lowCoveragePrefixes) {

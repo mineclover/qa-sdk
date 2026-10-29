@@ -13,7 +13,7 @@ import { join } from 'node:path';
 import type { Catalog } from '@qa-sdk/core';
 import { MemoryDefinitionRegistry, validateGraph } from 'definition-catalog';
 import { recordDecision, traceNode } from 'dkg';
-import { DkgSqliteStore } from 'dkg/store';
+import { DkgSqliteStore } from 'dkg-store';
 import { bootstrapDkg } from 'dkg-enrichment';
 import { DEMO_DKG_CONFIG } from 'demo-dkg-config';
 import { DEMO_CATALOG } from 'demo-snapshot';

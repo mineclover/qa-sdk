@@ -19,7 +19,7 @@ export {
 } from './lib/gate-client.js';
 export type { GateStateClient } from './lib/gate-client.js';
 export { InMemoryPolicyRuleStore } from './stores/in-memory-policy-rule-store.js';
-export { NodeSqliteDriver, BetterSqliteDriver } from 'index-meta';
+export { NodeSqliteDriver, BetterSqliteDriver } from 'index-meta-store';
 export { SqlPolicyRuleStore } from './stores/sql-policy-rule-store.js';
 export { RuleMigrationService, createRuleMigrationService } from './lib/rule-migration-service.js';
 export type { RuleMigrationResult } from './lib/rule-migration-service.js';

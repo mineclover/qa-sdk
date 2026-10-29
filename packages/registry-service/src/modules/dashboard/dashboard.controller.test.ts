@@ -2,15 +2,22 @@
 // @def.doc registry-system
 
 import 'reflect-metadata';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { createNestTestApp, request, json } from '../../test/nest-helpers.js';
 
-const TEST_DKG_PATH = '/tmp/registry-service-dashboard-test.sqlite';
+// The first Nest dashboard bootstrap can exceed Vitest's 15s default when the
+// full registry suite is running; subsequent requests are fast.
+vi.setConfig({ testTimeout: 30_000 });
+
 const originalDashboardEnabled = process.env.DEV_DASHBOARD_ENABLED;
 const originalDashboardPath = process.env.DEV_DASHBOARD_DKG_PATH;
 
 const apps: NestFastifyApplication[] = [];
+const dkgDirs: string[] = [];
 
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -19,6 +26,9 @@ beforeEach(() => {
 afterEach(async () => {
   while (apps.length > 0) {
     await apps.pop()!.close();
+  }
+  while (dkgDirs.length > 0) {
+    rmSync(dkgDirs.pop()!, { recursive: true, force: true });
   }
   if (originalDashboardEnabled === undefined) {
     delete process.env.DEV_DASHBOARD_ENABLED;
@@ -35,8 +45,10 @@ afterEach(async () => {
 describe('DashboardModule (Nest)', () => {
   it('serves diagrams and dashboard endpoints through Nest controllers', async () => {
     vi.resetModules();
+    const dkgDir = mkdtempSync(join(tmpdir(), 'registry-service-dashboard-test-'));
+    dkgDirs.push(dkgDir);
     process.env.DEV_DASHBOARD_ENABLED = 'true';
-    process.env.DEV_DASHBOARD_DKG_PATH = TEST_DKG_PATH;
+    process.env.DEV_DASHBOARD_DKG_PATH = join(dkgDir, 'state.sqlite');
 
     const { AppModule } = await import('../../app.module.js');
     const app = await createNestTestApp({ imports: [AppModule] });

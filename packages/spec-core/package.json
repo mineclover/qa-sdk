@@ -20,10 +20,6 @@
       "import": "./dist/propagation/index.js",
       "types": "./dist/propagation/index.d.ts"
     },
-    "./store": {
-      "import": "./dist/store/index.js",
-      "types": "./dist/store/index.d.ts"
-    },
     "./viz": {
       "import": "./dist/visualization/index.js",
       "types": "./dist/visualization/index.d.ts"
@@ -40,14 +36,11 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
-    "clean": "rm -rf dist",
-    "db:generate": "drizzle-kit generate"
+    "clean": "rm -rf dist"
   },
   "dependencies": {
     "@qa-sdk/core": "workspace:*",
     "dkg": "workspace:*",
-    "drizzle-orm": "catalog:",
-    "index-meta": "workspace:*",
     "spec-schema": "workspace:*",
     "spec-transition": "workspace:*",
     "weighted-index": "workspace:*"
@@ -58,7 +51,6 @@
     "demo-dkg-config": "workspace:*",
     "demo-snapshot": "workspace:*",
     "dkg-enrichment": "workspace:*",
-    "drizzle-kit": "catalog:",
     "typescript": "^5.9.3",
     "vitest": "^1.6.1"
   }

@@ -24,8 +24,7 @@ export async function buildPostActivationHookPort(
 
   try {
     const storeModule = await (
-      options.loadStoreModule ??
-      (async () => import('@qa-sdk/spec-core/store') as unknown as StoreModulePort)
+      options.loadStoreModule ?? (async () => import('dkg-store') as unknown as StoreModulePort)
     )();
 
     const dkgPath = options.dkgPath ?? env.POST_ACTIVATION_DKG_PATH;

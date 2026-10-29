@@ -2,7 +2,7 @@
 // @def.doc registry-system
 
 import { Module } from '@nestjs/common';
-import type { SqlDriver } from 'index-meta';
+import type { SqlDriver } from 'index-meta-store';
 import { DATABASE } from '../../database.module.js';
 import { SqlAxisProfileStore } from '../../stores/sql-axis-profile-store.js';
 import { AxisChangeNotifier } from './axis.change-notifier.js';

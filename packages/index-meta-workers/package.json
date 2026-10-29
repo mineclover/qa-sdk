@@ -31,7 +31,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "index-meta": "workspace:*"
+    "index-meta": "workspace:*",
+    "index-meta-store": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.5.1",

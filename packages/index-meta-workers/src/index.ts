@@ -14,4 +14,17 @@
  * import { D1SqlDriver, GateEngine, PrefixDecoder } from "index-meta-workers";
  * ```
  */
-export * from 'index-meta/workers';
+export * from 'index-meta';
+export {
+  D1SqlDriver,
+  D1IndexMetaStore,
+  SqlPrefixRegistry,
+  SqlPrefixRouter,
+  SqlIndexMetaStore,
+  SqlAddressStateStore,
+  SqlAddressRangeCache,
+  SqlVersionLifecycleStore,
+  SqlMigrationStore,
+  SqlEntryFlagStore,
+} from 'index-meta-store';
+export type { D1Database, SqlDriver, SqlDialect, ExecuteResult } from 'index-meta-store';

@@ -2,7 +2,7 @@
 // @def.doc registry-system
 
 import { Module } from '@nestjs/common';
-import { SqlIndexMetaStore, SqlPrefixRegistry, type SqlDriver } from 'index-meta';
+import { SqlIndexMetaStore, SqlPrefixRegistry, type SqlDriver } from 'index-meta-store';
 import { DATABASE } from '../../database.module.js';
 import { SqlOntologyRegistryStore } from '../../stores/sql-ontology-registry-store.js';
 import type { OntologyRegistryStore } from '../../stores/ontology-registry-store.js';

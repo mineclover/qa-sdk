@@ -15,11 +15,6 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    },
-    "./store": {
-      "types": "./dist/store/index.d.ts",
-      "import": "./dist/store/index.js",
-      "require": "./dist/store/index.cjs"
     }
   },
   "scripts": {
@@ -31,8 +26,6 @@
   },
   "dependencies": {
     "@qa-sdk/core": "workspace:*",
-    "drizzle-orm": "catalog:",
-    "index-meta": "workspace:*",
     "spec-schema": "workspace:*",
     "spec-transition": "workspace:*",
     "weighted-index": "workspace:*"
@@ -41,7 +34,6 @@
     "@types/node": "^22.20.5",
     "demo-dkg-config": "workspace:*",
     "demo-snapshot": "workspace:*",
-    "drizzle-kit": "catalog:",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vitest": "^1.6.1"

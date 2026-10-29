@@ -66,7 +66,7 @@ export type { ScopedUsage, BranchDistribution, ScopedReport } from './scoped-agg
 export type { AddressContextRecord } from './usage-aggregator.js';
 
 // ── 측정 (Measurement) ────────────────────────────
-export { analyzeDeploymentSkew } from './deployment-skew.js';
+export { analyzeDeploymentSkew, catalogLatestVersions } from './deployment-skew.js';
 export type { DeploymentSkew } from './deployment-skew.js';
 export { analyzeEntryCoverage } from './entry-coverage.js';
 export type { EntryState, PrefixCoverage, DimCoverage, CoverageReport } from './entry-coverage.js';
@@ -86,7 +86,11 @@ export { compareDecisions, scanDecisionConflicts } from './decision-comparator.j
 export { discoverCausality, discoverCausalityWithObservations } from './causal-discovery.js';
 
 // ── 추천 (Recommendation) ─────────────────────────
-export { analyzeSimplification, scanAllSimplifications } from './simplification-advisor.js';
+export {
+  analyzeSimplification,
+  scanAllSimplifications,
+  MIN_SIMPLIFICATION_SAMPLE_COUNT,
+} from './simplification-advisor.js';
 export {
   recommendFromSimplification,
   recommendFromObservation,

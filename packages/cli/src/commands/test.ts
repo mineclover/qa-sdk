@@ -7,6 +7,7 @@
  * scan:    스펙 frontmatter tests: 선언 → declared 상태 upsert
  * assign:  모듈화 체크 → B 좌표 부여 → assigned
  * scaffold: 테스트 스텁 파일 생성
+ * record:   테스트 실행 결과 기록 → collected
  * status:  생명주기 현황 매트릭스
  * report:  커버리지 매트릭스
  */
@@ -238,6 +239,54 @@ export function testScaffold(opts: { bCoord?: string; mirror?: string; db?: stri
     );
     console.log(`생성: ${scenario.filePath}`);
   }
+}
+
+// ── testRecord ──────────────────────────────────────────
+
+/**
+ * 할당된 시나리오의 실행 결과를 기록한다.
+ *
+ * `recordRun`은 실행 row를 남기고 assigned 상태를 collected로 전이한다.
+ * verified 승격은 별도 검증 정책이 필요하므로 이 명령의 책임에 포함하지 않는다.
+ */
+export function testRecord(opts: {
+  bCoord?: string;
+  passed?: boolean;
+  commitHash?: string;
+  durationMs?: number;
+  db?: string;
+}): void {
+  const dbPath = opts.db ?? join(getQaSdkDir(), 'test-scenarios.sqlite');
+  const bCoord = opts.bCoord?.trim();
+
+  if (!bCoord) {
+    console.error('기록할 B 좌표가 필요합니다: qa-sdk test record <b-coord> --passed|--failed');
+    process.exitCode = 1;
+    return;
+  }
+  if (opts.passed === undefined) {
+    console.error('실행 결과를 지정하세요: --passed 또는 --failed');
+    process.exitCode = 1;
+    return;
+  }
+
+  const store = new SqliteTestScenarioStore(dbPath);
+  const scenario = store.getById(bCoord);
+  if (!scenario) {
+    console.error(`시나리오 없음: ${bCoord}`);
+    process.exitCode = 1;
+    return;
+  }
+  if (scenario.lifecycle !== 'assigned' && scenario.lifecycle !== 'collected') {
+    console.error(`실행 기록 불가 상태: ${bCoord} (${scenario.lifecycle})`);
+    process.exitCode = 1;
+    return;
+  }
+
+  store.recordRun(bCoord, opts.passed, opts.commitHash ?? null, opts.durationMs ?? null);
+  console.log(
+    `기록: ${bCoord} ${opts.passed ? 'passed' : 'failed'} → ${store.getById(bCoord)?.lifecycle ?? scenario.lifecycle}`,
+  );
 }
 
 function generateTestStub(

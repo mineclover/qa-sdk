@@ -13,7 +13,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { DEMO_CATALOG, encodePrefixByValue } from 'demo-snapshot';
 import { DEMO_DKG_CONFIG } from 'demo-dkg-config';
-import { DkgSqliteStore } from 'dkg/store';
+import { DkgSqliteStore } from 'dkg-store';
 import { bootstrapDkg, convergeChain } from 'dkg-enrichment';
 import { systemHealthChain } from 'dkg';
 import {

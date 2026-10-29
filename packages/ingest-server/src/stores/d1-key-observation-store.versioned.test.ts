@@ -10,7 +10,7 @@
  *   - prefix_observation_prefixes도 version별 분리 집계
  */
 
-import { NodeSqliteDriver } from 'index-meta';
+import { NodeSqliteDriver } from 'index-meta-store';
 import { drizzle } from 'drizzle-orm/node-sqlite';
 import { migrate } from 'drizzle-orm/node-sqlite/migrator';
 import { beforeEach, describe, expect, it } from 'vitest';

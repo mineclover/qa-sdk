@@ -134,4 +134,4 @@ stable 인터페이스를 바꿔야 하면 ADR-010을 먼저 고치고, 위 테�
 | I-2 | `entry_snapshot` / `entrySnapshot` | D-2로 deprecated 유지. ingest·store 어디도 읽지 않는다 | 외부 SDK 배포본이 보내는 동안은 schema 수용만 유지하고, SDK 설정 3곳의 옵션은 다음 major에서 제거 |
 | I-3 | `toSnapshotWire` | 테스트만 사용 | 유지 — registry에서 받은 snapshot을 런타임에 SDK로 넘기는 정식 경로. 쓰는 앱이 생기기 전까지 추가 기능 금지 |
 | I-4 | `encodeDetailed`·`decodeDetailed` | 사내 소비자 없음 | 유지 — 실패 원인을 알아야 하는 외부 소비자용 공개 API (오류 전환에서 승인) |
-| I-5 | envelope `catalog_snapshot` 영속 | gate 판정 후 버린다 | #15(batch 문맥 조회)에서 읽는 API와 함께 설계 — 읽는 곳 없이 저장하지 않는다 |
+| I-5 | envelope `catalog_snapshot` 영속 | gate 판정 후 버린다 | 먼저 backend-agnostic 논리 저장 인터페이스·필드 불변식·digest 조회 계약을 정의하고, #15(batch 문맥 조회) adapter는 후속 결정 |

@@ -2,7 +2,7 @@
 // @def.doc registry-system
 
 import { canonicalJson, type CatalogSnapshot } from '@qa-sdk/core';
-import type { SqlDriver } from 'index-meta';
+import type { SqlDriver } from 'index-meta-store';
 import { checkPublishable, type CatalogSnapshotStore } from './catalog-snapshot-store.js';
 
 type SnapshotRow = { data: string };

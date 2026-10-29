@@ -1,7 +1,7 @@
 // @def.boundary shared-utility-group
 // @def.doc shared-utility-group
 
-import { getDatabaseSync, type DatabaseSyncInstance } from 'index-meta';
+import { getDatabaseSync, type DatabaseSyncInstance } from 'index-meta-store';
 import { drizzle } from 'drizzle-orm/node-sqlite';
 import { migrate } from 'drizzle-orm/node-sqlite/migrator';
 import { eq, desc, inArray } from 'drizzle-orm';

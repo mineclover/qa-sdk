@@ -5,7 +5,7 @@
  * D1 (SQLite) 팩토리 — NodeSqliteDriver(:memory:) 기반.
  * 각 호출마다 독립적인 in-memory DB를 생성한다.
  */
-import { NodeSqliteDriver } from 'index-meta';
+import { NodeSqliteDriver } from 'index-meta-store';
 import { drizzle } from 'drizzle-orm/node-sqlite';
 import { migrate } from 'drizzle-orm/node-sqlite/migrator';
 import { createD1Drizzle, type D1Db } from '../../../stores/d1-db-type.js';

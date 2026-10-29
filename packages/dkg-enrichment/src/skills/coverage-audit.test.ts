@@ -36,7 +36,7 @@ describe('auditCoverage', () => {
       CATALOG,
       graph,
       [{ axisId: 'action', entry: 'view', count: 3, lastSeen: '2026-06-18T00:00:00.000Z' }],
-      [],
+      [{ prefix: 'page_event', version: 'v1', address: 0, count: 3 }],
       { date: '2026-06-18', lowCoverageThreshold: 0.5 },
     );
 

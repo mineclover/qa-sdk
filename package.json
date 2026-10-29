@@ -25,6 +25,7 @@
     "arch:feedback": "tsx scripts/ai-feedback-loop.ts",
     "arch:verify": "tsx scripts/verify-analysis-os.ts",
     "ci:local": "node scripts/ci-local.mjs",
+    "ci:core": "node scripts/ci-core.mjs",
     "arch:manifest": "tsx scripts/generate-api-reference.ts",
     "clean": "corepack pnpm -r run clean",
     "sync:skills": "bash scripts/sync-skills.sh",

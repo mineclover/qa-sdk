@@ -21,6 +21,7 @@ import { readFileSync } from 'node:fs';
 const TEST_PACKAGES = [
   '@qa-sdk/core',
   'index-meta',
+  'index-meta-store',
   '@qa-sdk/demo-tests',
   '@qa-sdk/ingest-server',
   '@qa-sdk/registry-service',
@@ -36,6 +37,7 @@ const TEST_PACKAGES = [
   '@qa-sdk/browser-codec',
   '@qa-sdk/convergence',
   'dkg',
+  'dkg-store',
   'dkg-enrichment',
   '@qa-sdk/spec-core',
   'codegen-core',

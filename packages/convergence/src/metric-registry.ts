@@ -11,7 +11,7 @@ import type { ObservationNode } from './dkg-types.js';
 import type { UsageData } from './convergence.types.js';
 import type { Catalog } from '@qa-sdk/core';
 import { analyzeHeadroom } from './headroom-advisor.js';
-import { analyzeDeploymentSkew } from './deployment-skew.js';
+import { analyzeDeploymentSkew, catalogLatestVersions } from './deployment-skew.js';
 import { analyzeEntryCoverage } from './entry-coverage.js';
 import { scanAxisOverlaps } from './symbol-comparator.js';
 import { scanDecisionConflicts } from './decision-comparator.js';
@@ -221,7 +221,9 @@ export function collectMetrics(
   if (usage && usage.versionUsages.length > 0) {
     // eslint-disable-next-line typescript/no-non-null-assertion -- METRIC_DEFS에 정적으로 정의된 ID
     const skewDef = METRIC_DEFS.find((m) => m.id === 'metric:skew')!;
-    const skews = analyzeDeploymentSkew(usage.versionUsages);
+    const skews = analyzeDeploymentSkew(usage.versionUsages, {
+      latestVersions: catalogLatestVersions(catalog),
+    });
     for (const s of skews) {
       results.push({
         id: `metric:skew:${s.prefix}`,

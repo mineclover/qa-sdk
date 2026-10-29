@@ -2,7 +2,7 @@
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { createLogger } from './lib/logger.js';
-import { getDatabaseSync, type DatabaseSyncInstance } from 'index-meta';
+import { getDatabaseSync, type DatabaseSyncInstance } from 'index-meta-store';
 import { drizzle } from 'drizzle-orm/node-sqlite';
 import { migrate } from 'drizzle-orm/node-sqlite/migrator';
 import { eq, and, asc, desc, sql } from 'drizzle-orm';

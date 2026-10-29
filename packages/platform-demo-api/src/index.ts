@@ -47,7 +47,7 @@ import {
   type DemoFeatureDef,
 } from 'demo-snapshot';
 import { PermissionSet, type DimDef } from 'permission-engine';
-import { snapshotCapacity } from 'index-meta/workers';
+import { snapshotCapacity } from 'index-meta-store';
 import {
   demoDashboardFlowMap,
   demoDashboardMetrics,

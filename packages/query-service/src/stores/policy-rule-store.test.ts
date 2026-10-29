@@ -3,7 +3,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { InMemoryPolicyRuleStore } from './in-memory-policy-rule-store.js';
-import { NodeSqliteDriver } from 'index-meta';
+import { NodeSqliteDriver } from 'index-meta-store';
 import {
   PolicyRuleNotFoundError,
   type PolicyRuleStore,

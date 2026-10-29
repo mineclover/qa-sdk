@@ -27,6 +27,7 @@
     "drizzle-orm": "catalog:",
     "hono": "^4.7.5",
     "index-meta": "workspace:*",
+    "index-meta-store": "workspace:*",
     "motion-workspace": "workspace:*",
     "zod": "^3.25.76"
   },

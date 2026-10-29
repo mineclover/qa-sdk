@@ -2,7 +2,7 @@
 // @def.doc registry-system
 
 import { Module } from '@nestjs/common';
-import type { SqlDriver } from 'index-meta';
+import type { SqlDriver } from 'index-meta-store';
 import { DATABASE } from '../../database.module.js';
 import { CatalogModule } from '../catalog/catalog.module.js';
 import { SqlEventSchemaStore } from '../../stores/sql-event-schema-store.js';

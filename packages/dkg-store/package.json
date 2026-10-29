@@ -1,0 +1,44 @@
+{
+  "name": "dkg-store",
+  "version": "0.1.0",
+  "description": "DKG SQLite/Drizzle persistence adapter",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "drizzle"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "db:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "@qa-sdk/core": "workspace:*",
+    "dkg": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "index-meta-store": "workspace:*"
+  },
+  "devDependencies": {
+    "@qa-sdk/convergence": "workspace:*",
+    "@types/node": "^22.20.5",
+    "demo-dkg-config": "workspace:*",
+    "demo-snapshot": "workspace:*",
+    "drizzle-kit": "catalog:",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.1",
+    "vitest": "^1.6.1"
+  }
+}

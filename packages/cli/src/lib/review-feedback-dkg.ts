@@ -13,7 +13,7 @@ import {
   type ObservationNode,
 } from 'dkg';
 import { bootstrapDkg } from 'dkg-enrichment';
-import { DkgSqliteStore } from 'dkg/store';
+import { DkgSqliteStore } from 'dkg-store';
 import type { FeedbackRequest } from 'review-ledger';
 import { getQaSdkDir } from './qa-dir.js';
 

@@ -1,10 +1,10 @@
 // @def.boundary persistence-system-root
 // @def.doc test-scenario-store
 
-import { getDatabaseSync, type DatabaseSyncInstance } from 'index-meta';
+import { getDatabaseSync, type DatabaseSyncInstance } from 'index-meta-store';
 import { drizzle } from 'drizzle-orm/node-sqlite';
 import { migrate } from 'drizzle-orm/node-sqlite/migrator';
-import { eq, and, count, max, sql } from 'drizzle-orm';
+import { desc, eq, and, count, max, sql } from 'drizzle-orm';
 import { testScenarios, testScenarioRuns } from './db/schema.js';
 import type {
   TestScenario,
@@ -12,10 +12,11 @@ import type {
   CreateTestScenarioInput,
   TestLifecycle,
 } from './types.js';
+import type { TestScenarioStore } from './port.js';
 
 type DrizzleDb = ReturnType<typeof drizzle>;
 
-export class SqliteTestScenarioStore {
+export class SqliteTestScenarioStore implements TestScenarioStore {
   private rawDb: DatabaseSyncInstance;
   private db: DrizzleDb;
 
@@ -103,6 +104,20 @@ export class SqliteTestScenarioStore {
     }
   }
 
+  listRuns(scenarioId: string): TestScenarioRun[] {
+    return this.db
+      .select()
+      .from(testScenarioRuns)
+      .where(eq(testScenarioRuns.scenarioId, scenarioId))
+      .orderBy(desc(testScenarioRuns.runAt), desc(testScenarioRuns.id))
+      .all()
+      .map((row) => this.rowToRun(row));
+  }
+
+  latestRun(scenarioId: string): TestScenarioRun | undefined {
+    return this.listRuns(scenarioId)[0];
+  }
+
   getByACoord(aCoord: string): TestScenario | undefined {
     const row = this.db.select().from(testScenarios).where(eq(testScenarios.aCoord, aCoord)).get();
     return row ? this.rowToScenario(row) : undefined;
@@ -161,6 +176,17 @@ export class SqliteTestScenarioStore {
       conventionViolation: row.conventionViolation,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
+    };
+  }
+
+  private rowToRun(row: typeof testScenarioRuns.$inferSelect): TestScenarioRun {
+    return {
+      id: row.id,
+      scenarioId: row.scenarioId,
+      passed: row.passed,
+      commitHash: row.commitHash,
+      runAt: row.runAt,
+      durationMs: row.durationMs,
     };
   }
 }

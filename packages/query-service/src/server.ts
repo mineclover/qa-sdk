@@ -2,7 +2,7 @@
 // @def.doc query-api-spec
 
 import 'dotenv/config';
-import { createSqliteDriver } from 'index-meta';
+import { createSqliteDriver } from 'index-meta-store';
 import { InMemoryPrefixRegistry, MetaRegistry } from 'index-meta-workers';
 import { serve } from '@hono/node-server';
 import { warnPortConflict, installSimpleShutdown, createServiceBootConfig } from '@qa-sdk/core';

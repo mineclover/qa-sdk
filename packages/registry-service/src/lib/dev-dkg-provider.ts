@@ -46,7 +46,7 @@ export interface DevDkgProvider {
 export async function createDevDkgProvider(config: DevDkgProviderConfig): Promise<DevDkgProvider> {
   const enrichmentModule = await import('dkg-enrichment');
   const convergenceModule = await import('@qa-sdk/convergence');
-  const storeModuleImport = await import('@qa-sdk/spec-core/store');
+  const storeModuleImport = await import('dkg-store');
   const demoSnapshotImport = await import('demo-snapshot');
   const demoDkgConfigImport = await import('demo-dkg-config');
 

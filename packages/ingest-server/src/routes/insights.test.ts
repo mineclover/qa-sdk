@@ -3,7 +3,7 @@
 
 import { Hono } from 'hono';
 import { describe, expect, it, beforeEach } from 'vitest';
-import { getDatabaseSync } from 'index-meta';
+import { getDatabaseSync } from 'index-meta-store';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-sqlite';
 import { migrate } from 'drizzle-orm/node-sqlite/migrator';

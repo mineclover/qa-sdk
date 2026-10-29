@@ -5,7 +5,7 @@
  * 공유 DB 연결 — 단일 인스턴스에서 마이그레이션 1회 실행
  */
 
-import { getDatabaseSync, type DatabaseSyncInstance } from 'index-meta';
+import { getDatabaseSync, type DatabaseSyncInstance } from 'index-meta-store';
 import { drizzle } from 'drizzle-orm/node-sqlite';
 import { migrate } from 'drizzle-orm/node-sqlite/migrator';
 import { existsSync, readdirSync } from 'node:fs';

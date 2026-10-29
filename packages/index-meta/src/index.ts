@@ -25,26 +25,7 @@ export { defineTable } from './table-def.js';
 export { compileSchema } from './compile-schema.js';
 export { InMemoryIndexMetaStore } from './adapters/memory-store.js';
 export { InMemoryPrefixRegistry } from './adapters/memory-prefix-registry.js';
-export { SqlPrefixRegistry } from './adapters/sql-prefix-registry.js';
 export { InMemoryPrefixRouter } from './adapters/memory-prefix-router.js';
-export { SqlPrefixRouter } from './adapters/sql-prefix-router.js';
-export { SqlIndexMetaStore } from './adapters/sql-store.js';
-export type { SqlDriver, SqlDialect, ExecuteResult } from './adapters/sql-store.js';
-export {
-  getDatabaseSync,
-  type DatabaseSyncCtor,
-  type DatabaseSyncInstance,
-} from './adapters/database-sync-loader.js';
-export { NodeSqliteDriver } from './adapters/node-sqlite-driver.js';
-export { BetterSqliteDriver } from './adapters/better-sqlite-driver.js';
-export { createSqliteDriver } from './adapters/create-sqlite-driver.js';
-export type {
-  SqliteDriverType,
-  CreateSqliteDriverOptions,
-} from './adapters/create-sqlite-driver.js';
-export { D1SqlDriver } from './adapters/d1-driver.js';
-export { D1IndexMetaStore, type D1Database } from './adapters/d1-store.js';
-export { BunSqliteDriver, type BunDatabase } from './adapters/bun-sqlite-driver.js';
 export { DistributedStoreClient } from './distributed-client.js';
 export { syncSchemaToRegistry, applySchemaDiff } from './schema-sync.js';
 export type { ApplySchemaDiffResult } from './schema-sync.js';
@@ -59,9 +40,7 @@ export {
   positionsToConstraint,
 } from './invalid-ranges.js';
 export { InMemoryAddressStateStore } from './adapters/memory-invalid-range-store.js';
-export { SqlAddressStateStore } from './adapters/sql-address-state-store.js';
 export { InMemoryAddressRangeCache } from './adapters/memory-address-range-cache.js';
-export { SqlAddressRangeCache } from './adapters/sql-address-range-cache.js';
 export { CrossVersionEntrySync } from './cross-version-entry-sync.js';
 export type { CrossVersionAddResult } from './cross-version-entry-sync.js';
 export { CoalescingCache } from './coalescing-cache.js';
@@ -71,12 +50,9 @@ export { MigrationCache } from './migration-cache.js';
 export { MetadataCache } from './metadata-cache.js';
 export type { MetadataCacheOptions } from './metadata-cache.js';
 export { InMemoryVersionLifecycleStore } from './adapters/memory-version-lifecycle.js';
-export { SqlVersionLifecycleStore } from './adapters/sql-version-lifecycle-store.js';
 export { InMemoryMigrationStore } from './adapters/memory-migration-store.js';
-export { SqlMigrationStore } from './adapters/sql-migration-store.js';
 export { InMemoryEntryMetadataStore } from './adapters/memory-entry-metadata-store.js';
 export { InMemoryEntryFlagStore } from './adapters/memory-entry-flag-store.js';
-export { SqlEntryFlagStore } from './adapters/sql-entry-flag-store.js';
 export {
   GateEngine,
   GateAwareVersionLifecycleStore,

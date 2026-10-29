@@ -1,6 +1,6 @@
 // @def.doc federated-connection-runtime
 
-import { getDatabaseSync, type DatabaseSyncInstance } from 'index-meta';
+import { getDatabaseSync, type DatabaseSyncInstance } from 'index-meta-store';
 import {
   ConnectionRegistry,
   mappingKey,
