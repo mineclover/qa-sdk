@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "tsup",
-    "test": "tsup && tsx scripts/route-permissions.test.ts",
+    "test": "tsup && tsx scripts/route-permissions.test.ts && tsx scripts/route-table.test.ts",
     "start": "node dist/server.js",
     "dev": "tsx server.ts",
     "dev:worker": "wrangler dev",

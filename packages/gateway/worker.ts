@@ -7,16 +7,18 @@
  * Worker-to-Worker: Service Bindings (HTTP 우회, 직접 RPC)
  * 로컬 dev: binding 없음 → URL fetch fallback
  *
- * 라우팅:
- *   /v1/ingest/*    → ingest-server
- *   /v1/traces/*    → ingest-server
- *   /v1/sessions/*  → ingest-server
- *   /api/*          → registry-service
- *   /gate/*         → gate-service
- *   /query/*        → query-service
- *   /decode/*       → decode-service
- *   /health         → gateway 자체 헬스
+ * 라우팅: lib/route-table.ts GATEWAY_ROUTES (server.ts와 공유)
+ *   /health → gateway 자체 헬스
  */
+
+import {
+  GATEWAY_ROUTES,
+  GATEWAY_SERVICES,
+  matchRoute,
+  matchesPrefix,
+  targetPath,
+  type GatewayRoute,
+} from './lib/route-table.js';
 
 export interface Env {
   /** 인증 모드: bypass(개발) | api-key | cf-access */
@@ -36,6 +38,8 @@ export interface Env {
   GATE_SERVICE?: Fetcher;
   QUERY_SERVICE?: Fetcher;
   DECODE_SERVICE?: Fetcher;
+  DEFINITION_SERVICE?: Fetcher;
+  DECISION_SERVICE?: Fetcher;
   DEMO_API_SERVICE?: Fetcher;
 
   /** Fallback URL — binding 없을 때 (로컬 dev) */
@@ -44,131 +48,16 @@ export interface Env {
   GATE_URL?: string;
   QUERY_URL?: string;
   DECODE_URL?: string;
+  DEFINITION_URL?: string;
+  DECISION_URL?: string;
 }
-
-// ── 라우팅 테이블 ─────────────────────────────────
-
-interface RouteEntry {
-  prefix: string;
-  /** Service Binding env key */
-  bindingKey?: keyof Env;
-  /** strip: prefix 제거 후 서비스에 전달 */
-  strip?: boolean;
-  /** fallback URL env key */
-  urlKey: keyof Env;
-  defaultUrl: string;
-}
-
-const ROUTES: RouteEntry[] = [
-  {
-    prefix: '/v1/ingest',
-    urlKey: 'INGEST_URL',
-    defaultUrl: 'http://localhost:3200',
-    bindingKey: 'INGEST_SERVICE',
-  },
-  {
-    prefix: '/v1/traces',
-    urlKey: 'INGEST_URL',
-    defaultUrl: 'http://localhost:3200',
-    bindingKey: 'INGEST_SERVICE',
-  },
-  {
-    prefix: '/v1/sessions',
-    urlKey: 'INGEST_URL',
-    defaultUrl: 'http://localhost:3200',
-    bindingKey: 'INGEST_SERVICE',
-  },
-  {
-    prefix: '/v1/scenarios',
-    urlKey: 'INGEST_URL',
-    defaultUrl: 'http://localhost:3200',
-    bindingKey: 'INGEST_SERVICE',
-  },
-  {
-    prefix: '/v1/streams',
-    urlKey: 'INGEST_URL',
-    defaultUrl: 'http://localhost:3200',
-    bindingKey: 'INGEST_SERVICE',
-  },
-  {
-    prefix: '/v1/admin',
-    urlKey: 'INGEST_URL',
-    defaultUrl: 'http://localhost:3200',
-    bindingKey: 'INGEST_SERVICE',
-  },
-  {
-    prefix: '/v1/insights',
-    urlKey: 'INGEST_URL',
-    defaultUrl: 'http://localhost:3200',
-    bindingKey: 'INGEST_SERVICE',
-  },
-  {
-    prefix: '/v1/labels',
-    urlKey: 'INGEST_URL',
-    defaultUrl: 'http://localhost:3200',
-    bindingKey: 'INGEST_SERVICE',
-  },
-  {
-    prefix: '/api/',
-    urlKey: 'REGISTRY_URL',
-    defaultUrl: 'http://localhost:3300',
-    bindingKey: 'REGISTRY_SERVICE',
-  },
-  {
-    prefix: '/dev/',
-    urlKey: 'REGISTRY_URL',
-    defaultUrl: 'http://localhost:3300',
-    bindingKey: 'REGISTRY_SERVICE',
-  },
-  {
-    prefix: '/catalogs',
-    urlKey: 'REGISTRY_URL',
-    defaultUrl: 'http://localhost:3300',
-    bindingKey: 'REGISTRY_SERVICE',
-  },
-  {
-    prefix: '/metrics',
-    urlKey: 'REGISTRY_URL',
-    defaultUrl: 'http://localhost:3300',
-    bindingKey: 'REGISTRY_SERVICE',
-  },
-  {
-    prefix: '/health/',
-    urlKey: 'REGISTRY_URL',
-    defaultUrl: 'http://localhost:3300',
-    bindingKey: 'REGISTRY_SERVICE',
-  },
-  {
-    prefix: '/gate/',
-    urlKey: 'GATE_URL',
-    defaultUrl: 'http://localhost:3400',
-    bindingKey: 'GATE_SERVICE',
-    strip: true,
-  },
-  {
-    prefix: '/query/',
-    urlKey: 'QUERY_URL',
-    defaultUrl: 'http://localhost:3500',
-    bindingKey: 'QUERY_SERVICE',
-    strip: true,
-  },
-  {
-    prefix: '/state/',
-    urlKey: 'QUERY_URL',
-    defaultUrl: 'http://localhost:3500',
-    bindingKey: 'QUERY_SERVICE',
-    strip: true,
-  },
-  {
-    prefix: '/decode/',
-    urlKey: 'DECODE_URL',
-    defaultUrl: 'http://localhost:3600',
-    bindingKey: 'DECODE_SERVICE',
-    strip: true,
-  },
-];
 
 // ── 프록시 ──────────────────────────────────────────
+
+/** route-table의 binding·URL 키로 Env 값을 읽는다 */
+function envValue<T>(env: Env, key: string): T | undefined {
+  return (env as unknown as Record<string, unknown>)[key] as T | undefined;
+}
 
 /**
  * Service Binding 또는 HTTP fetch로 요청을 프록시한다.
@@ -179,20 +68,19 @@ const ROUTES: RouteEntry[] = [
 async function proxyRequest(
   request: Request,
   url: URL,
-  route: RouteEntry,
+  route: GatewayRoute,
   env: Env,
   headers: Headers,
 ): Promise<Response> {
-  const targetPath = route.strip
-    ? url.pathname.slice(route.prefix.replace(/\/$/, '').length) || '/'
-    : url.pathname;
+  const target = GATEWAY_SERVICES[route.service];
+  const path = targetPath(route, url.pathname);
 
   const body = request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined;
 
   // 1) Service Binding — Worker-to-Worker 직접 호출
-  const binding = route.bindingKey ? (env[route.bindingKey] as Fetcher | undefined) : undefined;
+  const binding = envValue<Fetcher>(env, target.bindingKey);
   if (binding) {
-    const bindingUrl = new URL(`https://internal${targetPath}${url.search}`);
+    const bindingUrl = new URL(`https://internal${path}${url.search}`);
     return binding.fetch(bindingUrl, {
       method: request.method,
       headers,
@@ -201,8 +89,8 @@ async function proxyRequest(
   }
 
   // 2) HTTP fetch fallback
-  const baseUrl = (env[route.urlKey] as string | undefined) ?? route.defaultUrl;
-  const targetUrl = `${baseUrl}${targetPath}${url.search}`;
+  const baseUrl = envValue<string>(env, target.urlEnv) ?? target.defaultUrl;
+  const targetUrl = `${baseUrl}${path}${url.search}`;
   return fetch(targetUrl, {
     method: request.method,
     headers,
@@ -218,13 +106,9 @@ export default {
 
     // /health — 게이트웨이 자체 헬스
     if (url.pathname === '/health') {
-      const bindings = [
-        'REGISTRY_SERVICE',
-        'INGEST_SERVICE',
-        'GATE_SERVICE',
-        'QUERY_SERVICE',
-        'DECODE_SERVICE',
-      ].filter((k) => !!(env as Record<string, unknown>)[k]);
+      const bindings = Object.values(GATEWAY_SERVICES)
+        .map((target) => target.bindingKey)
+        .filter((key) => !!envValue(env, key));
       return Response.json({
         status: 'ok',
         service: 'gateway',
@@ -254,26 +138,25 @@ export default {
     if (authResult instanceof Response) return authResult;
 
     // 라우팅
-    for (const route of ROUTES) {
-      if (url.pathname.startsWith(route.prefix)) {
-        const headers = new Headers(request.headers);
-        headers.set('X-Gateway-Identity', authResult.identity);
-        headers.set('X-Gateway-Auth-Method', authResult.method);
-        headers.delete('Authorization');
+    const route = matchRoute(GATEWAY_ROUTES, url.pathname);
+    if (route) {
+      const headers = new Headers(request.headers);
+      headers.set('X-Gateway-Identity', authResult.identity);
+      headers.set('X-Gateway-Auth-Method', authResult.method);
+      headers.delete('Authorization');
 
-        try {
-          return await proxyRequest(request, url, route, env, headers);
-        } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
-          // 에러 self-report (fire-and-forget, 순환 방지: /v1/ingest 에러는 스킵)
-          if (!route.prefix.startsWith('/v1/ingest') && env.INGEST_SERVICE) {
-            reportProxyError(env.INGEST_SERVICE, route.prefix, message);
-          }
-          return Response.json(
-            { error: 'Service unavailable', target: route.prefix, message },
-            { status: 502 },
-          );
+      try {
+        return await proxyRequest(request, url, route, env, headers);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        // 에러 self-report (fire-and-forget, 순환 방지: /v1/ingest 에러는 스킵)
+        if (!matchesPrefix(url.pathname, '/v1/ingest') && env.INGEST_SERVICE) {
+          reportProxyError(env.INGEST_SERVICE, route.prefix, message);
         }
+        return Response.json(
+          { error: 'Service unavailable', target: route.prefix, message },
+          { status: 502 },
+        );
       }
     }
 

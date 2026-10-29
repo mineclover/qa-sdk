@@ -16,6 +16,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { JwksVerifier } from './lib/jwks-verifier.js';
 import { getRoutePermission, checkPermission } from './lib/route-permissions.js';
+import { GATEWAY_ROUTES, GATEWAY_SERVICES, matchRoute, targetPath } from './lib/route-table.js';
 
 const app = new Hono();
 
@@ -166,39 +167,10 @@ async function fetchPermsFromZitadel(userId: string): Promise<PermsResult | null
   return null;
 }
 
-const SERVICE_URLS: Record<string, string> = {
-  ingest: process.env.INGEST_URL ?? 'http://localhost:3200',
-  registry: process.env.REGISTRY_URL ?? 'http://localhost:3300',
-  gate: process.env.GATE_URL ?? 'http://localhost:3400',
-  query: process.env.QUERY_URL ?? 'http://localhost:3500',
-  decode: process.env.DECODE_URL ?? 'http://localhost:3600',
-  definition: process.env.DEFINITION_URL ?? 'http://localhost:3700',
-  decision: process.env.DECISION_URL ?? 'http://localhost:3800',
-};
-
-const PATH_MAP: Array<{ prefix: string; service: string; strip?: boolean }> = [
-  { prefix: '/v1/ingest', service: 'ingest' },
-  { prefix: '/v1/traces', service: 'ingest' },
-  { prefix: '/v1/sessions', service: 'ingest' },
-  { prefix: '/v1/scenarios', service: 'ingest' },
-  { prefix: '/v1/streams', service: 'ingest' },
-  { prefix: '/v1/admin', service: 'ingest' },
-  { prefix: '/api/', service: 'registry' },
-  { prefix: '/dev/', service: 'registry' },
-  { prefix: '/catalogs', service: 'registry' },
-  { prefix: '/health/generation', service: 'registry' },
-  { prefix: '/metrics', service: 'registry', strip: true },
-  { prefix: '/gate/', service: 'gate', strip: true },
-  { prefix: '/query/', service: 'query', strip: true },
-  { prefix: '/state/', service: 'query', strip: true },
-  { prefix: '/decode/', service: 'decode', strip: true },
-  { prefix: '/docs', service: 'definition' },
-  { prefix: '/sync', service: 'definition' },
-  { prefix: '/graph/', service: 'definition' },
-  { prefix: '/definitions/', service: 'definition', strip: true },
-  { prefix: '/decisions/', service: 'decision', strip: true },
-  { prefix: '/decision/', service: 'decision', strip: true },
-];
+function serviceUrl(service: keyof typeof GATEWAY_SERVICES): string {
+  const target = GATEWAY_SERVICES[service];
+  return process.env[target.urlEnv] ?? target.defaultUrl;
+}
 
 // ── 동적 라우팅 (registry 기반) ─────────────────────
 
@@ -238,9 +210,9 @@ async function getRoutes(): Promise<GatewayRoute[]> {
     /* fallback */
   }
 
-  return PATH_MAP.map((r) => ({
+  return GATEWAY_ROUTES.map((r) => ({
     prefix: r.prefix,
-    url: SERVICE_URLS[r.service],
+    url: serviceUrl(r.service),
     strip: r.strip ?? false,
   }));
 }
@@ -397,40 +369,36 @@ app.all('*', async (c) => {
   const url = new URL(c.req.url);
   const routes = await getRoutes();
 
-  for (const route of routes) {
-    if (url.pathname.startsWith(route.prefix)) {
-      const targetPath = route.strip
-        ? url.pathname.slice(route.prefix.replace(/\/$/, '').length) || '/'
-        : url.pathname;
-      const targetUrl = `${route.url}${targetPath}${url.search}`;
-      const headers = new Headers(c.req.raw.headers);
-      headers.set('X-Gateway-Identity', c.get('identity') ?? 'unknown');
-      headers.delete('Authorization');
+  const route = matchRoute(routes, url.pathname);
+  if (route) {
+    const targetUrl = `${route.url}${targetPath(route, url.pathname)}${url.search}`;
+    const headers = new Headers(c.req.raw.headers);
+    headers.set('X-Gateway-Identity', c.get('identity') ?? 'unknown');
+    headers.delete('Authorization');
 
-      // body: arrayBuffer로 읽어서 전달 (stream 소비 문제 방지)
-      let body: ArrayBuffer | undefined;
-      if (c.req.method !== 'GET' && c.req.method !== 'HEAD') {
-        try {
-          body = await c.req.arrayBuffer();
-        } catch {
-          /* empty body */
-        }
-      }
-
+    // body: arrayBuffer로 읽어서 전달 (stream 소비 문제 방지)
+    let body: ArrayBuffer | undefined;
+    if (c.req.method !== 'GET' && c.req.method !== 'HEAD') {
       try {
-        const resp = await fetch(targetUrl, {
-          method: c.req.method,
-          headers,
-          body,
-        });
-        return new Response(resp.body, {
-          status: resp.status,
-          headers: resp.headers,
-        });
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return c.json({ error: 'Service unavailable', message }, 502);
+        body = await c.req.arrayBuffer();
+      } catch {
+        /* empty body */
       }
+    }
+
+    try {
+      const resp = await fetch(targetUrl, {
+        method: c.req.method,
+        headers,
+        body,
+      });
+      return new Response(resp.body, {
+        status: resp.status,
+        headers: resp.headers,
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      return c.json({ error: 'Service unavailable', message }, 502);
     }
   }
 

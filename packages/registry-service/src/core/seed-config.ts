@@ -195,7 +195,7 @@ export async function seedConfigs(configStore: ConfigStore, logger: SeedLogger =
         prod: 'https://qa-gate-service.astralclover.workers.dev',
       },
       gatewayPath: '/gate/',
-      stripPrefix: true,
+      // 서비스 라우트가 접두사를 포함하므로 strip하지 않는다 (gateway lib/route-table.ts)
       // gate-pack(owner=gate-service) 매핑이 gate_execution/bundle_observation을 emit하므로 ownership 등록.
       // gate_point는 GateEngine 라이브러리가 계산 (read-only cache).
       ownedPrefixes: ['gate_execution', 'bundle_observation'],
@@ -227,7 +227,7 @@ export async function seedConfigs(configStore: ConfigStore, logger: SeedLogger =
         prod: 'https://qa-decode-service.astralclover.workers.dev',
       },
       gatewayPath: '/decode/',
-      stripPrefix: true,
+      // 서비스 라우트가 접두사를 포함하므로 strip하지 않는다 (gateway lib/route-table.ts)
       ownedPrefixes: [],
       consumedPrefixes: ['service'],
     },
