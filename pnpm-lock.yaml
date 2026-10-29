@@ -3057,6 +3057,9 @@ importers:
         specifier: ^0.170.0
         version: 0.170.0
     devDependencies:
+      '@qa-sdk/core':
+        specifier: workspace:*
+        version: link:../core
       demo-snapshot:
         specifier: workspace:*
         version: link:../demo-snapshot

@@ -1,14 +1,27 @@
+// Generated from Catalog "demo" (hash: cc012d402486) by generate-browser-catalog@0.1.0
+// catalogDigest: sha256:cc012d402486255e232f4dc53651d0299cf66098a91e0f1c0ed986e4797c2789
+// !! 자동 생성 파일 — 직접 수정 금지 !!
+
 /**
  * DEMO_CATALOG의 브라우저용 경량 JSON.
  *
  * demo-snapshot의 DEMO_CATALOG에서 encode/decode에 필요한 최소 정보만 추출.
  * viz-3d-core.js 번들에 포함되어 브라우저에서 직접 사용.
  *
- * ⚠️ 이 파일은 자동 생성됨. 직접 수정하지 마세요.
- *    pnpm --filter @qa-sdk/viz-3d prebuild 으로 재생성.
+ * 재생성: pnpm codegen:update (검사: pnpm codegen:check)
  */
 
 import type { BrowserCatalog } from "./browser-codec.js";
+
+/**
+ * BROWSER_CATALOG가 파생된 Catalog 문맥.
+ * @qa-sdk/core BrowserCatalogSnapshot과 같은 형태 (browser-codec은 core에 의존하지 않는다).
+ */
+export const BROWSER_CATALOG_SNAPSHOT = {
+  catalog_id: "demo",
+  digest: "sha256:cc012d402486255e232f4dc53651d0299cf66098a91e0f1c0ed986e4797c2789",
+  codec_version: "legacy-v1",
+} as const;
 
 /**
  * DEMO_CATALOG 경량 버전.
