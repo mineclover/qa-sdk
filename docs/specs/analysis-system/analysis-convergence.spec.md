@@ -39,12 +39,14 @@ prefix 간 중복이나 낭비를 감지하는 수렴 분석. 유사한 축 조�
 
 수렴 분석은 `@qa-sdk/convergence` 패키지에 구현된 순수 함수 체계로, ingest-server의 `ConvergencePipelineRunner`가 런타임에서 오케스트레이션한다.
 
+> **단발 분석 `runConvergenceAnalysis` (G3 이관, 2026-10-29):** `convergence-runner.ts`의 순수·결정론 오케스트레이터는 프로덕션 호출이 없다. 런타임은 아래 `ConvergencePipelineRunner`가 수행한다. G3(incremental convergence)에서 full rebuild 진입점으로 흡수하고, G3를 하지 않기로 하면 삭제한다 (`docs/proposals/swc-next-qa-sdk-optimization/03-unwired-spec-review.md` U-7).
+
 ### 파이프라인 구조
 
 수렴 분석은 window-based 배치 처리로 동작한다.
 
 1. **버퍼 축적** — Phase 2 완료된 traceId를 버퍼에 수집
-2. **flush 트리거** — 건수 임계값(`recordThreshold`, 기본 100) 또는 타이머(`flushIntervalMs`, 기본 60초) 도달 시 실행
+2. **flush 트리거** — 건수 임계값(`recordThreshold`, 기본 100)·버퍼 cap 도달 시 즉시, 그 외에는 `convergence-scheduler`가 `CONVERGENCE_SCHEDULE_INTERVAL_MS`(기본 5분)마다 실행 (scheduler 존폐는 결정 D-9)
 3. **레코드 조회** — `recordStore.findByTraceId()`로 address_context가 있는 레코드만 수집
 4. **집계** — `aggregateUsageData(catalog, records)` → `UsageData` 생성
 5. **flow trace** — raw `addressRecords`로 IntentLink 위반을 검사하고, 현재 배치에서

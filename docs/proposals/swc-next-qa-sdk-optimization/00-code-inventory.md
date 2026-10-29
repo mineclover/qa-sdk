@@ -161,7 +161,7 @@ viz-3d/scripts ──► browser-codec/src/demo-catalog-browser.ts (생성물 �
 | X-14 | `convergence/src/dkg-types.ts` 타입 사본(`metadata` 누락으로 drift) | **Track F 처리**: `metadata`·`provenance` 동기화, `dkg-enrichment/src/type-drift.test.ts`가 `toEqualTypeOf`로 고정 (`test` 스크립트에 `tsc --noEmit`) | F |
 | X-15 | `scaffoldDecision` 2벌 (`dkg`, `convergence`), dkg ↔ dkg-enrichment skills 근사 중복 | **판정 완료 (§5.1)**: `scaffoldDecision` 정본 = `dkg`, skills 정본 = `dkg-enrichment`. 이동·삭제는 G3 | F → G3 |
 | X-16 | `data-object-codegen` 패키지 소비처 0건, `event-catalog/src/track-codegen.ts` ↔ `codegen-core` 중복 | ✅ **삭제 (2026-10-29, 핵심 기능 정리 1순위)**: `packages/data-object-codegen/`, event-catalog `track-codegen`. spec `data-object-codegen`·`event-track-codegen`은 원래 codegen-core 구현을 정본으로 가리켜 유지. demo catalog `qa_pkg` 축 entry는 append-only 규칙으로 유지 | ✅ |
-| X-17 | `runConvergenceAnalysis`, `transitionFlushToMetrics`, `aggregateTransitionResults` 프로덕션 호출 0건 | **2순위로 재분류**: approved spec(`analysis-convergence`, `analysis-transition`)이 정의한 기능이 런타임에 미배선된 상태. transition metric 3종은 `METRIC_DEFS`에 정의만 있고 미계산. 삭제(spec 폐기)와 배선(G3) 중 결정 필요 | 결정 대기 |
+| X-17 | `runConvergenceAnalysis`, `transitionFlushToMetrics`, `aggregateTransitionResults` 프로덕션 호출 0건 | **G3 이관 확정 (2026-10-29)**: approved spec 기능의 미배선 상태. U-6·U-7로 G3에서 배선 (`03-unwired-spec-review.md`) | G3 |
 
 X-1, X-2 외 항목은 동작이나 공개 API를 바꾸므로 담당 트랙에서 테스트와 함께 처리한다.
 
@@ -210,7 +210,7 @@ Track D에서는 삭제하지 않았다. 삭제 여부는 사람이 결정한다
 
 **2순위 — 결정 필요 (그룹 단위)**
 
-- spec은 있으나 미배선: X-17 (convergence 단발 오케스트레이터, transition metric)
+- spec은 있으나 미배선: ✅ 판정 완료 — [03-unwired-spec-review.md](./03-unwired-spec-review.md) (4건 배선, 2건 삭제, 2건 G3 이관)
 - `conditional-keep`: decision-flow·dkg 계열 8, motion 4, operational-ontology 1
 - consumer 계열: 시각화 7, 시뮬레이션 6, 데모 화면 8, taxonomy preview
 - 의존 패키지 0인 라이브러리: `address-index`, `tag-search`, `weighted-wasm`, `db-traffic-control`, `infra-engine`, `federated-connection-runtime`, `provider-tokenizer-openai`, `visbug-bridge`

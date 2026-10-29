@@ -115,6 +115,8 @@ collect → match → bind → load state → validate input → apply output �
 
 ### 전이 Metric 3종
 
+> **미배선 — G3 이관 (2026-10-29):** 아래 함수와 `METRIC_DEFS`의 transition metric 정의는 있지만, Phase 2.5 세션 결과가 convergence 버퍼까지 전달되지 않아 런타임에서 계산되지 않는다. G3의 TransitionRecord IR이 운반 수단이 된다 (`docs/proposals/swc-next-qa-sdk-optimization/03-unwired-spec-review.md` U-6).
+
 `transitionFlushToMetrics()` 함수가 세션 처리 결과에서 metric을 계산한다:
 
 | Metric ID | 이름 | 계산 | 임계값 |

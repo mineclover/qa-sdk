@@ -47,13 +47,25 @@ sources:
 | U-7 | 단발 convergence 분석 (`runConvergenceAnalysis`) | `analysis-convergence`, `engine-system` | 순수·결정론 오케스트레이터. 프로덕션 호출 0 (테스트만). 런타임은 `ConvergencePipelineRunner`가 별도로 수행 | **없음** | 중간 — CLI 리포트나 G3 full rebuild로 연결 | 추천(simplification·boundary·headroom) 일괄 리포트가 사라짐 | **G3 full rebuild 진입점으로 흡수**. G3를 하지 않기로 하면 삭제 |
 | U-8 | transition 상태 영속화 (`SqliteStateStore`) | `analysis-transition` | 구현 존재. 엔진이 세션마다 `InMemoryStateStore`를 만들어 연결 안 됨. Track E가 `TRANSITION_STATE_PATH`를 "배선할 자리 없음"으로 삭제 | **없음** — 세션을 넘는 상태 조회가 없음 | 중간 — 엔진 생성자에 state store 주입 경로 추가 | 세션 간 상태가 이어지지 않음 (지금과 동일) | **삭제** — 세션 격리가 현재 설계이고 교차 세션 상태 요구가 없다 |
 
-## 2. 권장 묶음
+## 2. 권장 묶음 — 2026-10-29 승인·반영
 
 - **지금 배선 (작은 비용, 읽는 곳 있음):** U-1, U-2, U-3(임시), U-4
 - **지금 삭제 (읽는 곳 없음, 구현 미완 또는 설계와 충돌):** U-5, U-8, U-4의 미사용 ingest pg 구현(`stores/pg/key-observation.adapter.ts`)
 - **G3로 이관 (운반 구조가 G3에서 생김):** U-6, U-7
 
 삭제 항목의 spec은 `lifecycle: deprecated`와 삭제 사유를 남기고, 상위 spec의 sources를 정리한다(1순위 정리와 같은 방식).
+
+## 2.1 반영 결과
+
+| # | 처리 | 커밋 |
+|---|---|---|
+| U-1 | ✅ 배선 — `lib/convergence-functions.ts`로 묶음 분리, 구성 테스트 | `98fef3a7` |
+| U-2 | ✅ 배선 — runner `getPatternStats()`, route anomaly 필드를 실제 타입에 맞춤 | `98fef3a7` |
+| U-3 | ✅ 배선 (임시) — `buildAddressHealthIndex(catalog)` | `98fef3a7` |
+| U-4 | ✅ 배선 — SQLite·PG runtime store + `/v1/key-observations/{summary,unregistered,prefixes/:id}`. ingest-server `stores/pg/*`의 PgKeyObservationStore는 factory·cross-adapter·RLS 테스트와 묶인 Plan 07d 묶음이라 `stores/pg/*` 전체 판정으로 넘김 | `98fef3a7` |
+| U-5 | ✅ 삭제 — `@qa-sdk/core` `MetricRollup*` export 제거 포함 (외부 배포 패키지 breaking) | `b62fa192` |
+| U-8 | ✅ 삭제 | `b62fa192` |
+| U-6, U-7 | G3 이관 표기 — `plans/gated-phases.md` G3, 각 spec에 미배선 주석 | 이 커밋 |
 
 ## 3. 이 표에 넣지 않은 것
 

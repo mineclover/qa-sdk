@@ -32,6 +32,8 @@
 - cache key: `catalogSnapshotDigest`, `inputBatchDigest`, `verdictRuleVersion`, `transitionSpecVersion`(`TransitionRegistry`에 이미 있음), `algorithmVersion`(F Task 2)
 - dirty set (prefix·axis·IntentLink·TransitionSpec 단위)
 - transition 결과 저장 (현재 로그만 남음)
+- U-6: transition metric 3종 배선 — Phase 2.5 `TransitionSessionResult`를 TransitionRecord IR로 convergence까지 운반하고 `transitionFlushToMetrics` 결과를 `collectMetrics`에 병합
+- U-7: `runConvergenceAnalysis`를 full rebuild 진입점으로 흡수 (incremental 결과와의 differential test 기준). G3를 하지 않기로 하면 삭제
 - full rebuild maintenance command와 full ↔ incremental differential test
 - X-15·X-17 중복 구현 정리
 - D-9: convergence 트리거 재설계 — scheduler 제거(runner 내부 max-wait로 대체) 여부와 worker 모드 convergence 배선 ([02-convergence-flush-review.md](../02-convergence-flush-review.md))
