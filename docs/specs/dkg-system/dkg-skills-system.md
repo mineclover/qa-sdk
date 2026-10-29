@@ -27,7 +27,7 @@ sources:
   - packages/dkg/src/dkg.types.ts
   - packages/dkg/src/index.ts
   - packages/dkg/src/skills/skill-chain.ts
-  - packages/dkg/src/skills/converge-chain.ts
+  - packages/dkg-enrichment/src/skills/converge-chain.ts
   - packages/dkg/src/skills/skills-suite.test.ts
   - packages/cli/src/commands/dkg.ts
 ---

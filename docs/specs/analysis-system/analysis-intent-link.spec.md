@@ -20,8 +20,8 @@ def:
       type: traces_to
 sources:
   - packages/dkg/src/skills/flow-trace.ts
-  - packages/dkg-enrichment/src/skills/flow-trace.ts
-  - packages/dkg-enrichment/src/skills/flow-trace.test.ts
+  - packages/dkg/src/skills/flow-trace.ts
+  - packages/dkg/src/skills/flow-trace.scenario.test.ts
   - packages/ingest-server/src/lib/convergence-pipeline.ts
   - packages/ingest-server/src/lib/convergence-pipeline.test.ts
   - packages/ingest-server/src/routes/labels.ts
@@ -147,8 +147,8 @@ build/test/contract 결과만으로 구성된 실행에서는 business IntentLin
 
 ## 관련 소스
 
-- `packages/dkg-enrichment/src/skills/flow-trace.ts` — `traceFlows()`, `validateDslInvariants()`
-- `packages/dkg-enrichment/src/skills/flow-trace.test.ts` — IntentLink/DSL invariant 단위 검증
+- `packages/dkg/src/skills/flow-trace.ts` — `traceFlows()`, `validateDslInvariants()`
+- `packages/dkg/src/skills/flow-trace.scenario.test.ts` — IntentLink/DSL invariant 단위 검증
 - `packages/ingest-server/src/lib/convergence-pipeline.ts` — 파이프라인 통합
 - `packages/ingest-server/src/lib/convergence-pipeline.test.ts` — `traceFlows` 결과 observation 저장 검증
 - `packages/ingest-server/src/routes/labels.ts` — 라벨링 API

@@ -121,10 +121,10 @@ sources:
 |---|---|
 | M-4 | ✅ gate·query 루트 `worker.ts` 사본 삭제 (wrangler `main`은 `src/worker.ts`) |
 | M-5 | ✅ `gate-openapi.ts`를 선언 전용으로 — 핸들러 사본 제거, `buildGateOpenAPIDocument()`. 사본이 실제와 갈라져 있던 것 2건 발견·수정: `/gate/filter-ranges`(실제 배열 ↔ 문서 `{ranges}`), `/gate/state`(실제 `AddressStateCacheRecord` ↔ 문서 `{reserved,inactive,open}`). `gate-openapi.test.ts`가 문서의 모든 경로를 실제 앱에 보내 status·본문 스키마를 대조 (예전 스키마로 되돌리면 실패하는 것 확인) |
-| M-1 | 🟡 **결정 필요** — 아래 |
+| M-1 | ✅ 권장안 반영 — `traceFlows`·`validateDslInvariants`는 dkg 정본(enrichment 사본·export 삭제, enrichment 시나리오 테스트를 `dkg/src/skills/flow-trace.scenario.test.ts`로 이동). `convergeChain`·`auditCoverage`는 convergence 위임 구현(enrichment) 정본(dkg 근사 구현·export 삭제, dkg 단위 테스트를 enrichment로 이동). CLI·sdk·spec-core는 `dkg-enrichment`에서 import하고, 근사 구현용 usage 변환(`toDkgEntryUsages`)을 거치지 않고 convergence `UsageData`를 그대로 넘긴다 (DKG snapshot 저장 형식은 유지). 옮긴 dkg 테스트 중 같은 prefix의 두 축에 merge를 기대하던 케이스는 convergence 규칙(같은 prefix → alias)과 충돌해 fixture를 서로 다른 prefix로 바꾸고 같은 prefix 케이스를 별도 단언으로 추가. `entriesMap` 생략 시 catalog 축 최신 entries를 기본값으로 |
 | M-2·M-3·M-6 | 대기 |
 
-**M-1 조사 결과.** 두 사본은 이름만 같고 구현 수준이 다르다.
+**M-1 조사 결과 (반영 완료).** 두 사본은 이름만 같고 구현 수준이 다르다.
 
 | skill | dkg (CLI·ingest가 사용) | dkg-enrichment (사용처 0, 자체 테스트만) |
 |---|---|---|

@@ -20,7 +20,7 @@ sources:
   - packages/dkg/src/skills/decision-scaffold.ts
   - packages/dkg/src/skills/skill-chain.ts
   - packages/dkg/src/skills/record-operation.ts
-  - packages/dkg/src/skills/converge-chain.ts
+  - packages/dkg-enrichment/src/skills/converge-chain.ts
   - packages/dkg/src/dkg.test.ts
   - packages/dkg/src/skills/record-operation.test.ts
   - packages/cli/src/commands/dkg.ts

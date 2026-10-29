@@ -60,7 +60,7 @@ role: status
 | **P0** | 미push 커밋(80+) push 여부 결정 | 원격에 반영되지 않았고, `8a624692`에 다른 주제의 삭제분이 섞여 있다 | 사람 결정 |
 | **P1** | ✅ Track B — registry generation이 digest 기준이 되어 SDK GENERATION 비교가 일치. 남은 #15 재료: batch 문맥 조회 API, VerdictReport artifact digest | — |
 | **P1** | ✅ core runtime 오류 전환, browser-codec 원인 코드 노출 | — | — |
-| **P1** | 🟡 기능 정리·안정화 — [06](./06-feature-cleanup-candidates.md). 완료: 결함 S-1·S-2·S-5~S-9(S-4 부분), 테스트 공백 T-1·T-2·T-4~T-6(registry e2e 45건 NestJS 이식 + SQL capacity 정밀도 결함 수정), 중복 M-4·M-5, stub N-2·N-3·N-7. 남음: S-3(gateway 인증 기본값)·S-4 엔진 데이터 공급·M-1(skill 정본)·M-3(Plan 07d)·N-1(App Hub stub)·§3 미사용 라우트·§5 패키지 그룹·V-1 배포 규칙 | 남은 항목은 대부분 사람 결정 | — |
+| **P1** | 🟡 기능 정리·안정화 — [06](./06-feature-cleanup-candidates.md). 완료: 결함 S-1·S-2·S-5~S-9(S-4 부분), 테스트 공백 T-1·T-2·T-4~T-6(registry e2e 45건 NestJS 이식 + SQL capacity 정밀도 결함 수정), 중복 M-1·M-4·M-5, stub N-2·N-3·N-7. 남음: S-3(gateway 인증 기본값)·S-4 엔진 데이터 공급·M-3(Plan 07d)·N-1(App Hub stub)·§3 미사용 라우트·§5 패키지 그룹·V-1 배포 규칙 | 남은 항목은 대부분 사람 결정 | — |
 | **P2** | 2순위 정리: 의존 0 라이브러리 8개, consumer 그룹(시각화 7·시뮬 6·데모 8), `stores/pg/*`(Plan 07d), 구조 중복 | 관리 비용 축소 | 그룹별 사람 결정 |
 | **P2** | ✅ I-1 삭제. 남은 인터페이스 정리 후보 I-2(`entrySnapshot` 옵션 제거 시점) — [05-interface-map.md](./05-interface-map.md) §4 | 실제 envelope 계약과 다른 두 번째 정의 | 사람 결정 |
 | **P2** | ✅ demo-tests 전체 `tsc` 검사 (`tsconfig.typecheck.json`) — 16건 수정, 죽은 registry skip 테스트 5개만 제외(06 T-6) | — | — |

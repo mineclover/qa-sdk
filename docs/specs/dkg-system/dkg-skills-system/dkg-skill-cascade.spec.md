@@ -33,10 +33,10 @@ sources:
   - packages/dkg/src/skills/constraint-check.ts
   - packages/dkg/src/skills/safe-entry-add.ts
   - packages/dkg/src/skills/skill-chain.ts
-  - packages/dkg/src/skills/converge-chain.ts
+  - packages/dkg-enrichment/src/skills/converge-chain.ts
   - packages/dkg/src/dkg.test.ts
   - packages/dkg/src/skills/skills-suite.test.ts
-  - packages/dkg/src/skills/converge-chain.test.ts
+  - packages/dkg-enrichment/src/skills/converge-chain.unit.test.ts
 ---
 # analyzeImpact — 종단 Cascade
 

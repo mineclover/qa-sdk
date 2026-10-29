@@ -20,8 +20,8 @@ sources:
   - packages/dkg/src/skills/analyze-impact.ts
   - packages/dkg/src/skills/claim-operation.ts
   - packages/dkg/src/skills/constraint-check.ts
-  - packages/dkg/src/skills/converge-chain.ts
-  - packages/dkg/src/skills/coverage-audit.ts
+  - packages/dkg-enrichment/src/skills/converge-chain.ts
+  - packages/dkg-enrichment/src/skills/coverage-audit.ts
   - packages/dkg/src/skills/domain-health.ts
   - packages/dkg/src/skills/flow-trace.ts
   - packages/dkg/src/skills/infer-migrator.ts
