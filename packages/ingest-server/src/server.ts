@@ -206,15 +206,15 @@ async function startServer() {
   }
 
   // ── Transition Engine (Phase 2.5, optional) ─────────
-  let _transitionFns: TransitionFunctions | undefined;
-  let _transitionCatalog: unknown;
+  let transitionEngine: TransitionFunctions | undefined;
+  let transitionCatalog: unknown;
   if (env.TRANSITION_ENGINE_ENABLED) {
     try {
       const { createTransitionFunctions, DEMO_TRANSITION_SPECS } =
         await import('@qa-sdk/spec-core/transition');
       const { DEMO_CATALOG } = await import('demo-snapshot');
-      _transitionFns = createTransitionFunctions(DEMO_TRANSITION_SPECS);
-      _transitionCatalog = DEMO_CATALOG;
+      transitionEngine = createTransitionFunctions(DEMO_TRANSITION_SPECS);
+      transitionCatalog = DEMO_CATALOG;
       logger.info(`transition engine enabled (${DEMO_TRANSITION_SPECS.length} specs)`);
     } catch (error) {
       logger.error({ err: error }, 'transition engine initialization failed — disabled');
@@ -345,6 +345,9 @@ async function startServer() {
           }),
     dlqMaxRetryAttempts: env.DLQ_MAX_RETRY_ATTEMPTS,
     convergencePipeline,
+    transitionEngine,
+    transitionCatalog,
+    decodeServiceUrl: env.DECODE_SERVICE_URL,
     corsOrigin: env.CORS_ORIGIN,
     catalogValidator,
     insightsStore,
