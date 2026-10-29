@@ -15,6 +15,9 @@ import type {
   VersionStatus,
 } from '../version-lifecycle.js';
 import type { SqlDriver } from './sql-store.js';
+import { realColumn } from './sqlite-shared.js';
+
+const CAPACITY_COLUMN = realColumn('capacity');
 
 interface VersionLifecycleRow extends Record<string, unknown> {
   prefix: string;
@@ -129,7 +132,7 @@ export class SqlVersionLifecycleStore implements VersionLifecycleStore {
 
   async getActive(prefix: string): Promise<VersionRecord | null> {
     const row = await this.driver.queryOne<VersionLifecycleRow>(
-      `SELECT prefix, version_id, status, base_version_id, capacity, deactivation_mode, created_at, released_at
+      `SELECT prefix, version_id, status, base_version_id, ${CAPACITY_COLUMN}, deactivation_mode, created_at, released_at
        FROM version_lifecycle
        WHERE prefix = ? AND status = ?
        ORDER BY created_at ASC
@@ -141,7 +144,7 @@ export class SqlVersionLifecycleStore implements VersionLifecycleStore {
 
   async getVersion(prefix: string, versionId: string): Promise<VersionRecord | null> {
     const row = await this.driver.queryOne<VersionLifecycleRow>(
-      `SELECT prefix, version_id, status, base_version_id, capacity, deactivation_mode, created_at, released_at
+      `SELECT prefix, version_id, status, base_version_id, ${CAPACITY_COLUMN}, deactivation_mode, created_at, released_at
        FROM version_lifecycle
        WHERE prefix = ? AND version_id = ?`,
       [prefix, versionId],
@@ -152,14 +155,14 @@ export class SqlVersionLifecycleStore implements VersionLifecycleStore {
   async getVersions(prefix: string, status?: VersionStatus): Promise<VersionRecord[]> {
     const rows = status
       ? await this.driver.query<VersionLifecycleRow>(
-          `SELECT prefix, version_id, status, base_version_id, capacity, deactivation_mode, created_at, released_at
+          `SELECT prefix, version_id, status, base_version_id, ${CAPACITY_COLUMN}, deactivation_mode, created_at, released_at
            FROM version_lifecycle
            WHERE prefix = ? AND status = ?
            ORDER BY created_at ASC`,
           [prefix, status],
         )
       : await this.driver.query<VersionLifecycleRow>(
-          `SELECT prefix, version_id, status, base_version_id, capacity, deactivation_mode, created_at, released_at
+          `SELECT prefix, version_id, status, base_version_id, ${CAPACITY_COLUMN}, deactivation_mode, created_at, released_at
            FROM version_lifecycle
            WHERE prefix = ?
            ORDER BY created_at ASC`,

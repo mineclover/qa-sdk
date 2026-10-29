@@ -15,6 +15,9 @@ import type { IndexMetaStore, SchemaVersionRecord, EntryRecord } from '../index-
 import { ValidationError } from '../errors.js';
 import type { EntityId } from '../types.js';
 import { validateEntryForInsert } from './validate-entry.js';
+import { realColumn } from './sqlite-shared.js';
+
+const CAPACITY_COLUMN = realColumn('capacity');
 
 // ── SqlDialect — DB 종류 + 기능 플래그 ──────────────────────────────────────
 
@@ -150,7 +153,7 @@ export class SqlIndexMetaStore implements IndexMetaStore {
 
   async getSchemaVersions(prefix: string): Promise<SchemaVersionRecord[]> {
     const rows = await this.driver.query<SchemaVersionRow>(
-      `SELECT prefix, version_id, capacity, created_at
+      `SELECT prefix, version_id, ${CAPACITY_COLUMN}, created_at
        FROM schema_version WHERE prefix = ?
        ORDER BY created_at ASC`,
       [prefix],
@@ -160,7 +163,7 @@ export class SqlIndexMetaStore implements IndexMetaStore {
 
   async getSchemaVersion(prefix: string, versionId: string): Promise<SchemaVersionRecord | null> {
     const row = await this.driver.queryOne<SchemaVersionRow>(
-      `SELECT prefix, version_id, capacity, created_at
+      `SELECT prefix, version_id, ${CAPACITY_COLUMN}, created_at
        FROM schema_version WHERE prefix = ? AND version_id = ?`,
       [prefix, versionId],
     );
@@ -169,7 +172,7 @@ export class SqlIndexMetaStore implements IndexMetaStore {
 
   async getCapacity(prefix: string, versionId: string): Promise<number | null> {
     const row = await this.driver.queryOne<{ capacity: number }>(
-      `SELECT capacity FROM schema_version WHERE prefix = ? AND version_id = ?`,
+      `SELECT ${CAPACITY_COLUMN} FROM schema_version WHERE prefix = ? AND version_id = ?`,
       [prefix, versionId],
     );
     return row?.capacity ?? null;

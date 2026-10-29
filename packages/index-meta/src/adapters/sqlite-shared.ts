@@ -39,3 +39,14 @@ export async function runTransaction<T>(
     throw err;
   }
 }
+
+/**
+ * capacity 계열 컬럼 읽기 — 값은 JS number(double)로 써서 저장했으므로 REAL로 읽어 같은 double을 되돌린다.
+ *
+ * INTEGER로 읽으면 node:sqlite가 2^53을 넘는 값에서 RangeError를 던진다. 그러면 overflow draft
+ * (release에서 OVERFLOW로 막아야 하는 정상 상태)를 읽는 모든 경로가 500이 된다.
+ * 안전한 정수 범위에서는 INTEGER로 읽은 값과 같다.
+ */
+export function realColumn(column: string): string {
+  return `CAST(${column} AS REAL) AS ${column}`;
+}

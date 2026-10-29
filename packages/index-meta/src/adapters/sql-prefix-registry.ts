@@ -16,6 +16,10 @@ import type {
   ResolvedAddress,
 } from '../prefix-registry.js';
 import type { SqlDriver } from './sql-store.js';
+import { realColumn } from './sqlite-shared.js';
+
+const CAPACITY_COLUMN = realColumn('capacity');
+const REF_CAPACITY_COLUMN = realColumn('ref_capacity');
 
 // ── DB row 타입 ───────────────────────────────────────────
 
@@ -110,7 +114,7 @@ export class SqlPrefixRegistry implements PrefixRegistry {
 
   async getCapacity(prefix: string, versionId: string): Promise<number | null> {
     const row = await this.driver.queryOne<{ capacity: number }>(
-      `SELECT capacity FROM prefix_registry WHERE prefix = ? AND version_id = ?`,
+      `SELECT ${CAPACITY_COLUMN} FROM prefix_registry WHERE prefix = ? AND version_id = ?`,
       [prefix, versionId],
     );
     return row?.capacity ?? null;
@@ -118,7 +122,7 @@ export class SqlPrefixRegistry implements PrefixRegistry {
 
   async getRecord(prefix: string, versionId: string): Promise<PrefixRegistryRecord | null> {
     const row = await this.driver.queryOne<PrefixRegistryRow>(
-      `SELECT prefix, version_id, capacity, registered_at FROM prefix_registry WHERE prefix = ? AND version_id = ?`,
+      `SELECT prefix, version_id, ${CAPACITY_COLUMN}, registered_at FROM prefix_registry WHERE prefix = ? AND version_id = ?`,
       [prefix, versionId],
     );
     if (!row) return null;
@@ -129,12 +133,12 @@ export class SqlPrefixRegistry implements PrefixRegistry {
 
   async listVersions(prefix: string): Promise<PrefixRegistryRecord[]> {
     const rows = await this.driver.query<PrefixRegistryRow>(
-      `SELECT prefix, version_id, capacity, registered_at FROM prefix_registry WHERE prefix = ? ORDER BY registered_at ASC`,
+      `SELECT prefix, version_id, ${CAPACITY_COLUMN}, registered_at FROM prefix_registry WHERE prefix = ? ORDER BY registered_at ASC`,
       [prefix],
     );
     // All rows share the same prefix — fetch refs with a single prefix filter
     const allRefRows = await this.driver.query<PrefixRefRow>(
-      `SELECT parent_prefix, parent_version_id, dim_order, ref_prefix, ref_version_id, ref_capacity
+      `SELECT parent_prefix, parent_version_id, dim_order, ref_prefix, ref_version_id, ${REF_CAPACITY_COLUMN}
        FROM prefix_ref WHERE parent_prefix = ?
        ORDER BY parent_version_id ASC, dim_order ASC`,
       [prefix],
@@ -145,10 +149,10 @@ export class SqlPrefixRegistry implements PrefixRegistry {
   async listAll(): Promise<PrefixRegistryRecord[]> {
     const [rows, allRefRows] = await Promise.all([
       this.driver.query<PrefixRegistryRow>(
-        `SELECT prefix, version_id, capacity, registered_at FROM prefix_registry ORDER BY registered_at ASC`,
+        `SELECT prefix, version_id, ${CAPACITY_COLUMN}, registered_at FROM prefix_registry ORDER BY registered_at ASC`,
       ),
       this.driver.query<PrefixRefRow>(
-        `SELECT parent_prefix, parent_version_id, dim_order, ref_prefix, ref_version_id, ref_capacity
+        `SELECT parent_prefix, parent_version_id, dim_order, ref_prefix, ref_version_id, ${REF_CAPACITY_COLUMN}
          FROM prefix_ref ORDER BY parent_prefix ASC, parent_version_id ASC, dim_order ASC`,
       ),
     ]);
@@ -200,7 +204,7 @@ export class SqlPrefixRegistry implements PrefixRegistry {
 
   async getShape(prefix: string, versionId: string): Promise<number[] | null> {
     const row = await this.driver.queryOne<{ capacity: number }>(
-      `SELECT capacity FROM prefix_registry WHERE prefix = ? AND version_id = ?`,
+      `SELECT ${CAPACITY_COLUMN} FROM prefix_registry WHERE prefix = ? AND version_id = ?`,
       [prefix, versionId],
     );
     if (!row) return null;
@@ -246,7 +250,7 @@ export class SqlPrefixRegistry implements PrefixRegistry {
 
   private async _getRefs(prefix: string, versionId: string): Promise<DimRef[]> {
     const rows = await this.driver.query<PrefixRefRow>(
-      `SELECT ref_prefix, ref_version_id, ref_capacity FROM prefix_ref
+      `SELECT ref_prefix, ref_version_id, ${REF_CAPACITY_COLUMN} FROM prefix_ref
        WHERE parent_prefix = ? AND parent_version_id = ?
        ORDER BY dim_order ASC`,
       [prefix, versionId],
