@@ -15,6 +15,9 @@
 //  Catalog Schema (경량)
 // ═══════════════════════════════════════════════════
 
+// 정본: @qa-sdk/core catalog/browser-flatten.ts. 브라우저 번들을 의존성 없이 유지하려고 복제하며,
+// 두 정의가 상호 할당 가능함을 demo-tests codec-compat/browser-catalog-type-drift.test.ts가 고정한다.
+
 export interface BrowserDimDef {
   readonly kind: 'axis' | 'prefix_ref';
   /** axis일 때 */

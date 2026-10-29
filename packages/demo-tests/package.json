@@ -5,7 +5,7 @@
   "description": "데모 카탈로그와 서비스 흐름의 cross-package 통합 테스트 스위트",
   "type": "module",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run && tsc -p tsconfig.codec-compat.json"
   },
   "dependencies": {
     "@qa-sdk/registry-service": "workspace:*",
