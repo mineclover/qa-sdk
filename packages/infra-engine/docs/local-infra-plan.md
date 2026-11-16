@@ -89,7 +89,7 @@ echo "KMS Alias: alias/qa-sdk-sops"
 echo "$KEY_ID" > /tmp/kms-key-id.txt
 ```
 
-#### 1-3. 환경 설정 파일 `packages/infra-engine/.env.infra`
+#### 1-3. 환경 설정 파일 `packages/infra-engine/.env.infra.example` (복사 후 `.env.docker`로 사용)
 
 ```env
 # LocalStack endpoint (로컬)

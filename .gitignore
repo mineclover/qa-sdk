@@ -3,6 +3,11 @@ dist/
 *.tsbuildinfo
 .DS_Store
 .env
+.env.*
+!.env.example
+!**/.env.example
+!**/.env.*.example
+!simulations/enterprise-pm/.env.sim.enc
 
 # build artifacts (prevent in-source builds)
 *.js.map

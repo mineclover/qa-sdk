@@ -8,7 +8,7 @@ services:
   postgres:
     environment:
       POSTGRES_REPLICATION_USER: replicator
-      POSTGRES_REPLICATION_PASSWORD: replicator_pass
+      POSTGRES_REPLICATION_PASSWORD: ${POSTGRES_REPLICATION_PASSWORD:?Set POSTGRES_REPLICATION_PASSWORD in .env}
     command:
       - postgres
       - -c
@@ -30,7 +30,6 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
       - pgdata-replica:/var/lib/postgresql/data
-      - ./postgres/replica.conf:/etc/postgresql/replica.conf:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -41,7 +40,7 @@ services:
         # 초기 base backup (데이터 없을 때만)
         if [ ! -f /var/lib/postgresql/data/PG_VERSION ]; then
           pg_basebackup -h postgres -U replicator -D /var/lib/postgresql/data -Fp -Xs -P -R
-          cp /etc/postgresql/replica.conf /var/lib/postgresql/data/
+          printf "primary_conninfo = 'host=postgres port=5432 user=replicator password=%s'\n" "$${POSTGRES_REPLICATION_PASSWORD}" > /var/lib/postgresql/data/replica.conf
         fi
         exec postgres -c config_file=/var/lib/postgresql/data/replica.conf
     healthcheck:
